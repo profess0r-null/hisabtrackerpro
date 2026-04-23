@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="bn" data-theme="dark" data-lang="bn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hisab Tracker Pro</title>
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* --- THEME & VARIABLES --- */
+:root {
+    --bg: #0b0e16; --bg2: #0f1320; --surface: #141929; --card: #1c243a; --border: #2e3a58;
+    --text: #e4e8f5; --text2: #94a3b8; --muted: #64748b; --primary: #38bdf8;
+    --green: #10b981; --red: #ef4444; --yellow: #f59e0b;
+    --shadow: 0 10px 30px rgba(0,0,0,0.4);
+}
+[data-theme="light"] {
+    --bg: #f1f5f9; --bg2: #ffffff; --surface: #ffffff; --card: #f8fafc; --border: #cbd5e1;
+    --text: #0f172a; --text2: #475569; --muted: #94a3b8; --primary: #0ea5e9;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; transition: background 0.3s, border-color 0.3s; }
+body { 
+    background: var(--bg); color: var(--text); 
+    font-family: 'Inter', 'Hind Siliguri', sans-serif; 
+    line-height: 1.6; font-size: 16px; /* Increased base size */
+}
+
+/* Language Toggle Logic */
+[data-lang="bn"] .en { display: none !important; }
+[data-lang="en"] .bn { display: none !important; }
+
+/* --- HEADER --- */
+.hdr {
+    background: var(--surface); border-bottom: 2px solid var(--border);
+    padding: 0 24px; height: 70px; display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; z-index: 1000; box-shadow: var(--shadow);
+}
+.logo-name { font-size: 20px; font-weight: 800; color: var(--primary); }
+
+.hdr-right { display: flex; gap: 10px; }
+.ctrl-btn {
+    height: 40px; padding: 0 15px; border-radius: 10px; border: 1px solid var(--border);
+    background: var(--card); color: var(--text); cursor: pointer; font-size: 14px;
+    font-weight: 600; display: flex; align-items: center; gap: 8px;
+}
+.ctrl-btn:hover { border-color: var(--primary); transform: translateY(-2px); }
+
+/* --- CONTENT WRAPPER --- */
+.wrap { max-width: 900px; margin: 0 auto; padding: 30px 20px; }
+
+/* --- SUMMARY --- */
+.summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin-bottom: 30px; }
+.sc {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 20px;
+    padding: 25px; text-align: center; box-shadow: var(--shadow);
+}
+.sc-lbl { font-size: 12px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+.sc-val { font-size: 32px; font-weight: 800; }
+.sc-val.g { color: var(--green); } .sc-val.r { color: var(--red); } .sc-val.y { color: var(--yellow); }
+
+/* --- TABS --- */
+.tabs { display: flex; gap: 10px; background: var(--bg2); padding: 8px; border-radius: 15px; margin-bottom: 25px; border: 1px solid var(--border); }
+.tab {
+    flex: 1; padding: 14px; border: none; border-radius: 10px; font-size: 15px; font-weight: 700;
+    cursor: pointer; color: var(--muted); background: transparent;
+}
+.tab.on { background: var(--surface); color: var(--primary); box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+
+/* --- INPUT FORMS --- */
+.af {
+    background: var(--surface); border-radius: 20px; padding: 25px; margin-bottom: 30px;
+    border: 1px solid var(--border); box-shadow: var(--shadow);
+}
+.af-head { font-size: 18px; font-weight: 700; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+.af-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 15px; }
+input {
+    width: 100%; padding: 15px; border-radius: 12px; border: 2px solid var(--border);
+    background: var(--bg2); color: var(--text); font-size: 15px; outline: none;
+}
+input:focus { border-color: var(--primary); }
+
+.quick-notes { display: flex; gap: 8px; margin-bottom: 15px; flex-wrap: wrap; }
+.q-tag {
+    font-size: 12px; padding: 6px 12px; border-radius: 8px; background: var(--card);
+    border: 1px solid var(--border); cursor: pointer; font-weight: 600; color: var(--text2);
+}
+.q-tag:hover { background: var(--primary); color: white; border-color: var(--primary); }
+
+.sbtn {
+    width: 100%; padding: 16px; border-radius: 12px; border: none; font-size: 16px; font-weight: 800;
+    cursor: pointer; color: white; box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+}
+.sbtn-g { background: linear-gradient(135deg, var(--green), #059669); }
+.sbtn-r { background: linear-gradient(135deg, var(--red), #dc2626); }
+
+/* --- CARDS & LISTS --- */
+.pcard { background: var(--surface); border: 1px solid var(--border); border-radius: 18px; margin-bottom: 15px; overflow: hidden; }
+.pt { padding: 20px 24px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; }
+.pname { font-size: 18px; font-weight: 700; }
+.pamount { font-size: 22px; font-weight: 800; }
+
+.pbody { display: none; border-top: 1px solid var(--border); background: var(--bg2); padding: 20px; }
+.pbody.on { display: block; animation: fadeIn 0.3s ease; }
+
+.hi { display: flex; justify-content: space-between; padding: 10px 5px; border-bottom: 1px solid var(--border); font-size: 14px; color: var(--text2); }
+
+@keyframes fadeIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
+
+/* Responsive */
+@media (max-width: 700px) {
+    .af-row { grid-template-columns: 1fr; }
+    .summary { grid-template-columns: 1fr; }
+    .hdr { padding: 0 15px; }
+}
+</style>
+</head>
+<body id="mainBody">
+
+<header class="hdr">
+  <div class="logo-name">
+    <span class="bn">হিসাব ট্র্যাকার Pro</span>
+    <span class="en">Hisab Tracker Pro</span>
+  </div>
+  <div class="hdr-right">
+    <button class="ctrl-btn" onclick="toggleLang()">🌐 <span class="bn">EN</span><span class="en">বাং</span></button>
+    <button class="ctrl-btn" onclick="exportData()">💾 <span class="bn">ব্যাকআপ</span><span class="en">Backup</span></button>
+    <button class="ctrl-btn" onclick="triggerImport()">📂 <span class="bn">রিস্টোর</span><span class="en">Restore</span></button>
+    <button class="ctrl-btn" onclick="toggleTheme()">🌓</button>
+  </div>
+</header>
+
+<input type="file" id="importFile" style="display:none" accept=".json" onchange="handleImport(event)">
+
+<div class="wrap">
+  <div class="summary">
+    <div class="sc">
+      <div class="sc-lbl bn">আমি পাবো</div><div class="sc-lbl en">I Will Receive</div>
+      <div class="sc-val g" id="sv-r">৳০</div>
+    </div>
+    <div class="sc">
+      <div class="sc-lbl bn">আমি দেবো</div><div class="sc-lbl en">I Owe</div>
+      <div class="sc-val r" id="sv-g">৳০</div>
+    </div>
+    <div class="sc">
+      <div class="sc-lbl bn">নিট ব্যালেন্স</div><div class="sc-lbl en">Net Balance</div>
+      <div class="sc-val y" id="sv-n">৳০</div>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab on" onclick="switchTab('r')">📥 <span class="bn">পাওনা</span><span class="en">Receivable</span></button>
+    <button class="tab" onclick="switchTab('g')">📤 <span class="bn">দেনা</span><span class="en">Payable</span></button>
+    <button class="tab" onclick="switchTab('a')">📋 <span class="bn">সব রেকর্ড</span><span class="en">All Records</span></button>
+  </div>
+
+  <div class="sec on" id="sec-r">
+    <div class="af">
+      <div class="af-head">✚ <span class="bn">নতুন পাওনা যোগ করুন</span><span class="en">Add New Receivable</span></div>
+      <div class="af-row">
+        <input id="r-n" type="text" placeholder="নাম / Name">
+        <input id="r-a" type="number" placeholder="পরিমাণ / Amount">
+        <input id="r-no" type="text" placeholder="নোট / Note">
+      </div>
+      <div class="quick-notes">
+        <span class="q-tag" onclick="setQuickNote('Hawlat', 'r-no')">Hawlat</span>
+        <span class="q-tag" onclick="setQuickNote('Recharge', 'r-no')">Recharge</span>
+        <span class="q-tag" onclick="setQuickNote('Lent', 'r-no')">Lent</span>
+      </div>
+      <button class="sbtn sbtn-g" onclick="addEntry('receive')"><span class="bn">এন্ট্রি যোগ করুন →</span><span class="en">Add Entry →</span></button>
+    </div>
+    <div id="lst-r"></div>
+  </div>
+
+  <div class="sec" id="sec-g" style="display:none">
+    <div class="af">
+      <div class="af-head">✚ <span class="bn">নতুন দেনা যোগ করুন</span><span class="en">Add New Payable</span></div>
+      <div class="af-row">
+        <input id="g-n" type="text" placeholder="নাম / Name">
+        <input id="g-a" type="number" placeholder="পরিমাণ / Amount">
+        <input id="g-no" type="text" placeholder="নোট / Note">
+      </div>
+      <div class="quick-notes">
+        <span class="q-tag" onclick="setQuickNote('Borrowed', 'g-no')">Borrowed</span>
+        <span class="q-tag" onclick="setQuickNote('Recharge', 'g-no')">Recharge</span>
+      </div>
+      <button class="sbtn sbtn-r" onclick="addEntry('give')"><span class="bn">এন্ট্রি যোগ করুন →</span><span class="en">Add Entry →</span></button>
+    </div>
+    <div id="lst-g"></div>
+  </div>
+
+  <div class="sec" id="sec-a" style="display:none">
+    <div id="lst-a"></div>
+  </div>
+</div>
+
+<script>
+let DB = { receive: [], give: [] };
+let LANG = 'bn'; 
+let THEME = 'dark';
+let TAB = 'r';
+
+// Initialization
+try {
+    const s = localStorage.getItem('hisab_v5');
+    if(s) DB = JSON.parse(s);
+    LANG = localStorage.getItem('hisab_lang') || 'bn';
+    THEME = localStorage.getItem('hisab_theme') || 'dark';
+} catch(e) {}
+
+function save() { localStorage.setItem('hisab_v5', JSON.stringify(DB)); }
+
+function toggleLang() {
+    LANG = LANG === 'bn' ? 'en' : 'bn';
+    document.documentElement.setAttribute('data-lang', LANG);
+    localStorage.setItem('hisab_lang', LANG);
+    render();
+}
+
+function toggleTheme() {
+    THEME = THEME === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', THEME);
+    localStorage.setItem('hisab_theme', THEME);
+}
+
+function switchTab(t) {
+    TAB = t;
+    document.querySelectorAll('.tab').forEach(b => b.classList.remove('on'));
+    event.currentTarget.classList.add('on');
+    document.querySelectorAll('.sec').forEach(s => s.style.display = 'none');
+    document.getElementById('sec-' + t).style.display = 'block';
+    render();
+}
+
+function setQuickNote(val, id) { document.getElementById(id).value = val; }
+
+function addEntry(type) {
+    const p = type === 'receive' ? 'r' : 'g';
+    const name = document.getElementById(p + '-n').value.trim();
+    const amt = parseFloat(document.getElementById(p + '-a').value);
+    const note = document.getElementById(p + '-no').value.trim() || 'Entry';
+
+    if(!name || isNaN(amt)) return alert(LANG === 'bn' ? "নাম এবং সঠিক টাকা দিন!" : "Enter name and valid amount!");
+
+    let person = DB[type].find(x => x.name.toLowerCase() === name.toLowerCase());
+    const hist = { date: new Date().toLocaleDateString(), amt, note, t: 'add' };
+
+    if(person) {
+        person.original += amt; person.remaining += amt;
+        person.history.unshift(hist);
+    } else {
+        DB[type].push({ id: Date.now(), name, original: amt, remaining: amt, history: [hist] });
+    }
+
+    document.getElementById(p+'-n').value=''; document.getElementById(p+'-a').value=''; document.getElementById(p+'-no').value='';
+    save(); render();
+}
+
+function deleteEntry(type, id) {
+    if(confirm(LANG === 'bn' ? "আপনি কি নিশ্চিত মুছে ফেলতে চান?" : "Are you sure you want to delete?")) {
+        DB[type] = DB[type].filter(x => x.id !== id);
+        save(); render();
+    }
+}
+
+function renderAll() {
+    const list = document.getElementById('lst-a');
+    list.innerHTML = '';
+    const all = [
+        ...DB.receive.map(p => ({ ...p, cat: LANG === 'bn' ? 'পাওনা' : 'Receivable', col: 'var(--green)' })),
+        ...DB.give.map(p => ({ ...p, cat: LANG === 'bn' ? 'দেনা' : 'Payable', col: 'var(--red)' }))
+    ].sort((a,b) => b.id - a.id);
+
+    if(!all.length) {
+        list.innerHTML = `<p style="text-align:center; padding:40px; opacity:0.5;">${LANG === 'bn' ? 'কোনো লেনদেন নেই' : 'No records found'}</p>`;
+        return;
+    }
+
+    all.forEach(p => {
+        const div = document.createElement('div');
+        div.className = 'pcard';
+        div.innerHTML = `
+            <div class="pt" style="border-left: 6px solid ${p.col}">
+                <div class="pname">${p.name} <span style="font-size:11px; opacity:0.6;">[${p.cat}]</span></div>
+                <div class="pamount">৳${p.remaining}</div>
+            </div>`;
+        list.appendChild(div);
+    });
+}
+
+function renderCard(p, type) {
+    return `
+        <div class="pcard">
+            <div class="pt" onclick="this.nextElementSibling.classList.toggle('on')">
+                <div class="pname">${p.name}</div>
+                <div class="pamount" style="color:var(--${type==='receive'?'green':'red'})">৳${p.remaining}</div>
+            </div>
+            <div class="pbody">
+                <p style="font-weight:700; font-size:12px; color:var(--muted); margin-bottom:10px;">HISTORY:</p>
+                ${p.history.map(h => `<div class="hi"><span>${h.date} - ${h.note}</span><b>${h.t==='add'?'+':'-'} ৳${h.amt}</b></div>`).join('')}
+                <div style="margin-top:20px;">
+                    <button class="ctrl-btn" style="width:100%; justify-content:center; color:var(--red); border-color:var(--red);" onclick="deleteEntry('${type}', ${p.id})">🗑️ Delete</button>
+                </div>
+            </div>
+        </div>`;
+}
+
+function updateSummary() {
+    const tr = DB.receive.reduce((s,p) => s + p.remaining, 0);
+    const tg = DB.give.reduce((s,p) => s + p.remaining, 0);
+    document.getElementById('sv-r').textContent = '৳' + tr;
+    document.getElementById('sv-g').textContent = '৳' + tg;
+    document.getElementById('sv-n').textContent = '৳' + Math.abs(tr - tg);
+}
+
+function render() {
+    updateSummary();
+    document.getElementById('lst-r').innerHTML = DB.receive.map(p => renderCard(p, 'receive')).join('');
+    document.getElementById('lst-g').innerHTML = DB.give.map(p => renderCard(p, 'give')).join('');
+    if(TAB === 'a') renderAll();
+}
+
+// Backup & Restore Functions
+function exportData() {
+    const blob = new Blob([JSON.stringify(DB, null, 2)], {type: "application/json"});
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `hisab_tracker_backup_${new Date().toLocaleDateString()}.json`;
+    a.click();
+}
+
+function triggerImport() { document.getElementById('importFile').click(); }
+function handleImport(e) {
+    const file = e.target.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+        try {
+            DB = JSON.parse(ev.target.result);
+            save(); render();
+            alert("Success!");
+        } catch(err) { alert("Invalid File!"); }
+    };
+    reader.readAsText(file);
+}
+
+// Initial Run
+document.documentElement.setAttribute('data-lang', LANG);
+document.documentElement.setAttribute('data-theme', THEME);
+render();
+</script>
+
+</body>
+</html>
