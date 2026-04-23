@@ -21,67 +21,73 @@
 * { box-sizing: border-box; margin: 0; padding: 0; transition: background 0.3s, border-color 0.3s; }
 body { background: var(--bg); color: var(--text); font-family: 'Inter', 'Hind Siliguri', sans-serif; line-height: 1.6; font-size: 16px; }
 
+/* Language Display Logic */
 [data-lang="bn"] .en { display: none !important; }
 [data-lang="en"] .bn { display: none !important; }
 
 /* --- HEADER --- */
 .hdr {
     background: var(--surface); border-bottom: 2px solid var(--border);
-    padding: 10px 20px; min-height: 70px; display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 20px; min-height: 70px; display: flex; align-items: center; justify-content: space-between;
     position: sticky; top: 0; z-index: 1000; box-shadow: var(--shadow);
     flex-wrap: wrap; gap: 10px;
 }
-.logo-name { font-size: 1.2rem; font-weight: 800; color: var(--primary); white-space: nowrap; }
+.logo-name { font-size: 1.3rem; font-weight: 800; color: var(--primary); white-space: nowrap; }
 
-.hdr-right { display: flex; gap: 8px; flex-wrap: wrap; }
+.hdr-right { display: flex; gap: 10px; flex-wrap: wrap; }
 .ctrl-btn {
-    height: 38px; padding: 0 12px; border-radius: 8px; border: 1px solid var(--border);
-    background: var(--card); color: var(--text); cursor: pointer; font-size: 13px;
-    font-weight: 600; display: flex; align-items: center; gap: 5px;
+    height: 42px; padding: 0 15px; border-radius: 10px; border: 1px solid var(--border);
+    background: var(--card); color: var(--text); cursor: pointer; font-size: 14px;
+    font-weight: 600; display: flex; align-items: center; gap: 6px;
 }
+.ctrl-btn:hover { border-color: var(--primary); transform: translateY(-2px); }
 
-.wrap { max-width: 900px; margin: 0 auto; padding: 20px; }
+/* --- WRAPPER --- */
+.wrap { max-width: 900px; margin: 0 auto; padding: 25px; }
 
 /* --- SUMMARY --- */
-.summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 15px; margin-bottom: 25px; }
-.sc { background: var(--surface); border: 1px solid var(--border); border-radius: 18px; padding: 20px; text-align: center; box-shadow: var(--shadow); }
-.sc-lbl { font-size: 12px; font-weight: 700; color: var(--muted); text-transform: uppercase; margin-bottom: 5px; }
-.sc-val { font-size: 28px; font-weight: 800; }
-.sc-val.g { color: var(--green); } .sc-val.r { color: var(--red); } .sc-val.y { color: var(--yellow); }
+.summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 18px; margin-bottom: 30px; }
+.sc { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 25px; text-align: center; box-shadow: var(--shadow); }
+.sc-lbl { font-size: 13px; font-weight: 700; color: var(--muted); text-transform: uppercase; margin-bottom: 6px; }
+.sc-val { font-size: 32px; font-weight: 800; }
 
-.tabs { display: flex; gap: 8px; background: var(--bg2); padding: 6px; border-radius: 14px; margin-bottom: 25px; border: 1px solid var(--border); overflow-x: auto; }
-.tab { flex: 1; min-width: 100px; padding: 12px; border: none; border-radius: 10px; font-size: 14px; font-weight: 700; cursor: pointer; color: var(--muted); background: transparent; white-space: nowrap; }
-.tab.on { background: var(--surface); color: var(--primary); box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+.tabs { display: flex; gap: 10px; background: var(--bg2); padding: 8px; border-radius: 16px; margin-bottom: 30px; border: 1px solid var(--border); overflow-x: auto; }
+.tab { flex: 1; min-width: 110px; padding: 14px; border: none; border-radius: 12px; font-size: 15px; font-weight: 700; cursor: pointer; color: var(--muted); background: transparent; white-space: nowrap; }
+.tab.on { background: var(--surface); color: var(--primary); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
 
-.af { background: var(--surface); border-radius: 20px; padding: 20px; margin-bottom: 25px; border: 1px solid var(--border); box-shadow: var(--shadow); }
-.af-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 15px; }
-input { width: 100%; padding: 14px; border-radius: 10px; border: 2px solid var(--border); background: var(--bg2); color: var(--text); font-size: 15px; outline: none; }
+/* --- FORM --- */
+.af { background: var(--surface); border-radius: 24px; padding: 25px; margin-bottom: 30px; border: 1px solid var(--border); box-shadow: var(--shadow); }
+.af-head { font-size: 1.2rem; font-weight: 700; margin-bottom: 20px; }
+.af-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px; }
+input { width: 100%; padding: 16px; border-radius: 12px; border: 2px solid var(--border); background: var(--bg2); color: var(--text); font-size: 16px; outline: none; }
+input:focus { border-color: var(--primary); }
 
-.quick-notes { display: flex; gap: 8px; margin-bottom: 15px; flex-wrap: wrap; }
-.q-tag { font-size: 12px; padding: 6px 12px; border-radius: 8px; background: var(--card); border: 1px solid var(--border); cursor: pointer; font-weight: 600; color: var(--text2); }
+.quick-notes { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+.q-tag { font-size: 13px; padding: 8px 16px; border-radius: 10px; background: var(--card); border: 1px solid var(--border); cursor: pointer; font-weight: 600; color: var(--text2); }
 
-.sbtn { width: 100%; padding: 15px; border-radius: 12px; border: none; font-size: 16px; font-weight: 800; cursor: pointer; color: white; }
+.sbtn { width: 100%; padding: 16px; border-radius: 14px; border: none; font-size: 18px; font-weight: 800; cursor: pointer; color: white; box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
 .sbtn-g { background: linear-gradient(135deg, var(--green), #059669); }
 .sbtn-r { background: linear-gradient(135deg, var(--red), #dc2626); }
 
 /* --- CARDS --- */
-.pcard { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; margin-bottom: 12px; overflow: hidden; }
-.pt { padding: 18px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; }
-.pname { font-size: 1.1rem; font-weight: 700; }
-.pamount { font-size: 1.3rem; font-weight: 800; }
+.pcard { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; margin-bottom: 15px; overflow: hidden; box-shadow: var(--shadow); }
+.pt { padding: 22px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; }
+.pname { font-size: 1.2rem; font-weight: 700; }
+.pamount { font-size: 1.5rem; font-weight: 800; }
 
-.pbody { display: none; border-top: 1px solid var(--border); background: var(--bg2); padding: 15px; }
+.pbody { display: none; border-top: 1px solid var(--border); background: var(--bg2); padding: 20px; }
 .pbody.on { display: block; }
-.hi { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 14px; color: var(--text2); }
+.hi { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 15px; color: var(--text2); }
 
-.arow { display: flex; gap: 8px; margin-top: 15px; flex-wrap: wrap; }
-.arow .btn-act { flex: 1; height: 40px; border-radius: 8px; border: 1px solid var(--border); background: var(--card); color: var(--text); font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; font-size: 13px; }
+.arow { display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap; }
+.btn-act { flex: 1; height: 45px; border-radius: 10px; border: 1px solid var(--border); background: var(--card); color: var(--text); font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 14px; }
 
-.overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(5px); z-index: 2000; display: none; align-items: center; justify-content: center; padding: 15px; }
+/* MODALS */
+.overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(8px); z-index: 2000; display: none; align-items: center; justify-content: center; padding: 20px; }
 .overlay.on { display: flex; }
-.modal { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 25px; width: 100%; max-width: 400px; }
+.modal { background: var(--surface); border: 1px solid var(--border); border-radius: 24px; padding: 30px; width: 100%; max-width: 450px; }
 
-.toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(100px); background: var(--card); padding: 12px 24px; border-radius: 50px; border: 1px solid var(--primary); transition: 0.4s; z-index: 3000; }
+.toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(100px); background: var(--card); padding: 15px 30px; border-radius: 100px; border: 1px solid var(--primary); transition: 0.4s; z-index: 3000; color: white; font-weight: bold; }
 .toast.on { transform: translateX(-50%) translateY(0); }
 </style>
 </head>
@@ -93,7 +99,7 @@ input { width: 100%; padding: 14px; border-radius: 10px; border: 2px solid var(-
     <span class="en">Hisab Tracker Pro</span>
   </div>
   <div class="hdr-right">
-    <button class="ctrl-btn" onclick="toggleLang()">🌐 <span class="bn">EN</span><span class="en">বাং</span></button>
+    <button class="ctrl-btn" onclick="toggleLang()">🌐 <span class="bn">English</span><span class="en">বাংলা</span></button>
     <button class="ctrl-btn" onclick="exportData()">💾 <span class="bn">ব্যাকআপ</span><span class="en">Backup</span></button>
     <button class="ctrl-btn" onclick="triggerImport()">📂 <span class="bn">রিস্টোর</span><span class="en">Restore</span></button>
     <button class="ctrl-btn" onclick="toggleTheme()">🌓</button>
@@ -106,15 +112,15 @@ input { width: 100%; padding: 14px; border-radius: 10px; border: 2px solid var(-
   <div class="summary">
     <div class="sc">
       <div class="sc-lbl bn">আমি পাবো</div><div class="sc-lbl en">I Receive</div>
-      <div class="sc-val g" id="sv-r">৳০</div>
+      <div class="sc-val g" id="sv-r" style="color:var(--green)">৳০</div>
     </div>
     <div class="sc">
       <div class="sc-lbl bn">আমি দেবো</div><div class="sc-lbl en">I Owe</div>
-      <div class="sc-val r" id="sv-g">৳০</div>
+      <div class="sc-val r" id="sv-g" style="color:var(--red)">৳০</div>
     </div>
     <div class="sc">
       <div class="sc-lbl bn">নিট ব্যালেন্স</div><div class="sc-lbl en">Net Balance</div>
-      <div class="sc-val y" id="sv-n">৳০</div>
+      <div class="sc-val y" id="sv-n" style="color:var(--yellow)">৳০</div>
     </div>
   </div>
 
@@ -138,8 +144,8 @@ input { width: 100%; padding: 14px; border-radius: 10px; border: 2px solid var(-
         <span class="q-tag" onclick="setQuickNote('Lent', 'r-no')">Lent</span>
       </div>
       <button class="sbtn sbtn-g" onclick="addEntry('receive')">
-        <span class="bn">এন্ট্রি যোগ করুন →</span>
-        <span class="en">Add Entry →</span>
+          <span class="bn">এন্ট্রি যোগ করুন →</span>
+          <span class="en">Add Entry →</span>
       </button>
     </div>
     <div id="lst-r"></div>
@@ -158,8 +164,8 @@ input { width: 100%; padding: 14px; border-radius: 10px; border: 2px solid var(-
         <span class="q-tag" onclick="setQuickNote('Recharge', 'g-no')">Recharge</span>
       </div>
       <button class="sbtn sbtn-r" onclick="addEntry('give')">
-        <span class="bn">এন্ট্রি যোগ করুন →</span>
-        <span class="en">Add Entry →</span>
+          <span class="bn">এন্ট্রি যোগ করুন →</span>
+          <span class="en">Add Entry →</span>
       </button>
     </div>
     <div id="lst-g"></div>
@@ -172,11 +178,11 @@ input { width: 100%; padding: 14px; border-radius: 10px; border: 2px solid var(-
 
 <div class="overlay" id="m-pay">
   <div class="modal">
-    <div style="font-weight:700; margin-bottom:10px;">💸 <span class="bn">পরিশোধ রেকর্ড</span><span class="en">Record Payment</span></div>
-    <div id="m-pay-sub" style="font-size:14px; margin-bottom:15px; color:var(--muted)"></div>
-    <input id="pa" type="number" placeholder="পরিমাণ / Amount" style="margin-bottom:10px;">
+    <div style="font-size:1.3rem; font-weight:700; margin-bottom:10px;">💸 <span class="bn">পরিশোধ রেকর্ড</span><span class="en">Record Payment</span></div>
+    <div id="m-pay-sub" style="color:var(--muted); font-size:15px; margin-bottom:20px;"></div>
+    <input id="pa" type="number" placeholder="পরিমাণ / Amount" style="margin-bottom:12px;">
     <input id="pn" type="text" placeholder="নোট / Note">
-    <div style="display:flex; gap:10px; margin-top:20px;">
+    <div style="display:flex; gap:12px; margin-top:25px;">
         <button class="btn-act" style="flex:1" onclick="cm('m-pay')">Cancel</button>
         <button class="sbtn sbtn-g" style="flex:1.5" onclick="confirmPay()">Confirm</button>
     </div>
@@ -184,16 +190,16 @@ input { width: 100%; padding: 14px; border-radius: 10px; border: 2px solid var(-
 </div>
 
 <div class="overlay" id="m-add">
-  <div class="modal">
-    <div style="font-weight:700; margin-bottom:10px;">➕ <span class="bn">আরো টাকা যোগ</span><span class="en">Add More</span></div>
-    <div id="m-add-sub" style="font-size:14px; margin-bottom:15px; color:var(--muted)"></div>
-    <input id="aa" type="number" placeholder="পরিমাণ / Amount" style="margin-bottom:10px;">
-    <input id="an" type="text" placeholder="নোট / Note">
-    <div style="display:flex; gap:10px; margin-top:20px;">
-        <button class="btn-act" style="flex:1" onclick="cm('m-add')">Cancel</button>
-        <button class="sbtn sbtn-g" style="flex:1.5" onclick="confirmAddMore()">Confirm</button>
+    <div class="modal">
+      <div style="font-size:1.3rem; font-weight:700; margin-bottom:10px;">➕ <span class="bn">আরো টাকা যোগ</span><span class="en">Add More</span></div>
+      <div id="m-add-sub" style="color:var(--muted); font-size:15px; margin-bottom:20px;"></div>
+      <input id="aa" type="number" placeholder="পরিমাণ / Amount" style="margin-bottom:12px;">
+      <input id="an" type="text" placeholder="নোট / Note">
+      <div style="display:flex; gap:12px; margin-top:25px;">
+          <button class="btn-act" style="flex:1" onclick="cm('m-add')">Cancel</button>
+          <button class="sbtn sbtn-g" style="flex:1.5; background:var(--primary)" onclick="confirmAddMore()">Add</button>
+      </div>
     </div>
-  </div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -201,29 +207,48 @@ input { width: 100%; padding: 14px; border-radius: 10px; border: 2px solid var(-
 <script>
 // --- Supabase Config ---
 const supabaseUrl = 'https://hmqckyecenigcjikfjob.supabase.co'; //
-const supabaseKey = 'sb_publishable_LAclyAR3_Oryi08Luv5PMA_GzkhU8yM'; // Eikhane oi Publishable Key boshao
+const supabaseKey = 'sb_publishable_LAclyAR3_0ry1G8Luv5PMA_GzkhU8yM'; //
 const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
 
 let DB = { receive: [], give: [] };
 let LANG = 'bn'; let THEME = 'dark'; let TAB = 'r'; let CTX = {};
 
-// --- Persistence Functions ---
+// --- Cloud Sync Logic (Fixed 406/PGRST116) ---
 async function cloudSave() {
-    const { error } = await supabaseClient.from('hisab_data').upsert({ id: 1, data: DB });
-    if (error) console.error("Cloud Save Error:", error);
+    try {
+        const { error } = await supabaseClient.from('hisab_data').upsert({ id: 1, data: DB });
+        if (error) throw error;
+    } catch (err) {
+        console.error("Cloud Save Error:", err);
+    }
 }
 
 async function cloudLoad() {
-    const { data, error } = await supabaseClient.from('hisab_data').select('data').eq('id', 1).single();
-    if (data) {
-        DB = data.data;
-        render();
-        toast("Synced from Cloud!");
-    } else if (error) {
-        console.log("No cloud data or error:", error);
-        const local = localStorage.getItem('hisab_v5');
-        if(local) DB = JSON.parse(local);
-        render();
+    try {
+        // .maybeSingle() solves the 406 Not Acceptable error when DB is empty
+        const { data, error } = await supabaseClient
+            .from('hisab_data')
+            .select('data')
+            .eq('id', 1)
+            .maybeSingle(); 
+
+        if (error) throw error;
+
+        if (data && data.data) {
+            DB = data.data;
+            render();
+            toast(LANG === 'bn' ? "✅ ক্লাউড থেকে সিঙ্ক হয়েছে!" : "✅ Synced from Cloud!");
+        } else {
+            // First time load: try local storage
+            console.log("No cloud data yet. Loading local...");
+            const local = localStorage.getItem('hisab_v5');
+            if(local) {
+                DB = JSON.parse(local);
+                render();
+            }
+        }
+    } catch (err) {
+        console.error("Sync Error:", err);
     }
 }
 
@@ -232,11 +257,11 @@ function save() {
     cloudSave();
 }
 
-// --- UI Logic ---
+// --- App Logic ---
 function toast(msg) {
     const t = document.getElementById('toast');
     t.textContent = msg; t.classList.add('on');
-    setTimeout(() => t.classList.remove('on'), 2500);
+    setTimeout(() => t.classList.remove('on'), 3000);
 }
 
 function toggleLang() {
@@ -268,7 +293,7 @@ function addEntry(type) {
     const name = document.getElementById(p + '-n').value.trim();
     const amt = parseFloat(document.getElementById(p + '-a').value);
     const note = document.getElementById(p + '-no').value.trim() || 'Entry';
-    if(!name || isNaN(amt)) return toast("Invalid Input!");
+    if(!name || isNaN(amt)) return alert("Invalid Data!");
     
     let person = DB[type].find(x => x.name.toLowerCase() === name.toLowerCase());
     const hist = { id: Date.now(), date: new Date().toLocaleDateString(), amt, note, t: 'add' };
@@ -314,7 +339,7 @@ function confirmAddMore() {
 }
 
 function deleteEntry(type, id) {
-    if(confirm("Delete Person?")) { DB[type] = DB[type].filter(x => x.id !== id); save(); render(); }
+    if(confirm("Delete?")) { DB[type] = DB[type].filter(x => x.id !== id); save(); render(); }
 }
 
 function cm(id) { document.getElementById(id).classList.remove('on'); }
@@ -326,7 +351,7 @@ function renderCard(p, type) {
             <div class="pamount" style="color:var(--${type==='receive'?'green':'red'})">৳${p.remaining}</div>
         </div>
         <div class="pbody">
-            <div style="font-weight:700; font-size:12px; color:var(--muted); margin-bottom:10px;">HISTORY:</div>
+            <div style="font-weight:700; font-size:12px; color:var(--muted); margin-bottom:10px; text-transform:uppercase;">History:</div>
             ${p.history.map(h => `<div class="hi"><span>${h.date} - ${h.note}</span><b>${h.t==='add'?'+':'-'} ৳${h.amt}</b></div>`).join('')}
             
             <div class="arow">
@@ -350,16 +375,17 @@ function render() {
     
     if(TAB === 'a') {
         const list = document.getElementById('lst-a'); list.innerHTML = '';
-        const all = [...DB.receive.map(p=>({...p,c:'RECV'})), ...DB.give.map(p=>({...p,c:'GIVE'}))].sort((a,b)=>b.id-a.id);
-        all.forEach(p=> list.innerHTML += `<div class="pcard"><div class="pt" style="border-left:5px solid ${p.c==='RECV'?'var(--green)':'var(--red)'}"><div class="pname">${p.name} <small>[${p.c}]</small></div><div class="pamount">৳${p.remaining}</div></div></div>`);
+        const all = [...DB.receive.map(p=>({...p,c:'RECV',col:'var(--green)'})), ...DB.give.map(p=>({...p,c:'GIVE',col:'var(--red)'}))].sort((a,b)=>b.id-a.id);
+        if(!all.length) list.innerHTML = '<p style="text-align:center; padding:30px; opacity:0.5;">No records</p>';
+        all.forEach(p=> list.innerHTML += `<div class="pcard"><div class="pt" style="border-left:6px solid ${p.col}"><div class="pname">${p.name} <small>[${p.c}]</small></div><div class="pamount">৳${p.remaining}</div></div></div>`);
     }
 }
 
 function exportData() { const blob = new Blob([JSON.stringify(DB)], {type: "application/json"}); const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "hisab_backup.json"; a.click(); }
 function triggerImport() { document.getElementById('importFile').click(); }
-function handleImport(e) { const reader = new FileReader(); reader.onload = (ev) => { DB = JSON.parse(ev.target.result); save(); render(); }; reader.readAsText(e.target.files[0]); }
+function handleImport(e) { const reader = new FileReader(); reader.onload = (ev) => { try { DB = JSON.parse(ev.target.result); save(); render(); } catch(e){alert("Invalid File");} }; reader.readAsText(e.target.files[0]); }
 
-// Load Start
+// --- Initial Render ---
 document.documentElement.setAttribute('data-lang', LANG);
 document.documentElement.setAttribute('data-theme', THEME);
 cloudLoad();
