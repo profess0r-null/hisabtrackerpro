@@ -223,7 +223,7 @@ async function cloudLoad() {
         if (data && data.data) {
             DB = data.data;
             render();
-            toast(LANG === 'bn' ? "✅ ক্লাউড থেকে সিঙ্ক হয়েছে!" : "✅ Synced from Cloud!");
+            toast(LANG === 'bn' ? "✅ Synced!" : "✅ Synced!");
         } else {
             const local = localStorage.getItem('hisab_v5');
             if(local) { DB = JSON.parse(local); render(); }
