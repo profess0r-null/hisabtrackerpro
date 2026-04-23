@@ -96,10 +96,10 @@ input:focus { border-color: var(--primary); }
 <header class="hdr">
   <div class="logo-name">
     <span class="bn">হিসাব ট্র্যাকার Pro</span>
-    <span class="en">Hisab Tracker Pro</span>
+    <span class="en">হিসাব ট্র্যাকার Pro</span>
   </div>
   <div class="hdr-right">
-    <button class="ctrl-btn" onclick="toggleLang()">🌐 <span class="bn">English</span><span class="en">বাংলা</span></button>
+    <button class="ctrl-btn" onclick="toggleLang()">🌐 <span class="bn">EN</span><span class="en">BN</span></button>
     <button class="ctrl-btn" onclick="exportData()">💾 <span class="bn">ব্যাকআপ</span><span class="en">Backup</span></button>
     <button class="ctrl-btn" onclick="triggerImport()">📂 <span class="bn">রিস্টোর</span><span class="en">Restore</span></button>
     <button class="ctrl-btn" onclick="toggleTheme()">🌓</button>
@@ -141,7 +141,7 @@ input:focus { border-color: var(--primary); }
       <div class="quick-notes">
         <span class="q-tag" onclick="setQuickNote('Hawlat', 'r-no')">Hawlat</span>
         <span class="q-tag" onclick="setQuickNote('Recharge', 'r-no')">Recharge</span>
-        <span class="q-tag" onclick="setQuickNote('Lent', 'r-no')">Lent</span>
+        <span class="q-tag" onclick="setQuickNote('Lent', 'r-no')">Send Money</span>
       </div>
       <button class="sbtn sbtn-g" onclick="addEntry('receive')">
           <span class="bn">এন্ট্রি যোগ করুন →</span>
@@ -237,7 +237,7 @@ async function cloudLoad() {
         if (data && data.data) {
             DB = data.data;
             render();
-            toast(LANG === 'bn' ? "✅ ক্লাউড থেকে সিঙ্ক হয়েছে!" : "✅ Synced from Cloud!");
+            toast(LANG === 'bn' ? "✅ Synced!" : "✅ Synced!");
         } else {
             // First time load: try local storage
             console.log("No cloud data yet. Loading local...");
