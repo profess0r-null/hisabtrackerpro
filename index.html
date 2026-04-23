@@ -3,8 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Hisab Tracker Pro - Fixed</title>
+<title>Hisab Tracker Pro - Cloud Sync</title>
 <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root {
     --bg: #0b0e16; --bg2: #0f1320; --surface: #141929; --card: #1c243a; --border: #2e3a58;
@@ -20,7 +21,6 @@
 * { box-sizing: border-box; margin: 0; padding: 0; transition: background 0.3s, border-color 0.3s; }
 body { background: var(--bg); color: var(--text); font-family: 'Inter', 'Hind Siliguri', sans-serif; line-height: 1.6; font-size: 16px; }
 
-/* Language Toggle Logic */
 [data-lang="bn"] .en { display: none !important; }
 [data-lang="en"] .bn { display: none !important; }
 
@@ -39,9 +39,7 @@ body { background: var(--bg); color: var(--text); font-family: 'Inter', 'Hind Si
     background: var(--card); color: var(--text); cursor: pointer; font-size: 13px;
     font-weight: 600; display: flex; align-items: center; gap: 5px;
 }
-.ctrl-btn:hover { border-color: var(--primary); }
 
-/* --- CONTENT --- */
 .wrap { max-width: 900px; margin: 0 auto; padding: 20px; }
 
 /* --- SUMMARY --- */
@@ -51,21 +49,18 @@ body { background: var(--bg); color: var(--text); font-family: 'Inter', 'Hind Si
 .sc-val { font-size: 28px; font-weight: 800; }
 .sc-val.g { color: var(--green); } .sc-val.r { color: var(--red); } .sc-val.y { color: var(--yellow); }
 
-/* --- TABS --- */
 .tabs { display: flex; gap: 8px; background: var(--bg2); padding: 6px; border-radius: 14px; margin-bottom: 25px; border: 1px solid var(--border); overflow-x: auto; }
 .tab { flex: 1; min-width: 100px; padding: 12px; border: none; border-radius: 10px; font-size: 14px; font-weight: 700; cursor: pointer; color: var(--muted); background: transparent; white-space: nowrap; }
 .tab.on { background: var(--surface); color: var(--primary); box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
 
-/* --- FORMS --- */
 .af { background: var(--surface); border-radius: 20px; padding: 20px; margin-bottom: 25px; border: 1px solid var(--border); box-shadow: var(--shadow); }
-.af-head { font-size: 1.1rem; font-weight: 700; margin-bottom: 15px; }
 .af-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 15px; }
 input { width: 100%; padding: 14px; border-radius: 10px; border: 2px solid var(--border); background: var(--bg2); color: var(--text); font-size: 15px; outline: none; }
 
 .quick-notes { display: flex; gap: 8px; margin-bottom: 15px; flex-wrap: wrap; }
 .q-tag { font-size: 12px; padding: 6px 12px; border-radius: 8px; background: var(--card); border: 1px solid var(--border); cursor: pointer; font-weight: 600; color: var(--text2); }
 
-.sbtn { width: 100%; padding: 15px; border-radius: 12px; border: none; font-size: 16px; font-weight: 800; cursor: pointer; color: white; transition: 0.3s; }
+.sbtn { width: 100%; padding: 15px; border-radius: 12px; border: none; font-size: 16px; font-weight: 800; cursor: pointer; color: white; }
 .sbtn-g { background: linear-gradient(135deg, var(--green), #059669); }
 .sbtn-r { background: linear-gradient(135deg, var(--red), #dc2626); }
 
@@ -80,14 +75,12 @@ input { width: 100%; padding: 14px; border-radius: 10px; border: 2px solid var(-
 .hi { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 14px; color: var(--text2); }
 
 .arow { display: flex; gap: 8px; margin-top: 15px; flex-wrap: wrap; }
-.arow .ctrl-btn { flex: 1; min-width: 100px; justify-content: center; }
+.arow .btn-act { flex: 1; height: 40px; border-radius: 8px; border: 1px solid var(--border); background: var(--card); color: var(--text); font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; font-size: 13px; }
 
-/* --- MODAL --- */
 .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(5px); z-index: 2000; display: none; align-items: center; justify-content: center; padding: 15px; }
 .overlay.on { display: flex; }
 .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 25px; width: 100%; max-width: 400px; }
 
-/* --- TOAST --- */
 .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(100px); background: var(--card); padding: 12px 24px; border-radius: 50px; border: 1px solid var(--primary); transition: 0.4s; z-index: 3000; }
 .toast.on { transform: translateX(-50%) translateY(0); }
 </style>
@@ -145,8 +138,8 @@ input { width: 100%; padding: 14px; border-radius: 10px; border: 2px solid var(-
         <span class="q-tag" onclick="setQuickNote('Lent', 'r-no')">Lent</span>
       </div>
       <button class="sbtn sbtn-g" onclick="addEntry('receive')">
-          <span class="bn">এন্ট্রি যোগ করুন →</span>
-          <span class="en">Add Entry →</span>
+        <span class="bn">এন্ট্রি যোগ করুন →</span>
+        <span class="en">Add Entry →</span>
       </button>
     </div>
     <div id="lst-r"></div>
@@ -165,8 +158,8 @@ input { width: 100%; padding: 14px; border-radius: 10px; border: 2px solid var(-
         <span class="q-tag" onclick="setQuickNote('Recharge', 'g-no')">Recharge</span>
       </div>
       <button class="sbtn sbtn-r" onclick="addEntry('give')">
-          <span class="bn">এন্ট্রি যোগ করুন →</span>
-          <span class="en">Add Entry →</span>
+        <span class="bn">এন্ট্রি যোগ করুন →</span>
+        <span class="en">Add Entry →</span>
       </button>
     </div>
     <div id="lst-g"></div>
@@ -179,46 +172,67 @@ input { width: 100%; padding: 14px; border-radius: 10px; border: 2px solid var(-
 
 <div class="overlay" id="m-pay">
   <div class="modal">
-    <div style="font-size:1.2rem; font-weight:700; margin-bottom:10px;">💸 <span class="bn">পরিশোধ রেকর্ড</span><span class="en">Record Payment</span></div>
-    <div id="m-pay-sub" style="color:var(--muted); font-size:14px; margin-bottom:15px;"></div>
-    <input id="pa" type="number" placeholder="টাকার পরিমাণ / Amount" style="margin-bottom:10px;">
+    <div style="font-weight:700; margin-bottom:10px;">💸 <span class="bn">পরিশোধ রেকর্ড</span><span class="en">Record Payment</span></div>
+    <div id="m-pay-sub" style="font-size:14px; margin-bottom:15px; color:var(--muted)"></div>
+    <input id="pa" type="number" placeholder="পরিমাণ / Amount" style="margin-bottom:10px;">
     <input id="pn" type="text" placeholder="নোট / Note">
     <div style="display:flex; gap:10px; margin-top:20px;">
-        <button class="ctrl-btn" style="flex:1; justify-content:center" onclick="cm('m-pay')">Cancel</button>
+        <button class="btn-act" style="flex:1" onclick="cm('m-pay')">Cancel</button>
         <button class="sbtn sbtn-g" style="flex:1.5" onclick="confirmPay()">Confirm</button>
     </div>
   </div>
 </div>
 
 <div class="overlay" id="m-add">
-    <div class="modal">
-      <div style="font-size:1.2rem; font-weight:700; margin-bottom:10px;">➕ <span class="bn">টাকা যোগ করুন</span><span class="en">Add More</span></div>
-      <div id="m-add-sub" style="color:var(--muted); font-size:14px; margin-bottom:15px;"></div>
-      <input id="aa" type="number" placeholder="টাকার পরিমাণ / Amount" style="margin-bottom:10px;">
-      <input id="an" type="text" placeholder="নোট / Note">
-      <div style="display:flex; gap:10px; margin-top:20px;">
-          <button class="ctrl-btn" style="flex:1; justify-content:center" onclick="cm('m-add')">Cancel</button>
-          <button class="sbtn sbtn-g" style="flex:1.5; background:var(--primary)" onclick="confirmAddMore()">Add</button>
-      </div>
+  <div class="modal">
+    <div style="font-weight:700; margin-bottom:10px;">➕ <span class="bn">আরো টাকা যোগ</span><span class="en">Add More</span></div>
+    <div id="m-add-sub" style="font-size:14px; margin-bottom:15px; color:var(--muted)"></div>
+    <input id="aa" type="number" placeholder="পরিমাণ / Amount" style="margin-bottom:10px;">
+    <input id="an" type="text" placeholder="নোট / Note">
+    <div style="display:flex; gap:10px; margin-top:20px;">
+        <button class="btn-act" style="flex:1" onclick="cm('m-add')">Cancel</button>
+        <button class="sbtn sbtn-g" style="flex:1.5" onclick="confirmAddMore()">Confirm</button>
     </div>
+  </div>
 </div>
 
 <div class="toast" id="toast"></div>
 
 <script>
+// --- Supabase Config ---
+const supabaseUrl = 'https://hmqckyecenigcjikfjob.supabase.co'; //
+const supabaseKey = 'sb_publishable_LAclyAR3_Oryi08Luv5PMA_GzkhU8yM'; // Eikhane oi Publishable Key boshao
+const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
+
 let DB = { receive: [], give: [] };
 let LANG = 'bn'; let THEME = 'dark'; let TAB = 'r'; let CTX = {};
 
-// Load Data
-try {
-    const s = localStorage.getItem('hisab_v5');
-    if(s) DB = JSON.parse(s);
-    LANG = localStorage.getItem('hisab_lang') || 'bn';
-    THEME = localStorage.getItem('hisab_theme') || 'dark';
-} catch(e) {}
+// --- Persistence Functions ---
+async function cloudSave() {
+    const { error } = await supabaseClient.from('hisab_data').upsert({ id: 1, data: DB });
+    if (error) console.error("Cloud Save Error:", error);
+}
 
-function save() { localStorage.setItem('hisab_v5', JSON.stringify(DB)); }
+async function cloudLoad() {
+    const { data, error } = await supabaseClient.from('hisab_data').select('data').eq('id', 1).single();
+    if (data) {
+        DB = data.data;
+        render();
+        toast("Synced from Cloud!");
+    } else if (error) {
+        console.log("No cloud data or error:", error);
+        const local = localStorage.getItem('hisab_v5');
+        if(local) DB = JSON.parse(local);
+        render();
+    }
+}
 
+function save() { 
+    localStorage.setItem('hisab_v5', JSON.stringify(DB));
+    cloudSave();
+}
+
+// --- UI Logic ---
 function toast(msg) {
     const t = document.getElementById('toast');
     t.textContent = msg; t.classList.add('on');
@@ -263,10 +277,8 @@ function addEntry(type) {
     
     document.getElementById(p+'-n').value=''; document.getElementById(p+'-a').value=''; document.getElementById(p+'-no').value='';
     save(); render();
-    toast("Added Successfully!");
 }
 
-// Partial Pay Logic
 function openPay(type, id) {
     const p = DB[type].find(x => x.id === id);
     CTX = {type, id};
@@ -282,14 +294,12 @@ function confirmPay() {
     p.remaining = Math.max(0, p.remaining - amt);
     p.history.unshift({ id: Date.now(), date: new Date().toLocaleDateString(), amt, note, t: 'pay' });
     cm('m-pay'); save(); render();
-    toast("Payment Recorded!");
 }
 
-// Add More Logic
 function openAddMore(type, id) {
     const p = DB[type].find(x => x.id === id);
     CTX = {type, id};
-    document.getElementById('m-add-sub').textContent = p.name + " - Current: ৳" + p.remaining;
+    document.getElementById('m-add-sub').textContent = p.name + " - Total: ৳" + p.remaining;
     document.getElementById('m-add').classList.add('on');
 }
 
@@ -301,11 +311,10 @@ function confirmAddMore() {
     p.original += amt; p.remaining += amt;
     p.history.unshift({ id: Date.now(), date: new Date().toLocaleDateString(), amt, note, t: 'add' });
     cm('m-add'); save(); render();
-    toast("Added More!");
 }
 
 function deleteEntry(type, id) {
-    if(confirm("Confirm Delete?")) { DB[type] = DB[type].filter(x => x.id !== id); save(); render(); }
+    if(confirm("Delete Person?")) { DB[type] = DB[type].filter(x => x.id !== id); save(); render(); }
 }
 
 function cm(id) { document.getElementById(id).classList.remove('on'); }
@@ -321,9 +330,9 @@ function renderCard(p, type) {
             ${p.history.map(h => `<div class="hi"><span>${h.date} - ${h.note}</span><b>${h.t==='add'?'+':'-'} ৳${h.amt}</b></div>`).join('')}
             
             <div class="arow">
-                <button class="ctrl-btn" onclick="openPay('${type}', ${p.id})">💸 <span class="bn">পরিশোধ</span><span class="en">Pay</span></button>
-                <button class="ctrl-btn" onclick="openAddMore('${type}', ${p.id})">➕ <span class="bn">আরো যোগ</span><span class="en">Add</span></button>
-                <button class="ctrl-btn" style="color:var(--red); border-color:var(--red); flex:0.4" onclick="deleteEntry('${type}', ${p.id})">🗑️</button>
+                <button class="btn-act" onclick="openPay('${type}', ${p.id})">💸 <span class="bn">পরিশোধ</span><span class="en">Pay</span></button>
+                <button class="btn-act" onclick="openAddMore('${type}', ${p.id})">➕ <span class="bn">আরো যোগ</span><span class="en">Add</span></button>
+                <button class="btn-act" style="color:var(--red); border-color:var(--red); flex:0.4" onclick="deleteEntry('${type}', ${p.id})">🗑️</button>
             </div>
         </div>
     </div>`;
@@ -348,11 +357,12 @@ function render() {
 
 function exportData() { const blob = new Blob([JSON.stringify(DB)], {type: "application/json"}); const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "hisab_backup.json"; a.click(); }
 function triggerImport() { document.getElementById('importFile').click(); }
-function handleImport(e) { const reader = new FileReader(); reader.onload = (ev) => { try { DB = JSON.parse(ev.target.result); save(); render(); toast("Restored!"); } catch(e){alert("Invalid File")} }; reader.readAsText(e.target.files[0]); }
+function handleImport(e) { const reader = new FileReader(); reader.onload = (ev) => { DB = JSON.parse(ev.target.result); save(); render(); }; reader.readAsText(e.target.files[0]); }
 
+// Load Start
 document.documentElement.setAttribute('data-lang', LANG);
 document.documentElement.setAttribute('data-theme', THEME);
-render();
+cloudLoad();
 </script>
 </body>
 </html>
