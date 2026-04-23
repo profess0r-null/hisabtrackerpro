@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Hisab Tracker Pro - Smart Cloud</title>
+<title>Hisab Tracker Pro - Cloud Sync</title>
 <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
@@ -32,7 +32,6 @@ body { background: var(--bg); color: var(--text); font-family: 'Inter', 'Hind Si
     flex-wrap: wrap; gap: 10px;
 }
 .logo-name { font-size: 1.2rem; font-weight: 800; color: var(--primary); white-space: nowrap; }
-
 .hdr-right { display: flex; gap: 8px; flex-wrap: wrap; }
 .ctrl-btn {
     height: 38px; padding: 0 12px; border-radius: 8px; border: 1px solid var(--border);
@@ -72,7 +71,6 @@ input { width: 100%; padding: 14px; border-radius: 10px; border: 2px solid var(-
 .pt { padding: 18px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; }
 .pname { font-size: 1.1rem; font-weight: 700; }
 .pamount { font-size: 1.3rem; font-weight: 800; }
-
 .pbody { display: none; border-top: 1px solid var(--border); background: var(--bg2); padding: 15px; }
 .pbody.on { display: block; }
 .hi { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 14px; color: var(--text2); }
@@ -97,7 +95,7 @@ input { width: 100%; padding: 14px; border-radius: 10px; border: 2px solid var(-
     <span class="en">Hisab Tracker Pro</span>
   </div>
   <div class="hdr-right">
-    <button class="ctrl-btn" onclick="toggleLang()">🌐 <span class="bn">EN</span><span class="en">BN</span></button>
+    <button class="ctrl-btn" onclick="toggleLang()">🌐 <span class="bn">EN</span><span class="en">বাং</span></button>
     <button class="ctrl-btn" onclick="exportData()">💾 <span class="bn">ব্যাকআপ</span><span class="en">Backup</span></button>
     <button class="ctrl-btn" onclick="triggerImport()">📂 <span class="bn">রিস্টোর</span><span class="en">Restore</span></button>
     <button class="ctrl-btn" onclick="toggleTheme()">🌓</button>
@@ -167,9 +165,7 @@ input { width: 100%; padding: 14px; border-radius: 10px; border: 2px solid var(-
     <div id="lst-g"></div>
   </div>
 
-  <div class="sec" id="sec-a" style="display:none">
-    <div id="lst-a"></div>
-  </div>
+  <div class="sec" id="sec-a" style="display:none"><div id="lst-a"></div></div>
 </div>
 
 <div class="overlay" id="m-pay">
@@ -201,9 +197,9 @@ input { width: 100%; padding: 14px; border-radius: 10px; border: 2px solid var(-
 <div class="toast" id="toast"></div>
 
 <script>
-// --- Supabase Config ---
+// --- CONFIG ---
 const supabaseUrl = 'https://hmqckyecenigcjikfjob.supabase.co';
-const supabaseKey = 'sb_publishable_LAclyAR3_Ory1G8Luv5PMA_GzkhU8yM';
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhtcWNreWVjZW5pZ2NqaWtmam9iIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY5MzUzMDMsImV4cCI6MjA5MjUxMTMwM30.1pyoIp6-GegOVERyroNm0MlkPe4VOAiBL-bU-iJP2gU';
 const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
 
 let DB = { receive: [], give: [] };
@@ -211,25 +207,30 @@ let LANG = localStorage.getItem('hisab_lang') || 'bn';
 let THEME = localStorage.getItem('hisab_theme') || 'dark';
 let TAB = 'r'; let CTX = {};
 
+// --- INITIALIZE SETTINGS ---
 document.documentElement.setAttribute('data-lang', LANG);
 document.documentElement.setAttribute('data-theme', THEME);
 
-// --- Cloud Sync Fixed ---
+// --- SYNC ENGINE ---
 async function cloudSave() {
-    // Upsert ensures we overwrite row 1 every time
     const { error } = await supabaseClient.from('hisab_data').upsert({ id: 1, data: DB });
-    if(error) console.error("Cloud Save Error:", error);
+    if (error) console.error("Cloud Save Error:", error);
 }
 
 async function cloudLoad() {
-    const { data, error } = await supabaseClient.from('hisab_data').select('data').eq('id', 1).maybeSingle();
-    if (data && data.data) {
-        DB = data.data;
-        render();
-        toast("Synced from Cloud!");
-    } else {
-        const local = localStorage.getItem('hisab_v5');
-        if(local) { DB = JSON.parse(local); render(); }
+    try {
+        const { data, error } = await supabaseClient.from('hisab_data').select('data').eq('id', 1).maybeSingle();
+        if (data && data.data) {
+            DB = data.data;
+            render();
+            toast(LANG === 'bn' ? "✅ ক্লাউড থেকে সিঙ্ক হয়েছে!" : "✅ Synced from Cloud!");
+        } else {
+            const local = localStorage.getItem('hisab_v5');
+            if(local) { DB = JSON.parse(local); render(); }
+            toast(LANG === 'bn' ? "⚠️ লোকাল ডেটা লোড হয়েছে" : "⚠️ Loaded local data");
+        }
+    } catch (e) {
+        console.error("Load Error:", e);
     }
 }
 
@@ -238,7 +239,7 @@ function save() {
     cloudSave();
 }
 
-// --- UI Logic ---
+// --- UI HELPERS ---
 function toast(msg) {
     const t = document.getElementById('toast');
     t.textContent = msg; t.classList.add('on');
@@ -318,7 +319,7 @@ function confirmAddMore() {
 }
 
 function deleteEntry(type, id) {
-    if(confirm("Delete?")) { DB[type] = DB[type].filter(x => x.id !== id); save(); render(); }
+    if(confirm("Confirm Delete?")) { DB[type] = DB[type].filter(x => x.id !== id); save(); render(); }
 }
 
 function cm(id) { document.getElementById(id).classList.remove('on'); }
@@ -330,11 +331,11 @@ function renderCard(p, type) {
             <div class="pamount" style="color:var(--${type==='receive'?'green':'red'})">৳${p.remaining}</div>
         </div>
         <div class="pbody">
-            <div style="font-weight:700; font-size:12px; color:var(--muted); margin-bottom:10px; text-transform:uppercase;">History:</div>
+            <div style="font-weight:700; font-size:11px; color:var(--muted); margin-bottom:8px;">HISTORY:</div>
             ${p.history.map(h => `<div class="hi"><span>${h.date} - ${h.note}</span><b>${h.t==='add'?'+':'-'} ৳${h.amt}</b></div>`).join('')}
             <div class="arow">
-                <button class="btn-act" onclick="openPay('${type}', ${p.id})">💸 Pay</button>
-                <button class="btn-act" onclick="openAddMore('${type}', ${p.id})">➕ Add</button>
+                <button class="btn-act" onclick="openPay('${type}', ${p.id})">💸 <span class="bn">পরিশোধ</span><span class="en">Pay</span></button>
+                <button class="btn-act" onclick="openAddMore('${type}', ${p.id})">➕ <span class="bn">যোগ</span><span class="en">Add</span></button>
                 <button class="btn-act" style="color:var(--red); border-color:var(--red); flex:0.4" onclick="deleteEntry('${type}', ${p.id})">🗑️</button>
             </div>
         </div>
@@ -348,7 +349,7 @@ function render() {
     document.getElementById('sv-g').textContent = '৳' + tg;
     document.getElementById('sv-n').textContent = '৳' + Math.abs(tr - tg);
 
-    // Filter Highest 3 for main tabs
+    // Filter Top 3 for main tabs (Sorted by highest remaining amount)
     const topR = [...DB.receive].sort((a,b) => b.remaining - a.remaining).slice(0,3);
     const topG = [...DB.give].sort((a,b) => b.remaining - a.remaining).slice(0,3);
 
@@ -357,7 +358,9 @@ function render() {
 
     if(TAB === 'a') {
         const all = [...DB.receive.map(p=>({...p,t:'receive'})), ...DB.give.map(p=>({...p,t:'give'}))].sort((a,b)=>b.id-a.id);
-        document.getElementById('lst-a').innerHTML = all.map(p => renderCard(p, p.t)).join(''); 
+        document.getElementById('lst-a').innerHTML = all.length ? 
+            all.map(p => renderCard(p, p.t)).join('') : 
+            '<p style="text-align:center; padding:30px; opacity:0.5;">No records found</p>';
     }
 }
 
