@@ -3,205 +3,226 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>HISAB</title>
+<title>হিসাব ট্র্যাকার PRO</title>
 <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root {
-    --bg: #0b0e16; --bg2: #0f1320; --surface: #141929; --card: #1c243a; --border: #2e3a58;
-    --text: #e4e8f5; --text2: #94a3b8; --muted: #64748b; --primary: #38bdf8;
-    --green: #10b981; --red: #ef4444; --yellow: #f59e0b; --orange: #f97316;
-    --shadow: 0 10px 30px rgba(0,0,0,0.4);
-    --green-bg: rgba(16,185,129,0.08); --red-bg: rgba(239,68,68,0.08);
+    --bg:#0b0e16;--bg2:#0f1320;--surface:#141929;--card:#1c243a;--border:#2e3a58;
+    --text:#e4e8f5;--text2:#94a3b8;--muted:#64748b;--primary:#38bdf8;
+    --green:#10b981;--red:#ef4444;--yellow:#f59e0b;
+    --shadow:0 10px 30px rgba(0,0,0,0.4);
+    --green-bg:rgba(16,185,129,0.08);--red-bg:rgba(239,68,68,0.08);
 }
-[data-theme="light"] {
-    --bg: #f1f5f9; --bg2: #ffffff; --surface: #ffffff; --card: #f8fafc; --border: #cbd5e1;
-    --text: #0f172a; --text2: #475569; --muted: #94a3b8; --primary: #0ea5e9;
-    --green-bg: rgba(16,185,129,0.07); --red-bg: rgba(239,68,68,0.07);
+[data-theme="light"]{
+    --bg:#f1f5f9;--bg2:#fff;--surface:#fff;--card:#f8fafc;--border:#cbd5e1;
+    --text:#0f172a;--text2:#475569;--muted:#94a3b8;--primary:#0ea5e9;
+    --green-bg:rgba(16,185,129,0.07);--red-bg:rgba(239,68,68,0.07);
 }
+*{box-sizing:border-box;margin:0;padding:0;transition:background .3s,border-color .3s,color .2s;}
+body{background:var(--bg);color:var(--text);font-family:'Inter','Hind Siliguri',sans-serif;line-height:1.6;font-size:16px;}
+[data-lang="bn"] .en{display:none!important;}
+[data-lang="en"] .bn{display:none!important;}
 
-* { box-sizing: border-box; margin: 0; padding: 0; transition: background 0.3s, border-color 0.3s, color 0.2s; }
-body { background: var(--bg); color: var(--text); font-family: 'Inter', 'Hind Siliguri', sans-serif; line-height: 1.6; font-size: 16px; }
+/* ── FULL SCREEN OVERLAYS ── */
+.fs{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;background:var(--bg);}
 
-[data-lang="bn"] .en { display: none !important; }
-[data-lang="en"] .bn { display: none !important; }
+/* ── AUTH ── */
+.auth-box{background:var(--surface);border:1px solid var(--border);border-radius:24px;padding:36px 28px;width:100%;max-width:380px;box-shadow:var(--shadow);}
+.auth-logo{font-size:1.6rem;font-weight:900;color:var(--primary);text-align:center;margin-bottom:4px;}
+.auth-tagline{font-size:13px;color:var(--muted);text-align:center;margin-bottom:28px;}
+.auth-tabs{display:flex;background:var(--bg2);border-radius:10px;padding:4px;margin-bottom:22px;border:1px solid var(--border);}
+.auth-tab{flex:1;padding:9px;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;color:var(--muted);background:transparent;}
+.auth-tab.on{background:var(--surface);color:var(--primary);}
+.ai{width:100%;padding:13px 14px;border-radius:10px;border:2px solid var(--border);background:var(--bg2);color:var(--text);font-size:15px;outline:none;font-family:inherit;margin-bottom:12px;display:block;}
+.ai:focus{border-color:var(--primary);}
+.auth-btn{width:100%;padding:14px;border-radius:12px;border:none;font-size:16px;font-weight:800;cursor:pointer;color:#fff;background:linear-gradient(135deg,var(--primary),#0ea5e9);}
+.auth-btn:disabled{opacity:.6;cursor:not-allowed;}
+.auth-msg{font-size:13px;font-weight:600;text-align:center;min-height:20px;margin-top:10px;}
+.auth-msg.err{color:var(--red);}
+.auth-msg.ok{color:var(--green);}
+.auth-link{font-size:12px;color:var(--muted);text-align:center;margin-top:14px;cursor:pointer;text-decoration:underline;}
 
-.hdr {
-    background: var(--surface); border-bottom: 2px solid var(--border);
-    padding: 10px 20px; min-height: 70px; display: flex; align-items: center; justify-content: space-between;
-    position: sticky; top: 0; z-index: 1000; box-shadow: var(--shadow); flex-wrap: wrap; gap: 10px;
-}
-.logo-name { font-size: 1.2rem; font-weight: 800; color: var(--primary); white-space: nowrap; }
-.hdr-right { display: flex; gap: 8px; flex-wrap: wrap; }
-.ctrl-btn {
-    height: 38px; padding: 0 12px; border-radius: 8px; border: 1px solid var(--border);
-    background: var(--card); color: var(--text); cursor: pointer; font-size: 13px;
-    font-weight: 600; display: flex; align-items: center; gap: 5px; white-space: nowrap;
-}
-.ctrl-btn:active { opacity: 0.7; }
+/* ── PIN ── */
+.pin-box{background:var(--surface);border:1px solid var(--border);border-radius:24px;padding:36px 28px;width:100%;max-width:320px;text-align:center;box-shadow:var(--shadow);}
+.pin-logo{font-size:1.3rem;font-weight:900;color:var(--primary);margin-bottom:20px;}
+.pin-dots{display:flex;justify-content:center;gap:14px;margin-bottom:28px;}
+.pin-dot{width:16px;height:16px;border-radius:50%;border:2px solid var(--border);background:transparent;transition:background .15s,border-color .15s;}
+.pin-dot.filled{background:var(--primary);border-color:var(--primary);}
+.pin-dot.err{background:var(--red);border-color:var(--red);}
+.pin-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px;}
+.pin-key{height:62px;border-radius:14px;border:1px solid var(--border);background:var(--card);color:var(--text);font-size:1.4rem;font-weight:700;cursor:pointer;transition:background .1s,transform .1s;display:flex;align-items:center;justify-content:center;}
+.pin-key:active{background:var(--primary);color:#fff;transform:scale(.93);}
+.pin-key.del{font-size:1.1rem;color:var(--muted);}
+.pin-err{font-size:13px;color:var(--red);font-weight:600;min-height:20px;}
+.pin-link{font-size:12px;color:var(--muted);cursor:pointer;text-decoration:underline;margin-top:14px;display:block;}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}
+.shake{animation:shake .4s ease;}
 
-.wrap { max-width: 900px; margin: 0 auto; padding: 20px; }
+/* ── HEADER ── */
+.hdr{background:var(--surface);border-bottom:2px solid var(--border);padding:0 20px;height:60px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:1000;box-shadow:var(--shadow);}
+.logo{font-size:1.15rem;font-weight:900;color:var(--primary);}
+.hamburger{width:40px;height:40px;border:none;background:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;border-radius:8px;padding:6px;}
+.hamburger:hover{background:var(--card);}
+.hb-line{width:22px;height:2px;background:var(--text);border-radius:2px;transition:all .3s;}
 
-.summary { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }
-.sc-net { margin-bottom: 25px; }
-.sc {
-    background: var(--surface); border: 1px solid var(--border); border-radius: 18px;
-    padding: 20px; text-align: center; box-shadow: var(--shadow);
-}
-.sc-net-card {
-    background: var(--surface); border: 2px solid var(--border); border-radius: 18px;
-    padding: 18px 24px; box-shadow: var(--shadow);
-    display: flex; align-items: center; justify-content: space-between; gap: 16px;
-}
-.sc-net-card.positive { border-color: var(--green); background: var(--green-bg); }
-.sc-net-card.negative { border-color: var(--red); background: var(--red-bg); }
-.sc-net-left { text-align: left; }
-.sc-lbl { font-size: 12px; font-weight: 700; color: var(--muted); text-transform: uppercase; margin-bottom: 5px; }
-.sc-val { font-size: 28px; font-weight: 800; }
-.sc-val.g { color: var(--green); } .sc-val.r { color: var(--red); } .sc-val.y { color: var(--yellow); }
-.sc-sub { font-size: 11px; color: var(--muted); margin-top: 4px; font-weight: 600; }
-.sc-net-val { font-size: 36px; font-weight: 900; }
-.sc-net-icon { font-size: 40px; opacity: 0.6; }
+/* ── SIDE DRAWER ── */
+.drawer-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(3px);z-index:2000;opacity:0;pointer-events:none;transition:opacity .3s;}
+.drawer-overlay.on{opacity:1;pointer-events:all;}
+.drawer{position:fixed;top:0;right:0;height:100%;width:280px;background:var(--surface);border-left:1px solid var(--border);z-index:2001;transform:translateX(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column;}
+.drawer.on{transform:translateX(0);}
+.drawer-head{padding:20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.drawer-user{font-size:13px;font-weight:700;color:var(--text2);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.drawer-close{width:32px;height:32px;border:none;background:var(--card);border-radius:8px;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;}
+.drawer-body{flex:1;padding:12px;overflow-y:auto;}
+.drawer-section{font-size:10px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;padding:8px 12px 4px;}
+.drawer-item{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;cursor:pointer;font-size:14px;font-weight:600;color:var(--text);margin-bottom:2px;border:none;background:none;width:100%;text-align:left;}
+.drawer-item:hover{background:var(--card);}
+.drawer-item .di-icon{font-size:18px;width:24px;text-align:center;flex-shrink:0;}
+.drawer-item.danger{color:var(--red);}
+.drawer-toggle{margin-left:auto;width:44px;height:24px;border-radius:12px;background:var(--border);border:none;cursor:pointer;position:relative;transition:background .2s;flex-shrink:0;}
+.drawer-toggle.on{background:var(--primary);}
+.drawer-toggle::after{content:'';position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:transform .2s;box-shadow:0 1px 4px rgba(0,0,0,.3);}
+.drawer-toggle.on::after{transform:translateX(20px);}
+.drawer-divider{height:1px;background:var(--border);margin:8px 12px;}
 
-.search-wrap { margin-bottom: 20px; position: relative; }
-.search-wrap input {
-    padding-left: 42px; background: var(--surface); border: 1px solid var(--border);
-    border-radius: 12px; font-size: 14px;
-}
-.search-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-size: 16px; pointer-events: none; }
+/* ── MODAL (profile/pw change) ── */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);backdrop-filter:blur(5px);z-index:3000;display:none;align-items:center;justify-content:center;padding:15px;}
+.overlay.on{display:flex;}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:25px;width:100%;max-width:400px;}
+.modal-title{font-weight:800;font-size:1.05rem;margin-bottom:5px;}
+.modal-sub{font-size:13px;color:var(--muted);margin-bottom:16px;}
+.modal input{margin-bottom:10px;}
+.modal-btns{display:flex;gap:10px;margin-top:16px;}
+.modal-msg{font-size:13px;font-weight:600;min-height:18px;margin-top:8px;}
+.modal-msg.err{color:var(--red);}
+.modal-msg.ok{color:var(--green);}
 
-.top-section { background: var(--surface); border: 1px solid var(--border); border-radius: 18px; padding: 18px; box-shadow: var(--shadow); }
-.top-section-head { font-size: 12px; font-weight: 700; color: var(--muted); text-transform: uppercase; margin-bottom: 12px; }
-.top-row { display: flex; align-items: center; gap: 8px; padding: 7px 0; border-bottom: 1px solid var(--border); }
-.top-row:last-child { border-bottom: none; }
-.top-rank { font-size: 11px; font-weight: 800; color: var(--muted); width: 22px; flex-shrink: 0; }
-.top-name { font-size: 14px; font-weight: 700; flex: 1; }
-.top-age { font-size: 11px; color: var(--muted); flex-shrink: 0; }
-.top-age.mid { color: var(--yellow); } .top-age.old { color: var(--red); }
-.top-amt { font-size: 14px; font-weight: 800; flex-shrink: 0; }
+/* ── WRAP ── */
+.wrap{max-width:900px;margin:0 auto;padding:20px;}
 
-.tabs { display: flex; gap: 8px; background: var(--bg2); padding: 6px; border-radius: 14px; margin-bottom: 25px; border: 1px solid var(--border); overflow-x: auto; }
-.tab { flex: 1; min-width: 100px; padding: 12px; border: none; border-radius: 10px; font-size: 14px; font-weight: 700; cursor: pointer; color: var(--muted); background: transparent; white-space: nowrap; }
-.tab.on { background: var(--surface); color: var(--primary); box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+/* ── SUMMARY ── */
+.summary{display:grid;grid-template-columns:1fr 1fr;gap:15px;margin-bottom:15px;}
+.sc{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:20px;text-align:center;box-shadow:var(--shadow);}
+.sc-net{background:var(--surface);border:2px solid var(--border);border-radius:18px;padding:18px 24px;box-shadow:var(--shadow);display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:25px;}
+.sc-net.pos{border-color:var(--green);background:var(--green-bg);}
+.sc-net.neg{border-color:var(--red);background:var(--red-bg);}
+.sc-lbl{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:5px;}
+.sc-val{font-size:28px;font-weight:800;}
+.sc-val.g{color:var(--green);}.sc-val.r{color:var(--red);}.sc-val.y{color:var(--yellow);}
+.sc-sub{font-size:11px;color:var(--muted);margin-top:4px;font-weight:600;}
+.net-val{font-size:34px;font-weight:900;}
+.net-icon{font-size:38px;opacity:.6;}
 
-.af { background: var(--surface); border-radius: 20px; padding: 20px; margin-bottom: 25px; border: 1px solid var(--border); box-shadow: var(--shadow); }
-.af-head { font-size: 1.1rem; font-weight: 700; margin-bottom: 15px; }
-.af-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 15px; }
-input { width: 100%; padding: 14px; border-radius: 10px; border: 2px solid var(--border); background: var(--bg2); color: var(--text); font-size: 15px; outline: none; font-family: inherit; }
-input:focus { border-color: var(--primary); }
-.quick-notes { display: flex; gap: 8px; margin-bottom: 15px; flex-wrap: wrap; }
-.q-tag { font-size: 12px; padding: 6px 12px; border-radius: 8px; background: var(--card); border: 1px solid var(--border); cursor: pointer; font-weight: 600; color: var(--text2); }
-.q-tag:active { opacity: 0.7; }
-.sbtn { width: 100%; padding: 15px; border-radius: 12px; border: none; font-size: 16px; font-weight: 800; cursor: pointer; color: white; }
-.sbtn-g { background: linear-gradient(135deg, var(--green), #059669); }
-.sbtn-r { background: linear-gradient(135deg, var(--red), #dc2626); }
-.sbtn:active { opacity: 0.85; transform: scale(0.99); }
+/* ── SEARCH ── */
+.search-wrap{margin-bottom:20px;position:relative;}
+.search-wrap input{padding-left:42px;background:var(--surface);border:1px solid var(--border);border-radius:12px;font-size:14px;}
+.si{position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:16px;pointer-events:none;}
 
-.sec-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
-.sec-title { font-size: 12px; font-weight: 700; color: var(--muted); text-transform: uppercase; }
-.see-all-btn { font-size: 12px; font-weight: 700; color: var(--primary); background: none; border: 1px solid var(--primary); cursor: pointer; padding: 4px 10px; border-radius: 6px; display: none; }
+/* ── TOP LIST ── */
+.top-s{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:18px;box-shadow:var(--shadow);}
+.top-sh{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:12px;}
+.top-row{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--border);}
+.top-row:last-child{border-bottom:none;}
+.top-rank{font-size:11px;font-weight:800;color:var(--muted);width:22px;flex-shrink:0;}
+.top-name{font-size:14px;font-weight:700;flex:1;}
+.top-age{font-size:11px;color:var(--muted);flex-shrink:0;}
+.top-age.mid{color:var(--yellow);}.top-age.old{color:var(--red);}
+.top-amt{font-size:14px;font-weight:800;flex-shrink:0;}
 
-.pcard { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; margin-bottom: 12px; overflow: hidden; transition: box-shadow 0.2s; }
-.pcard.settled { opacity: 0.55; }
-.pcard:active { box-shadow: none; }
-.pt { padding: 18px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; gap: 10px; min-height: 72px; }
-.pt-left { flex: 1; min-width: 0; }
-.pname { font-size: 1.1rem; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.page-badge { font-size: 11px; font-weight: 600; color: var(--muted); margin-top: 2px; }
-.page-badge.mid { color: var(--yellow); } .page-badge.old { color: var(--red); }
-.pt-right { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; flex-shrink: 0; }
-.pamount { font-size: 1.3rem; font-weight: 800; }
-.progress-wrap { width: 80px; }
-.progress-bar { height: 4px; border-radius: 2px; background: var(--border); overflow: hidden; }
-.progress-fill { height: 100%; border-radius: 2px; transition: width 0.5s ease; }
-.progress-lbl { font-size: 10px; color: var(--muted); text-align: right; margin-top: 2px; }
+/* ── TABS ── */
+.tabs{display:flex;gap:8px;background:var(--bg2);padding:6px;border-radius:14px;margin-bottom:25px;border:1px solid var(--border);overflow-x:auto;}
+.tab{flex:1;min-width:100px;padding:12px;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;color:var(--muted);background:transparent;white-space:nowrap;}
+.tab.on{background:var(--surface);color:var(--primary);box-shadow:0 4px 10px rgba(0,0,0,.1);}
 
-.pbody { display: none; border-top: 1px solid var(--border); background: var(--bg2); padding: 15px; }
-.pbody.on { display: block; }
+/* ── FORM ── */
+.af{background:var(--surface);border-radius:20px;padding:20px;margin-bottom:25px;border:1px solid var(--border);box-shadow:var(--shadow);}
+.af-head{font-size:1.1rem;font-weight:700;margin-bottom:15px;}
+.af-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:15px;}
+input{width:100%;padding:14px;border-radius:10px;border:2px solid var(--border);background:var(--bg2);color:var(--text);font-size:15px;outline:none;font-family:inherit;}
+input:focus{border-color:var(--primary);}
+.qtags{display:flex;gap:8px;margin-bottom:15px;flex-wrap:wrap;}
+.qtag{font-size:12px;padding:6px 12px;border-radius:8px;background:var(--card);border:1px solid var(--border);cursor:pointer;font-weight:600;color:var(--text2);}
+.sbtn{width:100%;padding:15px;border-radius:12px;border:none;font-size:16px;font-weight:800;cursor:pointer;color:#fff;}
+.sbtn-g{background:linear-gradient(135deg,var(--green),#059669);}
+.sbtn-r{background:linear-gradient(135deg,var(--red),#dc2626);}
+.sbtn:active{opacity:.85;}
 
-.p-summary { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-bottom: 14px; padding: 12px; background: var(--card); border-radius: 12px; border: 1px solid var(--border); }
-.ps-item { text-align: center; }
-.ps-lbl { font-size: 10px; font-weight: 700; color: var(--muted); text-transform: uppercase; margin-bottom: 2px; }
-.ps-val { font-size: 15px; font-weight: 800; }
+/* ── LIST HEADER ── */
+.sec-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.sec-lbl{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;}
+.see-all{font-size:12px;font-weight:700;color:var(--primary);background:none;border:1px solid var(--primary);cursor:pointer;padding:4px 10px;border-radius:6px;display:none;}
 
-.hi { display: flex; justify-content: space-between; padding: 8px 10px; border-radius: 8px; margin-bottom: 4px; font-size: 14px; gap: 10px; }
-.hi.add-row { background: var(--green-bg); }
-.hi.pay-row { background: var(--red-bg); }
-.hi span { color: var(--text2); flex: 1; min-width: 0; }
-.hi b { flex-shrink: 0; }
+/* ── CARD ── */
+.pcard{background:var(--surface);border:1px solid var(--border);border-radius:16px;margin-bottom:12px;overflow:hidden;}
+.pcard.settled{opacity:.5;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.pcard{animation:fadeIn .2s ease;}
+.pt{padding:18px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;gap:10px;min-height:72px;}
+.pt-l{flex:1;min-width:0;}
+.pname{font-size:1.05rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.pbadge{font-size:11px;font-weight:600;color:var(--muted);margin-top:2px;}
+.pbadge.mid{color:var(--yellow);}.pbadge.old{color:var(--red);}
+.pt-r{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0;}
+.pamt{font-size:1.25rem;font-weight:800;}
+.pbar-wrap{width:80px;}
+.pbar{height:4px;border-radius:2px;background:var(--border);overflow:hidden;}
+.pbar-fill{height:100%;border-radius:2px;transition:width .5s ease;}
+.pbar-lbl{font-size:10px;color:var(--muted);text-align:right;margin-top:2px;}
+.pbody{display:none;border-top:1px solid var(--border);background:var(--bg2);padding:15px;}
+.pbody.on{display:block;}
+.psum{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px;padding:12px;background:var(--card);border-radius:12px;border:1px solid var(--border);}
+.ps-i{text-align:center;}
+.ps-l{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:2px;}
+.ps-v{font-size:15px;font-weight:800;}
+.hi{display:flex;justify-content:space-between;padding:8px 10px;border-radius:8px;margin-bottom:4px;font-size:14px;gap:10px;}
+.hi.ar{background:var(--green-bg);}.hi.pr{background:var(--red-bg);}
+.hi span{color:var(--text2);flex:1;min-width:0;}
+.hi b{flex-shrink:0;}
+.hh{font-weight:700;font-size:11px;color:var(--muted);margin-bottom:8px;text-transform:uppercase;}
+.arow{display:flex;gap:8px;margin-top:15px;flex-wrap:wrap;}
+.btn-a{flex:1;height:44px;border-radius:8px;border:1px solid var(--border);background:var(--card);color:var(--text);font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;font-size:13px;min-width:44px;}
+.btn-a:active{opacity:.7;}
 
-.hist-head { font-weight: 700; font-size: 11px; color: var(--muted); margin-bottom: 8px; text-transform: uppercase; }
-.arow { display: flex; gap: 8px; margin-top: 15px; flex-wrap: wrap; }
-.btn-act { flex: 1; height: 44px; border-radius: 8px; border: 1px solid var(--border); background: var(--card); color: var(--text); font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; font-size: 13px; min-width: 44px; }
-.btn-act:active { opacity: 0.7; }
+/* ── EMPTY ── */
+.empty{text-align:center;padding:40px 20px;opacity:.6;}
+.empty-i{font-size:48px;margin-bottom:10px;}
+.empty-t{font-size:14px;font-weight:600;color:var(--muted);}
 
-.empty-state { text-align: center; padding: 40px 20px; opacity: 0.6; }
-.empty-icon { font-size: 48px; margin-bottom: 10px; }
-.empty-txt { font-size: 14px; font-weight: 600; color: var(--muted); }
-
-.overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(5px); z-index: 2000; display: none; align-items: center; justify-content: center; padding: 15px; }
-.overlay.on { display: flex; }
-.modal { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 25px; width: 100%; max-width: 420px; max-height: 90vh; overflow-y: auto; }
-.modal-title { font-weight: 800; font-size: 1.05rem; margin-bottom: 5px; }
-.modal-sub { font-size: 13px; color: var(--muted); margin-bottom: 16px; }
-.modal input { margin-bottom: 10px; }
-.modal-btns { display: flex; gap: 10px; margin-top: 16px; }
-
-.toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(100px); background: var(--card); padding: 12px 24px; border-radius: 50px; border: 1px solid var(--primary); transition: 0.4s; z-index: 3000; font-weight: 600; font-size: 14px; white-space: nowrap; }
-.toast.on { transform: translateX(-50%) translateY(0); }
-
-@keyframes fadeIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
-.pcard { animation: fadeIn 0.2s ease; }
-
-#pin-screen {
-    position: fixed; inset: 0; background: var(--bg); z-index: 9999;
-    display: flex; align-items: center; justify-content: center; padding: 20px;
-}
-.pin-box {
-    background: var(--surface); border: 1px solid var(--border); border-radius: 24px;
-    padding: 36px 28px; width: 100%; max-width: 340px; text-align: center;
-    box-shadow: var(--shadow);
-}
-.pin-logo { font-size: 1.3rem; font-weight: 900; color: var(--primary); margin-bottom: 6px; }
-.pin-sub { font-size: 13px; color: var(--muted); margin-bottom: 28px; }
-.pin-dots { display: flex; justify-content: center; gap: 14px; margin-bottom: 28px; }
-.pin-dot {
-    width: 16px; height: 16px; border-radius: 50%;
-    border: 2px solid var(--border); background: transparent;
-    transition: background 0.15s, border-color 0.15s;
-}
-.pin-dot.filled { background: var(--primary); border-color: var(--primary); }
-.pin-dot.err { background: var(--red); border-color: var(--red); }
-.pin-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 16px; }
-.pin-key {
-    height: 62px; border-radius: 14px; border: 1px solid var(--border);
-    background: var(--card); color: var(--text); font-size: 1.4rem; font-weight: 700;
-    cursor: pointer; transition: background 0.1s, transform 0.1s;
-    display: flex; align-items: center; justify-content: center;
-}
-.pin-key:active { background: var(--primary); color: white; transform: scale(0.93); }
-.pin-key.del { font-size: 1.1rem; color: var(--muted); }
-.pin-key.zero { grid-column: 2; }
-.pin-err { font-size: 13px; color: var(--red); font-weight: 600; min-height: 20px; }
-.pin-change-link { margin-top: 18px; font-size: 12px; color: var(--muted); cursor: pointer; text-decoration: underline; }
-@keyframes shake {
-    0%,100%{transform:translateX(0)} 20%{transform:translateX(-8px)} 40%{transform:translateX(8px)}
-    60%{transform:translateX(-5px)} 80%{transform:translateX(5px)}
-}
-.shake { animation: shake 0.4s ease; }
+/* ── TOAST ── */
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(100px);background:var(--card);padding:12px 24px;border-radius:50px;border:1px solid var(--primary);transition:.4s;z-index:9999;font-weight:600;font-size:14px;white-space:nowrap;}
+.toast.on{transform:translateX(-50%) translateY(0);}
 </style>
 </head>
 <body>
 
-<div id="pin-screen">
+<!-- ══ AUTH SCREEN ══ -->
+<div class="fs" id="auth-screen">
+  <div class="auth-box">
+    <div class="auth-logo">📒 হিসাব</div>
+    <div class="auth-tagline">আপনার হিসাব, আপনার নিয়ন্ত্রণে</div>
+    <div class="auth-tabs">
+      <button class="auth-tab on" onclick="switchAuthTab('login',this)">Login</button>
+      <button class="auth-tab" onclick="switchAuthTab('register',this)">Register</button>
+    </div>
+    <input class="ai" id="au-email" type="email" placeholder="Email address" autocomplete="email">
+    <input class="ai" id="au-pass" type="password" placeholder="Password" autocomplete="current-password" onkeydown="if(event.key==='Enter')authSubmit()">
+    <div id="au-name-wrap" style="display:none">
+      <input class="ai" id="au-name" type="text" placeholder="আপনার নাম (optional)">
+    </div>
+    <button class="auth-btn" id="au-btn" onclick="authSubmit()">Login করুন →</button>
+    <div class="auth-msg err" id="au-msg"></div>
+    <div class="auth-link" id="au-forgot" onclick="authForgot()">পাসওয়ার্ড ভুলে গেছেন?</div>
+  </div>
+</div>
+
+<!-- ══ PIN SCREEN ══ -->
+<div class="fs" id="pin-screen" style="display:none">
   <div class="pin-box">
-    <div class="pin-logo">🔐 হিসাব ট্র্যাকার</div>
-    <div class="pin-sub" id="pin-sub">PIN দিন / Enter PIN</div>
+    <div class="pin-logo" id="pin-title">🔒 PIN দিন</div>
     <div class="pin-dots">
-      <div class="pin-dot" id="pd0"></div>
-      <div class="pin-dot" id="pd1"></div>
-      <div class="pin-dot" id="pd2"></div>
-      <div class="pin-dot" id="pd3"></div>
+      <div class="pin-dot" id="pd0"></div><div class="pin-dot" id="pd1"></div>
+      <div class="pin-dot" id="pd2"></div><div class="pin-dot" id="pd3"></div>
     </div>
     <div class="pin-grid">
       <button class="pin-key" onclick="pinKey('1')">1</button>
@@ -217,67 +238,122 @@ input:focus { border-color: var(--primary); }
       <button class="pin-key del" onclick="pinDel()">⌫</button>
     </div>
     <div class="pin-err" id="pin-err"></div>
-    <div class="pin-change-link" onclick="pinChangeMode()">PIN পরিবর্তন করুন</div>
+    <span class="pin-link" onclick="signOut()">অন্য account দিয়ে login করুন</span>
   </div>
 </div>
 
+<!-- ══ MAIN APP ══ -->
+<div id="app" style="display:none">
+
+<!-- HEADER -->
 <header class="hdr">
- <div style="display:flex; align-items:center; gap:12px;">
-  <div class="logo-name">
-    <span class="bn">হিসাব ট্র্যাকার PRO</span>
-    <span class="en">হিসাব ট্র্যাকার PRO</span>
-  </div>
-  <button class="ctrl-btn" onclick="lockApp()" title="Lock">🔒</button>
-</div>
-  <div class="hdr-right">
-    <button class="ctrl-btn" onclick="toggleLang()">🌐 <span class="bn">ENG</span><span class="en">বাংলা</span></button>
-    <button class="ctrl-btn" onclick="exportData()">💾 <span class="bn">ব্যাকআপ</span><span class="en">Backup</span></button>
-    <button class="ctrl-btn" onclick="triggerImport()">📂 <span class="bn">রিস্টোর</span><span class="en">Restore</span></button>
-    <button class="ctrl-btn" onclick="toggleTheme()">🌓</button>
-  </div>
+  <div class="logo">📒 হিসাব ট্র্যাকার <span style="color:var(--muted);font-size:.75rem;font-weight:600;">PRO</span></div>
+  <button class="hamburger" onclick="openDrawer()" aria-label="Menu">
+    <div class="hb-line"></div>
+    <div class="hb-line"></div>
+    <div class="hb-line"></div>
+  </button>
 </header>
+
+<!-- DRAWER -->
+<div class="drawer-overlay" id="drw-overlay" onclick="closeDrawer()"></div>
+<div class="drawer" id="drw">
+  <div class="drawer-head">
+    <div>
+      <div style="font-size:13px;font-weight:800;color:var(--primary);">📒 হিসাব ট্র্যাকার PRO</div>
+      <div class="drawer-user" id="drw-email"></div>
+    </div>
+    <button class="drawer-close" onclick="closeDrawer()">✕</button>
+  </div>
+  <div class="drawer-body">
+    <div class="drawer-section">সেটিংস / Settings</div>
+    <button class="drawer-item" onclick="toggleLang();closeDrawer()">
+      <span class="di-icon">🌐</span>
+      <span class="bn">ভাষা পরিবর্তন → English</span>
+      <span class="en">Switch to বাংলা</span>
+    </button>
+    <button class="drawer-item" onclick="toggleThemeFn()">
+      <span class="di-icon" id="drw-theme-icon">🌙</span>
+      <span id="drw-theme-lbl">Dark Mode</span>
+      <button class="drawer-toggle" id="drw-theme-toggle" onclick="event.stopPropagation();toggleThemeFn()"></button>
+    </button>
+    <div class="drawer-divider"></div>
+    <div class="drawer-section">অ্যাকাউন্ট / Account</div>
+    <button class="drawer-item" onclick="openProfile()">
+      <span class="di-icon">👤</span>
+      <span class="bn">প্রোফাইল ও পাসওয়ার্ড</span>
+      <span class="en">Profile & Password</span>
+    </button>
+    <button class="drawer-item" onclick="openPinChange()">
+      <span class="di-icon">🔢</span>
+      <span class="bn">PIN পরিবর্তন</span>
+      <span class="en">Change PIN</span>
+    </button>
+    <button class="drawer-item" onclick="lockApp()">
+      <span class="di-icon">🔒</span>
+      <span class="bn">লক করুন</span>
+      <span class="en">Lock App</span>
+    </button>
+    <div class="drawer-divider"></div>
+    <div class="drawer-section">ডেটা / Data</div>
+    <button class="drawer-item" onclick="exportData();closeDrawer()">
+      <span class="di-icon">💾</span>
+      <span class="bn">ব্যাকআপ ডাউনলোড</span>
+      <span class="en">Download Backup</span>
+    </button>
+    <button class="drawer-item" onclick="triggerImport();closeDrawer()">
+      <span class="di-icon">📂</span>
+      <span class="bn">ব্যাকআপ রিস্টোর</span>
+      <span class="en">Restore Backup</span>
+    </button>
+    <div class="drawer-divider"></div>
+    <button class="drawer-item danger" onclick="signOut()">
+      <span class="di-icon">🚪</span>
+      <span class="bn">Logout</span>
+      <span class="en">Logout</span>
+    </button>
+  </div>
+</div>
 
 <input type="file" id="importFile" style="display:none" accept=".json" onchange="handleImport(event)">
 
+<!-- MAIN CONTENT -->
 <div class="wrap">
-
   <div class="summary">
     <div class="sc">
       <div class="sc-lbl bn">আমি পাবো</div><div class="sc-lbl en">I Receive</div>
       <div class="sc-val g" id="sv-r">৳০</div>
-      <div class="sc-sub" id="sv-r-cnt"></div>
+      <div class="sc-sub" id="sv-r-c"></div>
     </div>
     <div class="sc">
       <div class="sc-lbl bn">আমি দেবো</div><div class="sc-lbl en">I Owe</div>
       <div class="sc-val r" id="sv-g">৳০</div>
-      <div class="sc-sub" id="sv-g-cnt"></div>
+      <div class="sc-sub" id="sv-g-c"></div>
     </div>
   </div>
-  <div class="sc-net">
-    <div class="sc-net-card" id="net-card">
-      <div class="sc-net-left">
-        <div class="sc-lbl bn">নিট ব্যালেন্স</div><div class="sc-lbl en">Net Balance</div>
-        <div class="sc-net-val" id="sv-n">৳০</div>
-        <div class="sc-sub" id="sv-n-sub"></div>
-      </div>
-      <div class="sc-net-icon" id="net-icon">⚖️</div>
+  <div class="sc-net" id="net-card">
+    <div>
+      <div class="sc-lbl bn">নিট ব্যালেন্স</div><div class="sc-lbl en">Net Balance</div>
+      <div class="net-val" id="sv-n">৳০</div>
+      <div class="sc-sub" id="sv-n-s"></div>
     </div>
+    <div class="net-icon" id="net-ic">⚖️</div>
   </div>
 
   <div class="search-wrap">
-    <span class="search-icon">🔍</span>
-    <input type="text" id="search-input" placeholder="নাম দিয়ে খুঁজুন / Search by name..." oninput="render()">
+    <span class="si">🔍</span>
+    <input type="text" id="srch" placeholder="নাম দিয়ে খুঁজুন / Search..." oninput="render()">
   </div>
 
-  <div id="top-lists" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px,1fr)); gap:15px; margin-bottom:25px;"></div>
+  <div id="top-lists" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:15px;margin-bottom:25px;"></div>
 
   <div class="tabs">
-    <button class="tab on" onclick="switchTab('r', event)">📥 <span class="bn">পাওনা</span><span class="en">Receivable</span></button>
-    <button class="tab" onclick="switchTab('g', event)">📤 <span class="bn">দেনা</span><span class="en">Payable</span></button>
-    <button class="tab" onclick="switchTab('a', event)">📋 <span class="bn">সব রেকর্ড</span><span class="en">All Records</span></button>
+    <button class="tab on" onclick="switchTab('r',event)">📥 <span class="bn">পাওনা</span><span class="en">Receive</span></button>
+    <button class="tab" onclick="switchTab('g',event)">📤 <span class="bn">দেনা</span><span class="en">Payable</span></button>
+    <button class="tab" onclick="switchTab('a',event)">📋 <span class="bn">সব</span><span class="en">All</span></button>
   </div>
 
-  <div class="sec on" id="sec-r">
+  <div id="sec-r">
     <div class="af">
       <div class="af-head">✚ <span class="bn">নতুন পাওনা</span><span class="en">Add Receivable</span></div>
       <div class="af-row">
@@ -285,25 +361,21 @@ input:focus { border-color: var(--primary); }
         <input id="r-a" type="number" inputmode="numeric" placeholder="পরিমাণ / Amount">
         <input id="r-no" type="text" placeholder="নোট / Note">
       </div>
-      <div class="quick-notes">
-        <span class="q-tag" onclick="setQuickNote('Hawlat', 'r-no')">Hawlat</span>
-        <span class="q-tag" onclick="setQuickNote('Recharge', 'r-no')">Recharge</span>
-        <span class="q-tag" onclick="setQuickNote('Send Money', 'r-no')">Send Money</span>
+      <div class="qtags">
+        <span class="qtag" onclick="setQ('Hawlat','r-no')">Hawlat</span>
+        <span class="qtag" onclick="setQ('Recharge','r-no')">Recharge</span>
+        <span class="qtag" onclick="setQ('Send Money','r-no')">Send Money</span>
       </div>
-      <button class="sbtn sbtn-g" onclick="addEntry('receive')">
-        <span class="bn">যোগ করুন →</span><span class="en">Add Entry →</span>
-      </button>
+      <button class="sbtn sbtn-g" onclick="addEntry('receive')"><span class="bn">যোগ করুন →</span><span class="en">Add →</span></button>
     </div>
-    <div class="sec-header">
-      <span class="sec-title bn">পাওনা তালিকা</span><span class="sec-title en">Receivables</span>
-      <button class="see-all-btn" id="see-all-r-btn" onclick="toggleSeeAll('r')">
-        <span class="bn">সব দেখুন</span><span class="en">See All</span>
-      </button>
+    <div class="sec-hdr">
+      <span class="sec-lbl bn">পাওনা তালিকা</span><span class="sec-lbl en">Receivables</span>
+      <button class="see-all" id="sa-r" onclick="toggleSA('r')"><span class="bn">সব দেখুন</span><span class="en">See All</span></button>
     </div>
     <div id="lst-r"></div>
   </div>
 
-  <div class="sec" id="sec-g" style="display:none">
+  <div id="sec-g" style="display:none">
     <div class="af">
       <div class="af-head">✚ <span class="bn">নতুন দেনা</span><span class="en">Add Payable</span></div>
       <div class="af-row">
@@ -311,62 +383,71 @@ input:focus { border-color: var(--primary); }
         <input id="g-a" type="number" inputmode="numeric" placeholder="পরিমাণ / Amount">
         <input id="g-no" type="text" placeholder="নোট / Note">
       </div>
-      <div class="quick-notes">
-        <span class="q-tag" onclick="setQuickNote('Borrowed', 'g-no')">Borrowed</span>
-        <span class="q-tag" onclick="setQuickNote('Recharge', 'g-no')">Recharge</span>
+      <div class="qtags">
+        <span class="qtag" onclick="setQ('Borrowed','g-no')">Borrowed</span>
+        <span class="qtag" onclick="setQ('Recharge','g-no')">Recharge</span>
       </div>
-      <button class="sbtn sbtn-r" onclick="addEntry('give')">
-        <span class="bn">যোগ করুন →</span><span class="en">Add Entry →</span>
-      </button>
+      <button class="sbtn sbtn-r" onclick="addEntry('give')"><span class="bn">যোগ করুন →</span><span class="en">Add →</span></button>
     </div>
-    <div class="sec-header">
-      <span class="sec-title bn">দেনা তালিকা</span><span class="sec-title en">Payables</span>
-      <button class="see-all-btn" id="see-all-g-btn" onclick="toggleSeeAll('g')">
-        <span class="bn">সব দেখুন</span><span class="en">See All</span>
-      </button>
+    <div class="sec-hdr">
+      <span class="sec-lbl bn">দেনা তালিকা</span><span class="sec-lbl en">Payables</span>
+      <button class="see-all" id="sa-g" onclick="toggleSA('g')"><span class="bn">সব দেখুন</span><span class="en">See All</span></button>
     </div>
     <div id="lst-g"></div>
   </div>
 
-  <div class="sec" id="sec-a" style="display:none"><div id="lst-a"></div></div>
+  <div id="sec-a" style="display:none"><div id="lst-a"></div></div>
 </div>
+</div><!-- /#app -->
 
+<!-- MODALS -->
 <div class="overlay" id="m-pay">
   <div class="modal">
-    <div class="modal-title">💸 <span class="bn">পরিশোধ রেকর্ড</span><span class="en">Record Payment</span></div>
-    <div class="modal-sub" id="m-pay-sub"></div>
+    <div class="modal-title">💸 <span class="bn">পরিশোধ</span><span class="en">Payment</span></div>
+    <div class="modal-sub" id="m-pay-s"></div>
     <input id="pa" type="number" inputmode="numeric" placeholder="পরিমাণ / Amount">
-    <input id="pn" type="text" placeholder="নোট / Note (optional)">
+    <input id="pn" type="text" placeholder="নোট / Note">
     <div class="modal-btns">
-      <button class="btn-act" style="flex:1" onclick="cm('m-pay')">Cancel</button>
+      <button class="btn-a" style="flex:1" onclick="cm('m-pay')">Cancel</button>
       <button class="sbtn sbtn-g" style="flex:1.5" onclick="confirmPay()">Confirm ✓</button>
     </div>
   </div>
 </div>
-
 <div class="overlay" id="m-add">
   <div class="modal">
-    <div class="modal-title">➕ <span class="bn">আরো টাকা যোগ</span><span class="en">Add More</span></div>
-    <div class="modal-sub" id="m-add-sub"></div>
+    <div class="modal-title">➕ <span class="bn">আরো যোগ</span><span class="en">Add More</span></div>
+    <div class="modal-sub" id="m-add-s"></div>
     <input id="aa" type="number" inputmode="numeric" placeholder="পরিমাণ / Amount">
-    <input id="an" type="text" placeholder="নোট / Note (optional)">
+    <input id="an" type="text" placeholder="নোট / Note">
     <div class="modal-btns">
-      <button class="btn-act" style="flex:1" onclick="cm('m-add')">Cancel</button>
+      <button class="btn-a" style="flex:1" onclick="cm('m-add')">Cancel</button>
       <button class="sbtn sbtn-g" style="flex:1.5" onclick="confirmAddMore()">Add ✓</button>
     </div>
   </div>
 </div>
-
 <div class="overlay" id="m-edit">
   <div class="modal">
-    <div class="modal-title">✏️ <span class="bn">এন্ট্রি এডিট</span><span class="en">Edit Entry</span></div>
-    <div class="modal-sub" id="m-edit-sub"></div>
+    <div class="modal-title">✏️ <span class="bn">এডিট</span><span class="en">Edit Entry</span></div>
+    <div class="modal-sub" id="m-edit-s"></div>
     <input id="ed-name" type="text" placeholder="নাম / Name">
-    <input id="ed-amt" type="number" inputmode="numeric" placeholder="মূল পরিমাণ / Original Amount">
-    <input id="ed-rem" type="number" inputmode="numeric" placeholder="বাকি পরিমাণ / Remaining Amount">
+    <input id="ed-amt" type="number" inputmode="numeric" placeholder="মূল পরিমাণ / Original">
+    <input id="ed-rem" type="number" inputmode="numeric" placeholder="বাকি পরিমাণ / Remaining">
     <div class="modal-btns">
-      <button class="btn-act" style="flex:1" onclick="cm('m-edit')">Cancel</button>
+      <button class="btn-a" style="flex:1" onclick="cm('m-edit')">Cancel</button>
       <button class="sbtn sbtn-g" style="flex:1.5" onclick="confirmEdit()">Save ✓</button>
+    </div>
+  </div>
+</div>
+<div class="overlay" id="m-profile">
+  <div class="modal">
+    <div class="modal-title">👤 <span class="bn">প্রোফাইল ও পাসওয়ার্ড</span><span class="en">Profile & Password</span></div>
+    <div class="modal-sub" id="m-profile-email"></div>
+    <input id="pr-newpass" type="password" placeholder="নতুন পাসওয়ার্ড / New password">
+    <input id="pr-confirm" type="password" placeholder="পাসওয়ার্ড নিশ্চিত / Confirm password">
+    <div class="modal-msg" id="pr-msg"></div>
+    <div class="modal-btns">
+      <button class="btn-a" style="flex:1" onclick="cm('m-profile');closeDrawer()">Cancel</button>
+      <button class="sbtn sbtn-g" style="flex:1.5" onclick="changePassword()"><span class="bn">পরিবর্তন করুন</span><span class="en">Update</span></button>
     </div>
   </div>
 </div>
@@ -374,519 +455,449 @@ input:focus { border-color: var(--primary); }
 <div class="toast" id="toast"></div>
 
 <script>
-const supabaseUrl = 'https://hmqckyecenigcjikfjob.supabase.co';
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhtcWNreWVjZW5pZ2NqaWtmam9iIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY5MzUzMDMsImV4cCI6MjA5MjUxMTMwM30.1pyoIp6-GegOVERyroNm0MlkPe4VOAiBL-bU-iJP2gU';
-const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
+const SB_URL='https://hmqckyecenigcjikfjob.supabase.co';
+const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhtcWNreWVjZW5pZ2NqaWtmam9iIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY5MzUzMDMsImV4cCI6MjA5MjUxMTMwM30.1pyoIp6-GegOVERyroNm0MlkPe4VOAiBL-bU-iJP2gU';
+const sb=supabase.createClient(SB_URL,SB_KEY);
 
-let DB = { receive: [], give: [] };
-let LANG = localStorage.getItem('hisab_lang') || 'bn';
-let THEME = localStorage.getItem('hisab_theme') || 'dark';
-let TAB = 'r';
-let CTX = {};
-let SHOW_ALL = { r: false, g: false };
+let DB={receive:[],give:[]};
+let LANG=localStorage.getItem('hisab_lang')||'bn';
+let THEME=localStorage.getItem('hisab_theme')||'dark';
+let TAB='r',CTX={};
+let SA={r:false,g:false};
+let CUR_USER=null;
+let pTr=0,pTg=0,pNet=0;
+let pinBuf='',pinMode='unlock',pinTmp='';
 
-document.documentElement.setAttribute('data-lang', LANG);
-document.documentElement.setAttribute('data-theme', THEME);
+document.documentElement.setAttribute('data-lang',LANG);
+document.documentElement.setAttribute('data-theme',THEME);
 
-async function cloudSave() {
-    const { error } = await supabaseClient.from('hisab_data').upsert({ id: 1, data: DB });
-    if (error) console.error("Cloud Save Error:", error);
+// ── DRAWER ──
+function openDrawer(){
+    document.getElementById('drw').classList.add('on');
+    document.getElementById('drw-overlay').classList.add('on');
+    // sync theme toggle state
+    const t=document.getElementById('drw-theme-toggle');
+    t.classList.toggle('on', THEME==='dark');
+    document.getElementById('drw-theme-icon').textContent=THEME==='dark'?'🌙':'☀️';
+    document.getElementById('drw-theme-lbl').textContent=THEME==='dark'?'Dark Mode':'Light Mode';
 }
-async function cloudLoad() {
-    try {
-        const { data } = await supabaseClient.from('hisab_data').select('data').eq('id', 1).maybeSingle();
-        if (data && data.data) {
-            DB = data.data; render(); toast("✅ Synced!");
-        } else {
-            const local = localStorage.getItem('hisab_v5');
-            if (local) { DB = JSON.parse(local); render(); }
-            toast(LANG === 'bn' ? "⚠️ লোকাল ডেটা" : "⚠️ Local data loaded");
-        }
-    } catch (e) { console.error(e); }
-}
-function save() { localStorage.setItem('hisab_v5', JSON.stringify(DB)); cloudSave(); }
-
-function fmt(n) {
-    if (n === undefined || n === null) return '০';
-    return Number(n).toLocaleString('en-IN');
-}
-function fmtDate(val) {
-    let d;
-    if (typeof val === 'number' || (typeof val === 'string' && /^\d{10,}$/.test(val.toString()))) {
-        d = new Date(Number(val));
-    } else { d = new Date(val); }
-    if (isNaN(d)) return String(val);
-    const dd = String(d.getDate()).padStart(2,'0');
-    const mm = String(d.getMonth()+1).padStart(2,'0');
-    const yyyy = d.getFullYear();
-    const hh = String(d.getHours()).padStart(2,'0');
-    const min = String(d.getMinutes()).padStart(2,'0');
-    return `${dd}/${mm}/${yyyy} ${hh}:${min}`;
+function closeDrawer(){
+    document.getElementById('drw').classList.remove('on');
+    document.getElementById('drw-overlay').classList.remove('on');
 }
 
-function getFirstTs(person) {
-    const adds = person.history.filter(h => h.t === 'add');
-    if (!adds.length) return person.id;
-    return Math.min(...adds.map(h => Number(h.id) || Number(person.id)));
+// ── AUTH ──
+let authMode='login';
+function switchAuthTab(mode,el){
+    authMode=mode;
+    document.querySelectorAll('.auth-tab').forEach(t=>t.classList.remove('on'));
+    el.classList.add('on');
+    document.getElementById('au-name-wrap').style.display=mode==='register'?'block':'none';
+    document.getElementById('au-btn').textContent=mode==='login'?'Login করুন →':'Register করুন →';
+    document.getElementById('au-forgot').style.display=mode==='login'?'block':'none';
+    setAuthMsg('','');
 }
-function agingDays(person) {
-    return Math.floor((Date.now() - getFirstTs(person)) / 86400000);
+function setAuthMsg(msg,type){
+    const el=document.getElementById('au-msg');
+    el.textContent=msg;
+    el.className='auth-msg '+(type||'');
 }
-function agingBadge(days) {
-    const lbl = LANG === 'bn' ? `${days} দিন` : `${days}d`;
-    if (days <= 7)  return { cls: '', lbl };
-    if (days <= 30) return { cls: 'mid', lbl };
-    return { cls: 'old', lbl: lbl + ' ⚠️' };
-}
-
-function animateCount(el, target, prefix = '') {
-    const start = 0;
-    const duration = 600;
-    const startTime = performance.now();
-    function update(now) {
-        const elapsed = Math.min((now - startTime) / duration, 1);
-        const ease = 1 - Math.pow(1 - elapsed, 3);
-        const val = Math.round(start + (target - start) * ease);
-        el.textContent = prefix + fmt(val);
-        if (elapsed < 1) requestAnimationFrame(update);
-        else el.textContent = prefix + fmt(target);
+async function authSubmit(){
+    const email=document.getElementById('au-email').value.trim();
+    const pass=document.getElementById('au-pass').value;
+    if(!email||!pass){setAuthMsg('Email ও Password দিন!','err');return;}
+    const btn=document.getElementById('au-btn');
+    btn.textContent='⏳ অপেক্ষা করুন...'; btn.disabled=true;
+    const fn=authMode==='login'
+        ?sb.auth.signInWithPassword({email,password:pass})
+        :sb.auth.signUp({email,password:pass});
+    const {data,error}=await fn;
+    btn.disabled=false;
+    btn.textContent=authMode==='login'?'Login করুন →':'Register করুন →';
+    if(error){
+        const m=error.message;
+        if(m.includes('Invalid login'))setAuthMsg('❌ Email বা Password ভুল!','err');
+        else if(m.includes('already registered'))setAuthMsg('❌ এই email-এ আগেই account আছে!','err');
+        else if(m.includes('Password'))setAuthMsg('❌ Password কমপক্ষে ৬ অক্ষর!','err');
+        else setAuthMsg('❌ '+m,'err');
+        return;
     }
-    requestAnimationFrame(update);
+    if(authMode==='register'&&!data.session){
+        setAuthMsg('✅ Registered! Email verify করুন, তারপর login করুন।','ok');
+        return;
+    }
+}
+async function authForgot(){
+    const email=document.getElementById('au-email').value.trim();
+    if(!email){setAuthMsg('আগে email দিন!','err');return;}
+    await sb.auth.resetPasswordForEmail(email);
+    setAuthMsg('✅ Reset link পাঠানো হয়েছে!','ok');
+}
+async function signOut(){
+    await sb.auth.signOut();
+    if(CUR_USER) localStorage.removeItem('ht_'+CUR_USER.id);
+    CUR_USER=null; DB={receive:[],give:[]};
+    closeDrawer();
+    document.getElementById('app').style.display='none';
+    document.getElementById('pin-screen').style.display='none';
+    document.getElementById('auth-screen').style.display='flex';
+    setAuthMsg('','');
 }
 
-function toast(msg) {
-    const t = document.getElementById('toast');
-    t.textContent = msg; t.classList.add('on');
-    setTimeout(() => t.classList.remove('on'), 3000);
+// ── AUTH STATE ──
+sb.auth.onAuthStateChange(async(event,session)=>{
+    if(session&&session.user){
+        CUR_USER=session.user;
+        document.getElementById('auth-screen').style.display='none';
+        document.getElementById('drw-email').textContent=CUR_USER.email;
+        await checkPin();
+    }
+});
+
+// ── PROFILE / PASSWORD CHANGE ──
+function openProfile(){
+    closeDrawer();
+    document.getElementById('m-profile-email').textContent=CUR_USER.email;
+    document.getElementById('pr-newpass').value='';
+    document.getElementById('pr-confirm').value='';
+    document.getElementById('pr-msg').textContent='';
+    document.getElementById('pr-msg').className='modal-msg';
+    document.getElementById('m-profile').classList.add('on');
 }
-function cm(id) { document.getElementById(id).classList.remove('on'); }
-function toggleLang() {
-    LANG = LANG === 'bn' ? 'en' : 'bn';
-    localStorage.setItem('hisab_lang', LANG);
-    document.documentElement.setAttribute('data-lang', LANG);
+async function changePassword(){
+    const np=document.getElementById('pr-newpass').value;
+    const cf=document.getElementById('pr-confirm').value;
+    const msg=document.getElementById('pr-msg');
+    if(!np||np.length<6){msg.className='modal-msg err';msg.textContent='কমপক্ষে ৬ অক্ষর দিন!';return;}
+    if(np!==cf){msg.className='modal-msg err';msg.textContent='Password দুটো মিলছে না!';return;}
+    const{error}=await sb.auth.updateUser({password:np});
+    if(error){msg.className='modal-msg err';msg.textContent='❌ '+error.message;return;}
+    msg.className='modal-msg ok';msg.textContent='✅ পাসওয়ার্ড পরিবর্তন হয়েছে!';
+    setTimeout(()=>cm('m-profile'),1500);
+}
+
+// ── PIN ──
+function ph(p){let h=5381;for(let i=0;i<p.length;i++)h=(h*33)^p.charCodeAt(i);return(h>>>0).toString(36);}
+function pk(){return'ht_pin_'+CUR_USER.id;}
+function tk(){return'ht_tr_'+CUR_USER.id;}
+function getPin(){return localStorage.getItem(pk())||ph('1234');}
+function isTrusted(){return localStorage.getItem(tk())==='1';}
+function setTrusted(){localStorage.setItem(tk(),'1');}
+
+async function checkPin(){
+    if(isTrusted()){showApp();}
+    else{
+        pinMode='unlock';pinBuf='';updDots('');
+        document.getElementById('pin-err').textContent='';
+        document.getElementById('pin-title').textContent='🔒 PIN দিন';
+        document.getElementById('pin-screen').style.display='flex';
+    }
+}
+function openPinChange(){
+    closeDrawer();
+    pinMode='set-new1';pinBuf='';updDots('');
+    document.getElementById('pin-err').textContent='';
+    document.getElementById('pin-title').textContent='নতুন PIN দিন';
+    document.getElementById('app').style.display='none';
+    document.getElementById('pin-screen').style.display='flex';
+}
+function lockApp(){
+    closeDrawer();
+    localStorage.removeItem(tk());
+    document.getElementById('app').style.display='none';
+    pinMode='unlock';pinBuf='';updDots('');
+    document.getElementById('pin-err').textContent='';
+    document.getElementById('pin-title').textContent='🔒 PIN দিন';
+    document.getElementById('pin-screen').style.display='flex';
+}
+function updDots(buf,cls){
+    for(let i=0;i<4;i++){const d=document.getElementById('pd'+i);d.className='pin-dot'+(i<buf.length?' '+(cls||'filled'):'');}
+}
+function pinKey(k){
+    if(pinBuf.length>=4)return;
+    pinBuf+=k;updDots(pinBuf);
+    document.getElementById('pin-err').textContent='';
+    if(pinBuf.length===4)setTimeout(handlePin,120);
+}
+function pinDel(){pinBuf=pinBuf.slice(0,-1);updDots(pinBuf);}
+function handlePin(){
+    const box=document.querySelector('.pin-box');
+    if(pinMode==='unlock'){
+        if(ph(pinBuf)===getPin()){
+            setTrusted();
+            document.getElementById('pin-screen').style.display='none';
+            showApp();
+        }else{
+            updDots('1234','err');
+            document.getElementById('pin-err').textContent='❌ ভুল PIN!';
+            box.classList.add('shake');
+            setTimeout(()=>{box.classList.remove('shake');pinBuf='';updDots('');},500);
+        }
+    }else if(pinMode==='set-new1'){
+        pinTmp=pinBuf;pinBuf='';updDots('');
+        pinMode='set-new2';
+        document.getElementById('pin-title').textContent='আবার দিন (Confirm)';
+    }else if(pinMode==='set-new2'){
+        if(pinBuf===pinTmp){
+            localStorage.setItem(pk(),ph(pinBuf));
+            pinBuf='';pinTmp='';pinMode='unlock';
+            document.getElementById('pin-screen').style.display='none';
+            document.getElementById('app').style.display='block';
+            toast('✅ PIN পরিবর্তন হয়েছে!');
+        }else{
+            updDots('1234','err');
+            document.getElementById('pin-err').textContent='❌ মিলেনি! আবার চেষ্টা করুন।';
+            box.classList.add('shake');
+            setTimeout(()=>{box.classList.remove('shake');pinBuf='';pinTmp='';pinMode='set-new1';updDots('');document.getElementById('pin-title').textContent='নতুন PIN দিন';},500);
+        }
+    }
+}
+
+// ── DATA ──
+async function showApp(){
+    document.getElementById('app').style.display='block';
+    await loadData(); render();
+}
+async function loadData(){
+    const{data,error}=await sb.from('hisab_users').select('data').eq('id',CUR_USER.id).maybeSingle();
+    if(data&&data.data){DB=data.data;if(!DB.receive)DB.receive=[];if(!DB.give)DB.give=[];}
+    else if(!error) await sb.from('hisab_users').insert({id:CUR_USER.id,data:DB});
+}
+async function saveData(){
+    localStorage.setItem('ht_'+CUR_USER.id,JSON.stringify(DB));
+    await sb.from('hisab_users').upsert({id:CUR_USER.id,data:DB,updated_at:new Date().toISOString()});
+}
+
+// ── FORMAT ──
+function fmt(n){return Number(n).toLocaleString('en-IN');}
+function fmtD(v){
+    let d=typeof v==='number'||(typeof v==='string'&&/^\d{10,}$/.test(v))?new Date(Number(v)):new Date(v);
+    if(isNaN(d))return String(v);
+    return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+}
+
+// ── AGING ──
+function firstTs(p){const a=p.history.filter(h=>h.t==='add');return a.length?Math.min(...a.map(h=>Number(h.id)||Number(p.id))):p.id;}
+function ageDays(p){return Math.floor((Date.now()-firstTs(p))/86400000);}
+function ageBadge(d){const l=LANG==='bn'?`${d} দিন`:`${d}d`;return d<=7?{cls:'',l}:d<=30?{cls:'mid',l}:{cls:'old',l:l+' ⚠️'};}
+
+// ── COUNT-UP ──
+function countUp(el,target,pre=''){
+    const dur=600,s=performance.now();
+    const up=n=>{const p=Math.min((n-s)/dur,1),e=1-Math.pow(1-p,3);el.textContent=pre+fmt(Math.round(target*e));if(p<1)requestAnimationFrame(up);else el.textContent=pre+fmt(target);};
+    requestAnimationFrame(up);
+}
+
+// ── UI ──
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('on');setTimeout(()=>t.classList.remove('on'),3000);}
+function cm(id){document.getElementById(id).classList.remove('on');}
+function toggleLang(){LANG=LANG==='bn'?'en':'bn';localStorage.setItem('hisab_lang',LANG);document.documentElement.setAttribute('data-lang',LANG);render();}
+function toggleThemeFn(){
+    THEME=THEME==='dark'?'light':'dark';
+    localStorage.setItem('hisab_theme',THEME);
+    document.documentElement.setAttribute('data-theme',THEME);
+    const t=document.getElementById('drw-theme-toggle');
+    t.classList.toggle('on',THEME==='dark');
+    document.getElementById('drw-theme-icon').textContent=THEME==='dark'?'🌙':'☀️';
+    document.getElementById('drw-theme-lbl').textContent=THEME==='dark'?'Dark Mode':'Light Mode';
+}
+function switchTab(t,ev){
+    TAB=t;
+    document.querySelectorAll('.tab').forEach(b=>b.classList.remove('on'));
+    if(ev)ev.currentTarget.classList.add('on');
+    ['r','g','a'].forEach(s=>document.getElementById('sec-'+s).style.display=s===t?'block':'none');
     render();
 }
-function toggleTheme() {
-    THEME = THEME === 'dark' ? 'light' : 'dark';
-    localStorage.setItem('hisab_theme', THEME);
-    document.documentElement.setAttribute('data-theme', THEME);
-}
-function switchTab(t, ev) {
-    TAB = t;
-    document.querySelectorAll('.tab').forEach(b => b.classList.remove('on'));
-    if (ev) ev.currentTarget.classList.add('on');
-    document.querySelectorAll('.sec').forEach(s => s.style.display = 'none');
-    document.getElementById('sec-' + t).style.display = 'block';
-    render();
-}
-function setQuickNote(val, id) { document.getElementById(id).value = val; }
-function toggleSeeAll(key) {
-    SHOW_ALL[key] = !SHOW_ALL[key]; render();
-}
+function setQ(v,id){document.getElementById(id).value=v;}
+function toggleSA(k){SA[k]=!SA[k];render();}
 
-function addEntry(type) {
-    const p = type === 'receive' ? 'r' : 'g';
-    const name = document.getElementById(p+'-n').value.trim();
-    const amt = parseFloat(document.getElementById(p+'-a').value);
-    const note = document.getElementById(p+'-no').value.trim() || 'Entry';
-    if (!name || isNaN(amt) || amt <= 0) return alert(LANG === 'bn' ? "সঠিক তথ্য দিন!" : "Enter valid data!");
-    const ts = Date.now();
-    let person = DB[type].find(x => x.name.toLowerCase() === name.toLowerCase());
-    const hist = { id: ts, date: ts, amt, note, t: 'add' };
-    if (person) { person.original += amt; person.remaining += amt; person.history.unshift(hist); }
-    else { DB[type].push({ id: ts, name, original: amt, remaining: amt, history: [hist] }); }
-    document.getElementById(p+'-n').value = '';
-    document.getElementById(p+'-a').value = '';
-    document.getElementById(p+'-no').value = '';
-    save(); render();
-    toast(LANG === 'bn' ? "✅ যোগ হয়েছে!" : "✅ Added!");
+// ── ENTRIES ──
+function addEntry(type){
+    const p=type==='receive'?'r':'g';
+    const name=document.getElementById(p+'-n').value.trim();
+    const amt=parseFloat(document.getElementById(p+'-a').value);
+    const note=document.getElementById(p+'-no').value.trim()||'Entry';
+    if(!name||isNaN(amt)||amt<=0)return alert(LANG==='bn'?'সঠিক তথ্য দিন!':'Enter valid data!');
+    const ts=Date.now(),hist={id:ts,date:ts,amt,note,t:'add'};
+    let person=DB[type].find(x=>x.name.toLowerCase()===name.toLowerCase());
+    if(person){person.original+=amt;person.remaining+=amt;person.history.unshift(hist);}
+    else DB[type].push({id:ts,name,original:amt,remaining:amt,history:[hist]});
+    document.getElementById(p+'-n').value='';document.getElementById(p+'-a').value='';document.getElementById(p+'-no').value='';
+    saveData();render();toast(LANG==='bn'?'✅ যোগ হয়েছে!':'✅ Added!');
 }
-
-function openPay(type, id) {
-    const p = DB[type].find(x => x.id === id);
-    CTX = { type, id };
-    document.getElementById('m-pay-sub').textContent = `${p.name} — ${LANG==='bn'?'বাকি':'Due'}: ৳${fmt(p.remaining)}`;
-    document.getElementById('pa').value = '';
-    document.getElementById('pn').value = '';
+function openPay(type,id){
+    const p=DB[type].find(x=>x.id===id);CTX={type,id};
+    document.getElementById('m-pay-s').textContent=`${p.name} — ${LANG==='bn'?'বাকি':'Due'}: ৳${fmt(p.remaining)}`;
+    document.getElementById('pa').value='';document.getElementById('pn').value='';
     document.getElementById('m-pay').classList.add('on');
 }
-function confirmPay() {
-    const amt = parseFloat(document.getElementById('pa').value);
-    const note = document.getElementById('pn').value || 'Payment';
-    if (isNaN(amt) || amt <= 0) return;
-    const p = DB[CTX.type].find(x => x.id === CTX.id);
-    p.remaining = Math.max(0, p.remaining - amt);
-    const ts = Date.now();
-    p.history.unshift({ id: ts, date: ts, amt, note, t: 'pay' });
-    cm('m-pay'); save(); render();
-    toast(LANG === 'bn' ? "💸 পরিশোধ হয়েছে!" : "💸 Payment recorded!");
+function confirmPay(){
+    const amt=parseFloat(document.getElementById('pa').value);
+    const note=document.getElementById('pn').value||'Payment';
+    if(isNaN(amt)||amt<=0)return;
+    const p=DB[CTX.type].find(x=>x.id===CTX.id);
+    p.remaining=Math.max(0,p.remaining-amt);
+    const ts=Date.now();p.history.unshift({id:ts,date:ts,amt,note,t:'pay'});
+    cm('m-pay');saveData();render();toast(LANG==='bn'?'💸 পরিশোধ হয়েছে!':'💸 Payment recorded!');
 }
-
-function openAddMore(type, id) {
-    const p = DB[type].find(x => x.id === id);
-    CTX = { type, id };
-    document.getElementById('m-add-sub').textContent = `${p.name} — ${LANG==='bn'?'বর্তমান':'Current'}: ৳${fmt(p.remaining)}`;
-    document.getElementById('aa').value = '';
-    document.getElementById('an').value = '';
+function openAddMore(type,id){
+    const p=DB[type].find(x=>x.id===id);CTX={type,id};
+    document.getElementById('m-add-s').textContent=`${p.name} — ${LANG==='bn'?'বর্তমান':'Current'}: ৳${fmt(p.remaining)}`;
+    document.getElementById('aa').value='';document.getElementById('an').value='';
     document.getElementById('m-add').classList.add('on');
 }
-function confirmAddMore() {
-    const amt = parseFloat(document.getElementById('aa').value);
-    const note = document.getElementById('an').value || 'Added';
-    if (isNaN(amt) || amt <= 0) return;
-    const p = DB[CTX.type].find(x => x.id === CTX.id);
-    p.original += amt; p.remaining += amt;
-    const ts = Date.now();
-    p.history.unshift({ id: ts, date: ts, amt, note, t: 'add' });
-    cm('m-add'); save(); render();
-    toast(LANG === 'bn' ? "➕ যোগ হয়েছে!" : "➕ Added!");
+function confirmAddMore(){
+    const amt=parseFloat(document.getElementById('aa').value);
+    const note=document.getElementById('an').value||'Added';
+    if(isNaN(amt)||amt<=0)return;
+    const p=DB[CTX.type].find(x=>x.id===CTX.id);
+    p.original+=amt;p.remaining+=amt;
+    const ts=Date.now();p.history.unshift({id:ts,date:ts,amt,note,t:'add'});
+    cm('m-add');saveData();render();toast(LANG==='bn'?'➕ যোগ হয়েছে!':'➕ Added!');
 }
-
-function openEdit(type, id) {
-    const p = DB[type].find(x => x.id === id);
-    CTX = { type, id };
-    document.getElementById('m-edit-sub').textContent = LANG === 'bn' ? 'এন্ট্রি পরিবর্তন করুন' : 'Edit this entry';
-    document.getElementById('ed-name').value = p.name;
-    document.getElementById('ed-amt').value = p.original;
-    document.getElementById('ed-rem').value = p.remaining;
+function openEdit(type,id){
+    const p=DB[type].find(x=>x.id===id);CTX={type,id};
+    document.getElementById('ed-name').value=p.name;
+    document.getElementById('ed-amt').value=p.original;
+    document.getElementById('ed-rem').value=p.remaining;
+    document.getElementById('m-edit-s').textContent=LANG==='bn'?'তথ্য পরিবর্তন করুন':'Edit entry details';
     document.getElementById('m-edit').classList.add('on');
 }
-function confirmEdit() {
-    const name = document.getElementById('ed-name').value.trim();
-    const amt = parseFloat(document.getElementById('ed-amt').value);
-    const rem = parseFloat(document.getElementById('ed-rem').value);
-    if (!name || isNaN(amt) || isNaN(rem)) return alert(LANG === 'bn' ? "সঠিক তথ্য দিন!" : "Enter valid data!");
-    const p = DB[CTX.type].find(x => x.id === CTX.id);
-    p.name = name;
-    p.original = amt;
-    p.remaining = rem;
-    cm('m-edit'); save(); render();
-    toast(LANG === 'bn' ? "✏️ সংশোধন হয়েছে!" : "✏️ Updated!");
+function confirmEdit(){
+    const name=document.getElementById('ed-name').value.trim();
+    const amt=parseFloat(document.getElementById('ed-amt').value);
+    const rem=parseFloat(document.getElementById('ed-rem').value);
+    if(!name||isNaN(amt)||isNaN(rem))return alert(LANG==='bn'?'সঠিক তথ্য দিন!':'Enter valid data!');
+    const p=DB[CTX.type].find(x=>x.id===CTX.id);
+    p.name=name;p.original=amt;p.remaining=rem;
+    cm('m-edit');saveData();render();toast(LANG==='bn'?'✏️ সংশোধন হয়েছে!':'✏️ Updated!');
 }
-
-function deleteEntry(type, id) {
-    if (confirm(LANG === 'bn' ? "ডিলিট করবেন?" : "Confirm Delete?")) {
-        DB[type] = DB[type].filter(x => x.id !== id); save(); render();
-        toast(LANG === 'bn' ? "🗑️ ডিলিট হয়েছে" : "🗑️ Deleted");
+function deleteEntry(type,id){
+    if(confirm(LANG==='bn'?'ডিলিট করবেন?':'Confirm Delete?')){
+        DB[type]=DB[type].filter(x=>x.id!==id);saveData();render();
+        toast(LANG==='bn'?'🗑️ ডিলিট হয়েছে':'🗑️ Deleted');
     }
 }
 
-function copyWhatsApp(type, id) {
-    const p = DB[type].find(x => x.id === id);
-    const days = agingDays(p);
-    const label = type === 'receive'
-        ? (LANG === 'bn' ? 'তুমি আমাকে দেবে' : 'You owe me')
-        : (LANG === 'bn' ? 'আমি তোমাকে দেবো' : 'I owe you');
-    let txt = `📋 *হিসাব / Account Summary*\n`;
-    txt += `👤 *${p.name}*\n`;
-    txt += `💰 *${label}: ৳${fmt(p.remaining)}*\n`;
-    txt += `📅 ${LANG === 'bn' ? 'বকেয়া' : 'Pending'}: ${days} ${LANG === 'bn' ? 'দিন' : 'days'}\n`;
-    txt += `\n📜 ${LANG === 'bn' ? 'শেষ ৫টি লেনদেন:' : 'Last 5 transactions:'}\n`;
-    p.history.slice(0, 5).forEach(h => {
-        txt += `• ${fmtDate(h.date)} — ${h.note}: ${h.t==='add'?'+':'-'}৳${fmt(h.amt)}\n`;
-    });
-    if (p.history.length > 5) txt += `...${LANG === 'bn' ? 'আরো' : 'and'} ${p.history.length-5} ${LANG === 'bn' ? 'টি' : 'more'}\n`;
-    txt += `\n_Hisab Tracker PRO_`;
-    const copyTxt = () => {
-        const ta = document.createElement('textarea');
-        ta.value = txt; document.body.appendChild(ta); ta.select();
-        document.execCommand('copy'); document.body.removeChild(ta);
-        toast(LANG === 'bn' ? "📋 কপি হয়েছে!" : "📋 Copied!");
-    };
-    if (navigator.clipboard) {
-        navigator.clipboard.writeText(txt).then(() => toast(LANG === 'bn' ? "📋 কপি হয়েছে!" : "📋 Copied!")).catch(copyTxt);
-    } else copyTxt();
+// ── WHATSAPP ──
+function copyWA(type,id){
+    const p=DB[type].find(x=>x.id===id);
+    const d=ageDays(p);
+    const lbl=type==='receive'?(LANG==='bn'?'তুমি আমাকে দেবে':'You owe me'):(LANG==='bn'?'আমি তোমাকে দেবো':'I owe you');
+    let t=`📋 *হিসাব Summary*\n👤 *${p.name}*\n💰 *${lbl}: ৳${fmt(p.remaining)}*\n📅 ${LANG==='bn'?'বকেয়া':'Pending'}: ${d} ${LANG==='bn'?'দিন':'days'}\n\n`;
+    p.history.slice(0,5).forEach(h=>{t+=`• ${fmtD(h.date)} — ${h.note}: ${h.t==='add'?'+':'-'}৳${fmt(h.amt)}\n`;});
+    if(p.history.length>5)t+=`...আরো ${p.history.length-5}টি\n`;
+    t+=`\n_Hisab Tracker PRO_`;
+    const cp=()=>{const ta=document.createElement('textarea');ta.value=t;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);toast('📋 Copied!');};
+    navigator.clipboard?navigator.clipboard.writeText(t).then(()=>toast('📋 Copied!')).catch(cp):cp();
 }
 
-function renderCard(p, type) {
-    const isSettled = p.remaining <= 0;
-    if (isSettled && TAB !== 'a') return '';
-    const days = agingDays(p);
-    const badge = agingBadge(days);
-    const ageLbl = isSettled
-        ? (LANG === 'bn' ? '✅ শোধ হয়েছে' : '✅ Settled')
-        : (LANG === 'bn' ? `বকেয়া ${badge.lbl}` : `Pending ${badge.lbl}`);
-    const ageCls = isSettled ? '' : badge.cls;
-
-    const pct = p.original > 0 ? Math.max(0, Math.min(100, (1 - p.remaining/p.original)*100)) : 0;
-    const pctRound = Math.round(pct);
-    const color = type === 'receive' ? 'var(--green)' : 'var(--red)';
-
-    const totalPaid = p.original - p.remaining;
-    const txCount = p.history.length;
-
-    return `<div class="pcard${isSettled ? ' settled' : ''}">
+// ── RENDER CARD ──
+function renderCard(p,type){
+    const settled=p.remaining<=0;
+    if(settled&&TAB!=='a')return'';
+    const d=ageDays(p),b=ageBadge(d);
+    const ageLbl=settled?(LANG==='bn'?'✅ শোধ হয়েছে':'✅ Settled'):(LANG==='bn'?`বকেয়া ${b.l}`:`Pending ${b.l}`);
+    const col=type==='receive'?'var(--green)':'var(--red)';
+    const pct=p.original>0?Math.round(Math.max(0,Math.min(100,(1-p.remaining/p.original)*100))):0;
+    return `<div class="pcard${settled?' settled':''}">
         <div class="pt" onclick="this.nextElementSibling.classList.toggle('on')">
-            <div class="pt-left">
+            <div class="pt-l">
                 <div class="pname">${p.name}</div>
-                <div class="page-badge ${ageCls}">${ageLbl}</div>
+                <div class="pbadge ${settled?'':b.cls}">${ageLbl}</div>
             </div>
-            <div class="pt-right">
-                <div class="pamount" style="color:${color}">৳${fmt(p.remaining)}</div>
-                <div class="progress-wrap">
-                    <div class="progress-bar"><div class="progress-fill" style="width:${pctRound}%; background:${color}"></div></div>
-                    <div class="progress-lbl">${pctRound}% ${LANG==='bn'?'শোধ':'paid'}</div>
+            <div class="pt-r">
+                <div class="pamt" style="color:${col}">৳${fmt(p.remaining)}</div>
+                <div class="pbar-wrap">
+                    <div class="pbar"><div class="pbar-fill" style="width:${pct}%;background:${col}"></div></div>
+                    <div class="pbar-lbl">${pct}% ${LANG==='bn'?'শোধ':'paid'}</div>
                 </div>
             </div>
         </div>
         <div class="pbody">
-            <div class="p-summary">
-                <div class="ps-item">
-                    <div class="ps-lbl bn">মূল</div><div class="ps-lbl en">Original</div>
-                    <div class="ps-val" style="color:${color}">৳${fmt(p.original)}</div>
-                </div>
-                <div class="ps-item">
-                    <div class="ps-lbl bn">শোধ</div><div class="ps-lbl en">Paid</div>
-                    <div class="ps-val" style="color:var(--green)">৳${fmt(totalPaid)}</div>
-                </div>
-                <div class="ps-item">
-                    <div class="ps-lbl bn">লেনদেন</div><div class="ps-lbl en">Txns</div>
-                    <div class="ps-val">${txCount}</div>
-                </div>
+            <div class="psum">
+                <div class="ps-i"><div class="ps-l bn">মূল</div><div class="ps-l en">Original</div><div class="ps-v" style="color:${col}">৳${fmt(p.original)}</div></div>
+                <div class="ps-i"><div class="ps-l bn">শোধ</div><div class="ps-l en">Paid</div><div class="ps-v" style="color:var(--green)">৳${fmt(p.original-p.remaining)}</div></div>
+                <div class="ps-i"><div class="ps-l bn">লেনদেন</div><div class="ps-l en">Txns</div><div class="ps-v">${p.history.length}</div></div>
             </div>
-            <div class="hist-head">HISTORY</div>
-            ${p.history.map(h => `
-                <div class="hi ${h.t==='add'?'add-row':'pay-row'}">
-                    <span>${fmtDate(h.date)} — ${h.note}</span>
-                    <b style="color:var(--${h.t==='add'?'green':'red'})">${h.t==='add'?'+':'-'} ৳${fmt(h.amt)}</b>
-                </div>`).join('')}
+            <div class="hh">HISTORY</div>
+            ${p.history.map(h=>`<div class="hi ${h.t==='add'?'ar':'pr'}"><span>${fmtD(h.date)} — ${h.note}</span><b style="color:var(--${h.t==='add'?'green':'red'})">${h.t==='add'?'+':'-'} ৳${fmt(h.amt)}</b></div>`).join('')}
             <div class="arow">
-                <button class="btn-act" onclick="openPay('${type}', ${p.id})">💸 <span class="bn">শোধ</span><span class="en">Pay</span></button>
-                <button class="btn-act" onclick="openAddMore('${type}', ${p.id})">➕ <span class="bn">যোগ</span><span class="en">Add</span></button>
-                <button class="btn-act" onclick="openEdit('${type}', ${p.id})">✏️ <span class="bn">এডিট</span><span class="en">Edit</span></button>
-                <button class="btn-act" onclick="copyWhatsApp('${type}', ${p.id})">📋</button>
-                <button class="btn-act" style="color:var(--red); border-color:var(--red); flex:0.5" onclick="deleteEntry('${type}', ${p.id})">🗑️</button>
+                <button class="btn-a" onclick="openPay('${type}',${p.id})">💸 <span class="bn">শোধ</span><span class="en">Pay</span></button>
+                <button class="btn-a" onclick="openAddMore('${type}',${p.id})">➕ <span class="bn">যোগ</span><span class="en">Add</span></button>
+                <button class="btn-a" onclick="openEdit('${type}',${p.id})">✏️ <span class="bn">এডিট</span><span class="en">Edit</span></button>
+                <button class="btn-a" onclick="copyWA('${type}',${p.id})">📋</button>
+                <button class="btn-a" style="color:var(--red);border-color:var(--red);flex:0.5" onclick="deleteEntry('${type}',${p.id})">🗑️</button>
             </div>
         </div>
     </div>`;
 }
 
-function emptyState(bn, en, icon) {
-    return `<div class="empty-state"><div class="empty-icon">${icon}</div><div class="empty-txt"><span class="bn">${bn}</span><span class="en">${en}</span></div></div>`;
-}
+function emptyS(bn,en,ic){return`<div class="empty"><div class="empty-i">${ic}</div><div class="empty-t"><span class="bn">${bn}</span><span class="en">${en}</span></div></div>`;}
 
-function renderTopLists() {
-    const q = document.getElementById('search-input').value.toLowerCase().trim();
-    const topR = [...DB.receive].filter(p => p.remaining > 0 && (!q || p.name.toLowerCase().includes(q)))
-        .sort((a,b) => b.remaining - a.remaining).slice(0,5);
-    const topG = [...DB.give].filter(p => p.remaining > 0 && (!q || p.name.toLowerCase().includes(q)))
-        .sort((a,b) => b.remaining - a.remaining).slice(0,5);
-    let html = '';
-    const mkTop = (list, color, bnTitle, enTitle) => {
-        if (!list.length) return '';
-        return `<div class="top-section">
-            <div class="top-section-head"><span class="bn">${bnTitle}</span><span class="en">${enTitle}</span></div>
-            ${list.map((p,i) => {
-                const b = agingBadge(agingDays(p));
-                return `<div class="top-row">
-                    <span class="top-rank">#${i+1}</span>
-                    <span class="top-name">${p.name}</span>
-                    <span class="top-age ${b.cls}">${b.lbl}</span>
-                    <span class="top-amt" style="color:${color}">৳${fmt(p.remaining)}</span>
-                </div>`;
-            }).join('')}
-        </div>`;
+// ── TOP LISTS ──
+function renderTop(){
+    const q=document.getElementById('srch').value.toLowerCase().trim();
+    const mk=(list,col,bnt,ent)=>{
+        if(!list.length)return'';
+        return`<div class="top-s"><div class="top-sh"><span class="bn">${bnt}</span><span class="en">${ent}</span></div>${list.map((p,i)=>{const b=ageBadge(ageDays(p));return`<div class="top-row"><span class="top-rank">#${i+1}</span><span class="top-name">${p.name}</span><span class="top-age ${b.cls}">${b.l}</span><span class="top-amt" style="color:${col}">৳${fmt(p.remaining)}</span></div>`;}).join('')}</div>`;
     };
-    html += mkTop(topR, 'var(--green)', '🏆 সর্বোচ্চ পাওনাদার', '🏆 Top Receivables');
-    html += mkTop(topG, 'var(--red)', '🏆 সর্বোচ্চ দেনাদার', '🏆 Top Payables');
-    document.getElementById('top-lists').innerHTML = html;
+    const tR=[...DB.receive].filter(p=>p.remaining>0&&(!q||p.name.toLowerCase().includes(q))).sort((a,b)=>b.remaining-a.remaining).slice(0,5);
+    const tG=[...DB.give].filter(p=>p.remaining>0&&(!q||p.name.toLowerCase().includes(q))).sort((a,b)=>b.remaining-a.remaining).slice(0,5);
+    document.getElementById('top-lists').innerHTML=mk(tR,'var(--green)','🏆 সর্বোচ্চ পাওনাদার','🏆 Top Receivables')+mk(tG,'var(--red)','🏆 সর্বোচ্চ দেনাদার','🏆 Top Payables');
 }
 
-let prevTr = 0, prevTg = 0, prevNet = 0;
-function render() {
-    const q = document.getElementById('search-input').value.toLowerCase().trim();
-
-    const tr = DB.receive.reduce((s,p) => s + p.remaining, 0);
-    const tg = DB.give.reduce((s,p) => s + p.remaining, 0);
-    const net = tr - tg;
-    const rCnt = DB.receive.filter(p => p.remaining > 0).length;
-    const gCnt = DB.give.filter(p => p.remaining > 0).length;
-
-    const svR = document.getElementById('sv-r');
-    const svG = document.getElementById('sv-g');
-    const svN = document.getElementById('sv-n');
-    if (tr !== prevTr) animateCount(svR, tr, '৳');
-    if (tg !== prevTg) animateCount(svG, tg, '৳');
-    if (net !== prevNet) {
-        const sign = net > 0 ? '+' : net < 0 ? '-' : '';
-        animateCount(svN, Math.abs(net), sign + '৳');
-    }
-    prevTr = tr; prevTg = tg; prevNet = net;
-
-    document.getElementById('sv-r-cnt').textContent = LANG === 'bn' ? `${rCnt} জনের কাছে` : `${rCnt} people`;
-    document.getElementById('sv-g-cnt').textContent = LANG === 'bn' ? `${gCnt} জনকে` : `${gCnt} people`;
-
-    const netCard = document.getElementById('net-card');
-    const netSub = document.getElementById('sv-n-sub');
-    const netIcon = document.getElementById('net-icon');
-    svN.style.color = net > 0 ? 'var(--green)' : net < 0 ? 'var(--red)' : 'var(--yellow)';
-    netCard.className = 'sc-net-card ' + (net > 0 ? 'positive' : net < 0 ? 'negative' : '');
-    if (net > 0) { netSub.textContent = LANG === 'bn' ? '▲ আপনি পাবেন' : '▲ In your favor'; netIcon.textContent = '📈'; }
-    else if (net < 0) { netSub.textContent = LANG === 'bn' ? '▼ আপনি দেবেন' : '▼ You owe more'; netIcon.textContent = '📉'; }
-    else { netSub.textContent = LANG === 'bn' ? '= সমান' : '= Balanced'; netIcon.textContent = '⚖️'; }
-
-    renderTopLists();
-
-    const filterList = (list) => q ? list.filter(p => p.name.toLowerCase().includes(q)) : list;
-
-    const sortedR = filterList([...DB.receive]).sort((a,b) => b.remaining - a.remaining);
-    const showR = SHOW_ALL.r ? sortedR : sortedR.slice(0,3);
-    const htmlR = showR.map(p => renderCard(p, 'receive')).filter(Boolean).join('');
-    document.getElementById('lst-r').innerHTML = htmlR || emptyState('কোনো পাওনা নেই', 'No receivables', '📭');
-    const btnR = document.getElementById('see-all-r-btn');
-    btnR.style.display = sortedR.length > 3 ? 'inline-flex' : 'none';
-    btnR.querySelector('.bn').textContent = SHOW_ALL.r ? 'কম দেখুন' : `সব দেখুন (${sortedR.length})`;
-    btnR.querySelector('.en').textContent = SHOW_ALL.r ? 'Show Less' : `See All (${sortedR.length})`;
-
-    const sortedG = filterList([...DB.give]).sort((a,b) => b.remaining - a.remaining);
-    const showG = SHOW_ALL.g ? sortedG : sortedG.slice(0,3);
-    const htmlG = showG.map(p => renderCard(p, 'give')).filter(Boolean).join('');
-    document.getElementById('lst-g').innerHTML = htmlG || emptyState('কোনো দেনা নেই', 'No payables', '🎉');
-    const btnG = document.getElementById('see-all-g-btn');
-    btnG.style.display = sortedG.length > 3 ? 'inline-flex' : 'none';
-    btnG.querySelector('.bn').textContent = SHOW_ALL.g ? 'কম দেখুন' : `সব দেখুন (${sortedG.length})`;
-    btnG.querySelector('.en').textContent = SHOW_ALL.g ? 'Show Less' : `See All (${sortedG.length})`;
-
-    if (TAB === 'a') {
-        const all = filterList([
-            ...DB.receive.map(p => ({...p, t: 'receive'})),
-            ...DB.give.map(p => ({...p, t: 'give'}))
-        ]).sort((a,b) => b.id - a.id);
-        document.getElementById('lst-a').innerHTML = all.length
-            ? all.map(p => renderCard(p, p.t)).filter(Boolean).join('')
-            : emptyState('কোনো রেকর্ড নেই', 'No records found', '📂');
+// ── MAIN RENDER ──
+function render(){
+    const q=document.getElementById('srch').value.toLowerCase().trim();
+    const tr=DB.receive.reduce((s,p)=>s+p.remaining,0);
+    const tg=DB.give.reduce((s,p)=>s+p.remaining,0);
+    const net=tr-tg;
+    const rc=DB.receive.filter(p=>p.remaining>0).length;
+    const gc=DB.give.filter(p=>p.remaining>0).length;
+    if(tr!==pTr)countUp(document.getElementById('sv-r'),tr,'৳');
+    if(tg!==pTg)countUp(document.getElementById('sv-g'),tg,'৳');
+    if(net!==pNet){const sg=net>0?'+':net<0?'-':'';countUp(document.getElementById('sv-n'),Math.abs(net),sg+'৳');}
+    pTr=tr;pTg=tg;pNet=net;
+    document.getElementById('sv-r-c').textContent=LANG==='bn'?`${rc} জনের কাছে`:`${rc} people`;
+    document.getElementById('sv-g-c').textContent=LANG==='bn'?`${gc} জনকে`:`${gc} people`;
+    const nv=document.getElementById('sv-n');
+    nv.style.color=net>0?'var(--green)':net<0?'var(--red)':'var(--yellow)';
+    const nc=document.getElementById('net-card');
+    nc.className='sc-net '+(net>0?'pos':net<0?'neg':'');
+    const ns=document.getElementById('sv-n-s'),ni=document.getElementById('net-ic');
+    if(net>0){ns.textContent=LANG==='bn'?'▲ আপনি পাবেন':'▲ In your favor';ni.textContent='📈';}
+    else if(net<0){ns.textContent=LANG==='bn'?'▼ আপনি দেবেন':'▼ You owe more';ni.textContent='📉';}
+    else{ns.textContent=LANG==='bn'?'= সমান':'= Balanced';ni.textContent='⚖️';}
+    renderTop();
+    const fl=list=>q?list.filter(p=>p.name.toLowerCase().includes(q)):list;
+    const sR=fl([...DB.receive]).sort((a,b)=>b.remaining-a.remaining);
+    const shR=SA.r?sR:sR.slice(0,3);
+    document.getElementById('lst-r').innerHTML=shR.map(p=>renderCard(p,'receive')).filter(Boolean).join('')||emptyS('কোনো পাওনা নেই','No receivables','📭');
+    const bR=document.getElementById('sa-r');
+    bR.style.display=sR.length>3?'inline-flex':'none';
+    bR.querySelector('.bn').textContent=SA.r?'কম দেখুন':`সব দেখুন (${sR.length})`;
+    bR.querySelector('.en').textContent=SA.r?'Show Less':`See All (${sR.length})`;
+    const sG=fl([...DB.give]).sort((a,b)=>b.remaining-a.remaining);
+    const shG=SA.g?sG:sG.slice(0,3);
+    document.getElementById('lst-g').innerHTML=shG.map(p=>renderCard(p,'give')).filter(Boolean).join('')||emptyS('কোনো দেনা নেই','No payables','🎉');
+    const bG=document.getElementById('sa-g');
+    bG.style.display=sG.length>3?'inline-flex':'none';
+    bG.querySelector('.bn').textContent=SA.g?'কম দেখুন':`সব দেখুন (${sG.length})`;
+    bG.querySelector('.en').textContent=SA.g?'Show Less':`See All (${sG.length})`;
+    if(TAB==='a'){
+        const all=fl([...DB.receive.map(p=>({...p,t:'receive'})),...DB.give.map(p=>({...p,t:'give'}))]).sort((a,b)=>b.id-a.id);
+        document.getElementById('lst-a').innerHTML=all.length?all.map(p=>renderCard(p,p.t)).filter(Boolean).join(''):emptyS('কোনো রেকর্ড নেই','No records','📂');
     }
 }
 
-function exportData() {
-    const blob = new Blob([JSON.stringify(DB)], {type:"application/json"});
-    const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "hisab_backup.json"; a.click();
-}
-function triggerImport() { document.getElementById('importFile').click(); }
-function handleImport(e) {
-    const reader = new FileReader();
-    reader.onload = (ev) => { DB = JSON.parse(ev.target.result); save(); render(); toast("✅ Imported!"); };
-    reader.readAsText(e.target.files[0]);
-}
+// ── BACKUP / RESTORE ──
+function exportData(){const b=new Blob([JSON.stringify(DB)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='hisab_backup.json';a.click();}
+function triggerImport(){document.getElementById('importFile').click();}
+function handleImport(e){const r=new FileReader();r.onload=ev=>{DB=JSON.parse(ev.target.result);saveData();render();toast('✅ Imported!');};r.readAsText(e.target.files[0]);}
 
-const DEFAULT_PIN = '1234';
-let pinBuffer = '';
-let pinMode = 'unlock';
-let pinTemp = '';
-
-function pinHash(p) {
-    let h = 5381;
-    for (let i = 0; i < p.length; i++) h = (h * 33) ^ p.charCodeAt(i);
-    return (h >>> 0).toString(36);
-}
-function getStoredPin() {
-    return localStorage.getItem('hisab_pin') || pinHash(DEFAULT_PIN);
-}
-
-function getTrustToken() { return localStorage.getItem('hisab_trust'); }
-function setTrustToken() {
-    const token = Math.random().toString(36).slice(2) + Date.now().toString(36);
-    localStorage.setItem('hisab_trust', token);
-    saveTrustToCloud(token);
-}
-async function saveTrustToCloud(token) {
-    const { data } = await supabaseClient.from('hisab_data').select('data').eq('id', 1).maybeSingle();
-    const current = (data && data.data) ? data.data : DB;
-    if (!current._trustedTokens) current._trustedTokens = [];
-    if (!current._trustedTokens.includes(token)) current._trustedTokens.push(token);
-    if (current._trustedTokens.length > 20) current._trustedTokens = current._trustedTokens.slice(-20);
-    await supabaseClient.from('hisab_data').upsert({ id: 1, data: current });
-}
-async function isTrustedDevice() {
-    const localToken = getTrustToken();
-    if (!localToken) return false;
-    const { data } = await supabaseClient.from('hisab_data').select('data').eq('id', 1).maybeSingle();
-    if (!data || !data.data || !data.data._trustedTokens) return false;
-    return data.data._trustedTokens.includes(localToken);
-}
-
-function updateDots(buf, dotClass) {
-    for (let i = 0; i < 4; i++) {
-        const d = document.getElementById('pd' + i);
-        d.className = 'pin-dot' + (i < buf.length ? ' ' + (dotClass || 'filled') : '');
-    }
-}
-
-function pinKey(k) {
-    if (pinBuffer.length >= 4) return;
-    pinBuffer += k;
-    updateDots(pinBuffer);
-    document.getElementById('pin-err').textContent = '';
-    if (pinBuffer.length === 4) setTimeout(() => handlePinSubmit(), 120);
-}
-function pinDel() {
-    pinBuffer = pinBuffer.slice(0, -1);
-    updateDots(pinBuffer);
-}
-
-function unlockSuccess() {
-    setTrustToken();
-    document.getElementById('pin-screen').style.display = 'none';
-    cloudLoad();
-}
-
-function handlePinSubmit() {
-    if (pinMode === 'unlock') {
-        if (pinHash(pinBuffer) === getStoredPin()) {
-            unlockSuccess();
-        } else {
-            updateDots('1234', 'err');
-            document.getElementById('pin-err').textContent = '❌ ভুল PIN! Wrong PIN!';
-            document.querySelector('.pin-box').classList.add('shake');
-            setTimeout(() => {
-                document.querySelector('.pin-box').classList.remove('shake');
-                pinBuffer = ''; updateDots('');
-            }, 500);
-        }
-    } else if (pinMode === 'set-new1') {
-        pinTemp = pinBuffer; pinBuffer = ''; updateDots('');
-        pinMode = 'set-new2';
-        document.getElementById('pin-sub').textContent = 'আবার দিন / Confirm new PIN';
-    } else if (pinMode === 'set-new2') {
-        if (pinBuffer === pinTemp) {
-            localStorage.setItem('hisab_pin', pinHash(pinBuffer));
-            pinBuffer = ''; pinTemp = ''; pinMode = 'unlock';
-            document.getElementById('pin-screen').style.display = 'none';
-            toast('✅ PIN পরিবর্তন হয়েছে!');
-        } else {
-            updateDots('1234', 'err');
-            document.getElementById('pin-err').textContent = '❌ মিলেনি! PIN mismatch!';
-            document.querySelector('.pin-box').classList.add('shake');
-            setTimeout(() => {
-                document.querySelector('.pin-box').classList.remove('shake');
-                pinBuffer = ''; pinTemp = ''; pinMode = 'set-new1'; updateDots('');
-                document.getElementById('pin-sub').textContent = 'নতুন PIN দিন / Enter new PIN';
-            }, 500);
-        }
-    }
-}
-
-function pinChangeMode() {
-    pinMode = 'set-new1'; pinBuffer = ''; updateDots('');
-    document.getElementById('pin-sub').textContent = 'নতুন PIN দিন / Enter new PIN';
-    document.getElementById('pin-err').textContent = '';
-}
-
-function lockApp() {
-    localStorage.removeItem('hisab_trust');
-    pinMode = 'unlock'; pinBuffer = ''; updateDots('');
-    document.getElementById('pin-sub').textContent = 'PIN দিন / Enter PIN';
-    document.getElementById('pin-err').textContent = '';
-    document.getElementById('pin-screen').style.display = 'flex';
-}
-
-(async () => {
-    const trusted = await isTrustedDevice();
-    if (trusted) {
-        document.getElementById('pin-screen').style.display = 'none';
-        cloudLoad();
-    }
-})();
+// init theme toggle state
+document.getElementById('drw-theme-toggle').classList.toggle('on',THEME==='dark');
 </script>
 </body>
 </html>
