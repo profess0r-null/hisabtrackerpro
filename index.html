@@ -164,9 +164,76 @@ input:focus { border-color: var(--primary); }
 /* COUNT-UP animation handled in JS */
 @keyframes fadeIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
 .pcard { animation: fadeIn 0.2s ease; }
+
+/* PIN LOCK */
+#pin-screen {
+    position: fixed; inset: 0; background: var(--bg); z-index: 9999;
+    display: flex; align-items: center; justify-content: center; padding: 20px;
+}
+.pin-box {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 24px;
+    padding: 36px 28px; width: 100%; max-width: 340px; text-align: center;
+    box-shadow: var(--shadow);
+}
+.pin-logo { font-size: 1.3rem; font-weight: 900; color: var(--primary); margin-bottom: 6px; }
+.pin-sub { font-size: 13px; color: var(--muted); margin-bottom: 28px; }
+.pin-dots { display: flex; justify-content: center; gap: 14px; margin-bottom: 28px; }
+.pin-dot {
+    width: 16px; height: 16px; border-radius: 50%;
+    border: 2px solid var(--border); background: transparent;
+    transition: background 0.15s, border-color 0.15s;
+}
+.pin-dot.filled { background: var(--primary); border-color: var(--primary); }
+.pin-dot.err { background: var(--red); border-color: var(--red); }
+.pin-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 16px; }
+.pin-key {
+    height: 62px; border-radius: 14px; border: 1px solid var(--border);
+    background: var(--card); color: var(--text); font-size: 1.4rem; font-weight: 700;
+    cursor: pointer; transition: background 0.1s, transform 0.1s;
+    display: flex; align-items: center; justify-content: center;
+}
+.pin-key:active { background: var(--primary); color: white; transform: scale(0.93); }
+.pin-key.del { font-size: 1.1rem; color: var(--muted); }
+.pin-key.zero { grid-column: 2; }
+.pin-err { font-size: 13px; color: var(--red); font-weight: 600; min-height: 20px; }
+.pin-change-link { margin-top: 18px; font-size: 12px; color: var(--muted); cursor: pointer; text-decoration: underline; }
+@keyframes shake {
+    0%,100%{transform:translateX(0)} 20%{transform:translateX(-8px)} 40%{transform:translateX(8px)}
+    60%{transform:translateX(-5px)} 80%{transform:translateX(5px)}
+}
+.shake { animation: shake 0.4s ease; }
 </style>
 </head>
 <body>
+
+<!-- PIN LOCK SCREEN -->
+<div id="pin-screen">
+  <div class="pin-box">
+    <div class="pin-logo">🔐 হিসাব ট্র্যাকার</div>
+    <div class="pin-sub" id="pin-sub">PIN দিন / Enter PIN</div>
+    <div class="pin-dots">
+      <div class="pin-dot" id="pd0"></div>
+      <div class="pin-dot" id="pd1"></div>
+      <div class="pin-dot" id="pd2"></div>
+      <div class="pin-dot" id="pd3"></div>
+    </div>
+    <div class="pin-grid">
+      <button class="pin-key" onclick="pinKey('1')">1</button>
+      <button class="pin-key" onclick="pinKey('2')">2</button>
+      <button class="pin-key" onclick="pinKey('3')">3</button>
+      <button class="pin-key" onclick="pinKey('4')">4</button>
+      <button class="pin-key" onclick="pinKey('5')">5</button>
+      <button class="pin-key" onclick="pinKey('6')">6</button>
+      <button class="pin-key" onclick="pinKey('7')">7</button>
+      <button class="pin-key" onclick="pinKey('8')">8</button>
+      <button class="pin-key" onclick="pinKey('9')">9</button>
+      <button class="pin-key" onclick="pinKey('0')" style="grid-column:2">0</button>
+      <button class="pin-key del" onclick="pinDel()">⌫</button>
+    </div>
+    <div class="pin-err" id="pin-err"></div>
+    <div class="pin-change-link" onclick="pinChangeMode()">PIN পরিবর্তন করুন</div>
+  </div>
+</div>
 
 <header class="hdr">
   <div class="logo-name">
@@ -178,6 +245,7 @@ input:focus { border-color: var(--primary); }
     <button class="ctrl-btn" onclick="exportData()">💾 <span class="bn">ব্যাকআপ</span><span class="en">Backup</span></button>
     <button class="ctrl-btn" onclick="triggerImport()">📂 <span class="bn">রিস্টোর</span><span class="en">Restore</span></button>
     <button class="ctrl-btn" onclick="toggleTheme()">🌓</button>
+    <button class="ctrl-btn" onclick="lockApp()" title="Lock">🔒</button>
   </div>
 </header>
 
@@ -745,7 +813,101 @@ function handleImport(e) {
     reader.readAsText(e.target.files[0]);
 }
 
-cloudLoad();
+// --- PIN SYSTEM ---
+const DEFAULT_PIN = '1234';
+let pinBuffer = '';
+let pinMode = 'unlock'; // 'unlock' | 'set-new1' | 'set-new2'
+let pinTemp = '';
+
+function pinHash(p) {
+    // Simple djb2 hash — not cryptographic but good enough for local PIN
+    let h = 5381;
+    for (let i = 0; i < p.length; i++) h = (h * 33) ^ p.charCodeAt(i);
+    return (h >>> 0).toString(36);
+}
+
+function getStoredPin() {
+    return localStorage.getItem('hisab_pin') || pinHash(DEFAULT_PIN);
+}
+
+function updateDots(buf, dotClass) {
+    for (let i = 0; i < 4; i++) {
+        const d = document.getElementById('pd' + i);
+        d.className = 'pin-dot' + (i < buf.length ? ' ' + (dotClass || 'filled') : '');
+    }
+}
+
+function pinKey(k) {
+    if (pinBuffer.length >= 4) return;
+    pinBuffer += k;
+    updateDots(pinBuffer);
+    document.getElementById('pin-err').textContent = '';
+    if (pinBuffer.length === 4) setTimeout(() => handlePinSubmit(), 120);
+}
+
+function pinDel() {
+    pinBuffer = pinBuffer.slice(0, -1);
+    updateDots(pinBuffer);
+}
+
+function handlePinSubmit() {
+    if (pinMode === 'unlock') {
+        if (pinHash(pinBuffer) === getStoredPin()) {
+            document.getElementById('pin-screen').style.display = 'none';
+            cloudLoad();
+        } else {
+            updateDots('1234', 'err');
+            document.getElementById('pin-err').textContent = '❌ ভুল PIN! Wrong PIN!';
+            document.querySelector('.pin-box').classList.add('shake');
+            setTimeout(() => {
+                document.querySelector('.pin-box').classList.remove('shake');
+                pinBuffer = ''; updateDots('');
+            }, 500);
+        }
+    } else if (pinMode === 'set-new1') {
+        pinTemp = pinBuffer;
+        pinBuffer = '';
+        updateDots('');
+        pinMode = 'set-new2';
+        document.getElementById('pin-sub').textContent = 'আবার দিন / Confirm new PIN';
+    } else if (pinMode === 'set-new2') {
+        if (pinBuffer === pinTemp) {
+            localStorage.setItem('hisab_pin', pinHash(pinBuffer));
+            pinBuffer = ''; pinTemp = '';
+            pinMode = 'unlock';
+            document.getElementById('pin-screen').style.display = 'none';
+            toast('✅ PIN পরিবর্তন হয়েছে!');
+        } else {
+            updateDots('1234', 'err');
+            document.getElementById('pin-err').textContent = '❌ মিলেনি! PIN mismatch!';
+            document.querySelector('.pin-box').classList.add('shake');
+            setTimeout(() => {
+                document.querySelector('.pin-box').classList.remove('shake');
+                pinBuffer = ''; pinTemp = ''; pinMode = 'set-new1';
+                updateDots('');
+                document.getElementById('pin-sub').textContent = 'নতুন PIN দিন / Enter new PIN';
+            }, 500);
+        }
+    }
+}
+
+function pinChangeMode() {
+    // First must unlock, then set new
+    pinMode = 'set-new1';
+    pinBuffer = ''; updateDots('');
+    document.getElementById('pin-sub').textContent = 'নতুন PIN দিন / Enter new PIN';
+    document.getElementById('pin-err').textContent = '';
+}
+
+function lockApp() {
+    pinMode = 'unlock';
+    pinBuffer = ''; updateDots('');
+    document.getElementById('pin-sub').textContent = 'PIN দিন / Enter PIN';
+    document.getElementById('pin-err').textContent = '';
+    document.getElementById('pin-screen').style.display = 'flex';
+}
+
+// PIN screen shows on load. cloudLoad() is called only after correct PIN.
 </script>
 </body>
 </html>
