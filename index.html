@@ -26,7 +26,6 @@ body { background: var(--bg); color: var(--text); font-family: 'Inter', 'Hind Si
 [data-lang="bn"] .en { display: none !important; }
 [data-lang="en"] .bn { display: none !important; }
 
-/* HEADER */
 .hdr {
     background: var(--surface); border-bottom: 2px solid var(--border);
     padding: 10px 20px; min-height: 70px; display: flex; align-items: center; justify-content: space-between;
@@ -43,7 +42,6 @@ body { background: var(--bg); color: var(--text); font-family: 'Inter', 'Hind Si
 
 .wrap { max-width: 900px; margin: 0 auto; padding: 20px; }
 
-/* SUMMARY */
 .summary { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }
 .sc-net { margin-bottom: 25px; }
 .sc {
@@ -65,7 +63,6 @@ body { background: var(--bg); color: var(--text); font-family: 'Inter', 'Hind Si
 .sc-net-val { font-size: 36px; font-weight: 900; }
 .sc-net-icon { font-size: 40px; opacity: 0.6; }
 
-/* SEARCH BAR */
 .search-wrap { margin-bottom: 20px; position: relative; }
 .search-wrap input {
     padding-left: 42px; background: var(--surface); border: 1px solid var(--border);
@@ -73,7 +70,6 @@ body { background: var(--bg); color: var(--text); font-family: 'Inter', 'Hind Si
 }
 .search-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-size: 16px; pointer-events: none; }
 
-/* TOP LISTS */
 .top-section { background: var(--surface); border: 1px solid var(--border); border-radius: 18px; padding: 18px; box-shadow: var(--shadow); }
 .top-section-head { font-size: 12px; font-weight: 700; color: var(--muted); text-transform: uppercase; margin-bottom: 12px; }
 .top-row { display: flex; align-items: center; gap: 8px; padding: 7px 0; border-bottom: 1px solid var(--border); }
@@ -84,12 +80,10 @@ body { background: var(--bg); color: var(--text); font-family: 'Inter', 'Hind Si
 .top-age.mid { color: var(--yellow); } .top-age.old { color: var(--red); }
 .top-amt { font-size: 14px; font-weight: 800; flex-shrink: 0; }
 
-/* TABS */
 .tabs { display: flex; gap: 8px; background: var(--bg2); padding: 6px; border-radius: 14px; margin-bottom: 25px; border: 1px solid var(--border); overflow-x: auto; }
 .tab { flex: 1; min-width: 100px; padding: 12px; border: none; border-radius: 10px; font-size: 14px; font-weight: 700; cursor: pointer; color: var(--muted); background: transparent; white-space: nowrap; }
 .tab.on { background: var(--surface); color: var(--primary); box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
 
-/* FORMS */
 .af { background: var(--surface); border-radius: 20px; padding: 20px; margin-bottom: 25px; border: 1px solid var(--border); box-shadow: var(--shadow); }
 .af-head { font-size: 1.1rem; font-weight: 700; margin-bottom: 15px; }
 .af-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 15px; }
@@ -103,12 +97,10 @@ input:focus { border-color: var(--primary); }
 .sbtn-r { background: linear-gradient(135deg, var(--red), #dc2626); }
 .sbtn:active { opacity: 0.85; transform: scale(0.99); }
 
-/* SECTION HEADER */
 .sec-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
 .sec-title { font-size: 12px; font-weight: 700; color: var(--muted); text-transform: uppercase; }
 .see-all-btn { font-size: 12px; font-weight: 700; color: var(--primary); background: none; border: 1px solid var(--primary); cursor: pointer; padding: 4px 10px; border-radius: 6px; display: none; }
 
-/* CARDS */
 .pcard { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; margin-bottom: 12px; overflow: hidden; transition: box-shadow 0.2s; }
 .pcard.settled { opacity: 0.55; }
 .pcard:active { box-shadow: none; }
@@ -127,7 +119,6 @@ input:focus { border-color: var(--primary); }
 .pbody { display: none; border-top: 1px solid var(--border); background: var(--bg2); padding: 15px; }
 .pbody.on { display: block; }
 
-/* PERSON SUMMARY */
 .p-summary { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-bottom: 14px; padding: 12px; background: var(--card); border-radius: 12px; border: 1px solid var(--border); }
 .ps-item { text-align: center; }
 .ps-lbl { font-size: 10px; font-weight: 700; color: var(--muted); text-transform: uppercase; margin-bottom: 2px; }
@@ -144,12 +135,10 @@ input:focus { border-color: var(--primary); }
 .btn-act { flex: 1; height: 44px; border-radius: 8px; border: 1px solid var(--border); background: var(--card); color: var(--text); font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; font-size: 13px; min-width: 44px; }
 .btn-act:active { opacity: 0.7; }
 
-/* EMPTY STATE */
 .empty-state { text-align: center; padding: 40px 20px; opacity: 0.6; }
 .empty-icon { font-size: 48px; margin-bottom: 10px; }
 .empty-txt { font-size: 14px; font-weight: 600; color: var(--muted); }
 
-/* MODALS */
 .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(5px); z-index: 2000; display: none; align-items: center; justify-content: center; padding: 15px; }
 .overlay.on { display: flex; }
 .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 25px; width: 100%; max-width: 420px; max-height: 90vh; overflow-y: auto; }
@@ -161,11 +150,9 @@ input:focus { border-color: var(--primary); }
 .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(100px); background: var(--card); padding: 12px 24px; border-radius: 50px; border: 1px solid var(--primary); transition: 0.4s; z-index: 3000; font-weight: 600; font-size: 14px; white-space: nowrap; }
 .toast.on { transform: translateX(-50%) translateY(0); }
 
-/* COUNT-UP animation handled in JS */
 @keyframes fadeIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
 .pcard { animation: fadeIn 0.2s ease; }
 
-/* PIN LOCK */
 #pin-screen {
     position: fixed; inset: 0; background: var(--bg); z-index: 9999;
     display: flex; align-items: center; justify-content: center; padding: 20px;
@@ -206,7 +193,6 @@ input:focus { border-color: var(--primary); }
 </head>
 <body>
 
-<!-- PIN LOCK SCREEN -->
 <div id="pin-screen">
   <div class="pin-box">
     <div class="pin-logo">🔐 হিসাব ট্র্যাকার</div>
@@ -236,16 +222,18 @@ input:focus { border-color: var(--primary); }
 </div>
 
 <header class="hdr">
+ <div style="display:flex; align-items:center; gap:12px;">
   <div class="logo-name">
     <span class="bn">হিসাব ট্র্যাকার PRO</span>
     <span class="en">হিসাব ট্র্যাকার PRO</span>
   </div>
+  <button class="ctrl-btn" onclick="lockApp()" title="Lock">🔒</button>
+</div>
   <div class="hdr-right">
     <button class="ctrl-btn" onclick="toggleLang()">🌐 <span class="bn">ENG</span><span class="en">বাংলা</span></button>
     <button class="ctrl-btn" onclick="exportData()">💾 <span class="bn">ব্যাকআপ</span><span class="en">Backup</span></button>
     <button class="ctrl-btn" onclick="triggerImport()">📂 <span class="bn">রিস্টোর</span><span class="en">Restore</span></button>
     <button class="ctrl-btn" onclick="toggleTheme()">🌓</button>
-    <button class="ctrl-btn" onclick="lockApp()" title="Lock">🔒</button>
   </div>
 </header>
 
@@ -253,7 +241,6 @@ input:focus { border-color: var(--primary); }
 
 <div class="wrap">
 
-  <!-- SUMMARY -->
   <div class="summary">
     <div class="sc">
       <div class="sc-lbl bn">আমি পাবো</div><div class="sc-lbl en">I Receive</div>
@@ -277,23 +264,19 @@ input:focus { border-color: var(--primary); }
     </div>
   </div>
 
-  <!-- SEARCH -->
   <div class="search-wrap">
     <span class="search-icon">🔍</span>
     <input type="text" id="search-input" placeholder="নাম দিয়ে খুঁজুন / Search by name..." oninput="render()">
   </div>
 
-  <!-- TOP LISTS -->
   <div id="top-lists" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px,1fr)); gap:15px; margin-bottom:25px;"></div>
 
-  <!-- TABS -->
   <div class="tabs">
     <button class="tab on" onclick="switchTab('r', event)">📥 <span class="bn">পাওনা</span><span class="en">Receivable</span></button>
     <button class="tab" onclick="switchTab('g', event)">📤 <span class="bn">দেনা</span><span class="en">Payable</span></button>
     <button class="tab" onclick="switchTab('a', event)">📋 <span class="bn">সব রেকর্ড</span><span class="en">All Records</span></button>
   </div>
 
-  <!-- RECEIVABLE SECTION -->
   <div class="sec on" id="sec-r">
     <div class="af">
       <div class="af-head">✚ <span class="bn">নতুন পাওনা</span><span class="en">Add Receivable</span></div>
@@ -320,7 +303,6 @@ input:focus { border-color: var(--primary); }
     <div id="lst-r"></div>
   </div>
 
-  <!-- PAYABLE SECTION -->
   <div class="sec" id="sec-g" style="display:none">
     <div class="af">
       <div class="af-head">✚ <span class="bn">নতুন দেনা</span><span class="en">Add Payable</span></div>
@@ -346,11 +328,9 @@ input:focus { border-color: var(--primary); }
     <div id="lst-g"></div>
   </div>
 
-  <!-- ALL RECORDS -->
   <div class="sec" id="sec-a" style="display:none"><div id="lst-a"></div></div>
 </div>
 
-<!-- PAY MODAL -->
 <div class="overlay" id="m-pay">
   <div class="modal">
     <div class="modal-title">💸 <span class="bn">পরিশোধ রেকর্ড</span><span class="en">Record Payment</span></div>
@@ -364,7 +344,6 @@ input:focus { border-color: var(--primary); }
   </div>
 </div>
 
-<!-- ADD MORE MODAL -->
 <div class="overlay" id="m-add">
   <div class="modal">
     <div class="modal-title">➕ <span class="bn">আরো টাকা যোগ</span><span class="en">Add More</span></div>
@@ -378,7 +357,6 @@ input:focus { border-color: var(--primary); }
   </div>
 </div>
 
-<!-- EDIT ENTRY MODAL -->
 <div class="overlay" id="m-edit">
   <div class="modal">
     <div class="modal-title">✏️ <span class="bn">এন্ট্রি এডিট</span><span class="en">Edit Entry</span></div>
@@ -410,7 +388,6 @@ let SHOW_ALL = { r: false, g: false };
 document.documentElement.setAttribute('data-lang', LANG);
 document.documentElement.setAttribute('data-theme', THEME);
 
-// --- SYNC ---
 async function cloudSave() {
     const { error } = await supabaseClient.from('hisab_data').upsert({ id: 1, data: DB });
     if (error) console.error("Cloud Save Error:", error);
@@ -429,9 +406,7 @@ async function cloudLoad() {
 }
 function save() { localStorage.setItem('hisab_v5', JSON.stringify(DB)); cloudSave(); }
 
-// --- FORMAT ---
 function fmt(n) {
-    // Bengali-style comma formatting: e.g. 1,00,000
     if (n === undefined || n === null) return '০';
     return Number(n).toLocaleString('en-IN');
 }
@@ -449,7 +424,6 @@ function fmtDate(val) {
     return `${dd}/${mm}/${yyyy} ${hh}:${min}`;
 }
 
-// --- AGING ---
 function getFirstTs(person) {
     const adds = person.history.filter(h => h.t === 'add');
     if (!adds.length) return person.id;
@@ -465,7 +439,6 @@ function agingBadge(days) {
     return { cls: 'old', lbl: lbl + ' ⚠️' };
 }
 
-// --- COUNT-UP ANIMATION ---
 function animateCount(el, target, prefix = '') {
     const start = 0;
     const duration = 600;
@@ -481,7 +454,6 @@ function animateCount(el, target, prefix = '') {
     requestAnimationFrame(update);
 }
 
-// --- UI HELPERS ---
 function toast(msg) {
     const t = document.getElementById('toast');
     t.textContent = msg; t.classList.add('on');
@@ -512,7 +484,6 @@ function toggleSeeAll(key) {
     SHOW_ALL[key] = !SHOW_ALL[key]; render();
 }
 
-// --- ENTRIES ---
 function addEntry(type) {
     const p = type === 'receive' ? 'r' : 'g';
     const name = document.getElementById(p+'-n').value.trim();
@@ -571,7 +542,6 @@ function confirmAddMore() {
     toast(LANG === 'bn' ? "➕ যোগ হয়েছে!" : "➕ Added!");
 }
 
-// EDIT ENTRY
 function openEdit(type, id) {
     const p = DB[type].find(x => x.id === id);
     CTX = { type, id };
@@ -601,7 +571,6 @@ function deleteEntry(type, id) {
     }
 }
 
-// WHATSAPP COPY
 function copyWhatsApp(type, id) {
     const p = DB[type].find(x => x.id === id);
     const days = agingDays(p);
@@ -629,7 +598,6 @@ function copyWhatsApp(type, id) {
     } else copyTxt();
 }
 
-// --- RENDER CARD ---
 function renderCard(p, type) {
     const isSettled = p.remaining <= 0;
     if (isSettled && TAB !== 'a') return '';
@@ -640,12 +608,10 @@ function renderCard(p, type) {
         : (LANG === 'bn' ? `বকেয়া ${badge.lbl}` : `Pending ${badge.lbl}`);
     const ageCls = isSettled ? '' : badge.cls;
 
-    // Progress bar
     const pct = p.original > 0 ? Math.max(0, Math.min(100, (1 - p.remaining/p.original)*100)) : 0;
     const pctRound = Math.round(pct);
     const color = type === 'receive' ? 'var(--green)' : 'var(--red)';
 
-    // Per-person summary
     const totalPaid = p.original - p.remaining;
     const txCount = p.history.length;
 
@@ -695,12 +661,10 @@ function renderCard(p, type) {
     </div>`;
 }
 
-// --- EMPTY STATE ---
 function emptyState(bn, en, icon) {
     return `<div class="empty-state"><div class="empty-icon">${icon}</div><div class="empty-txt"><span class="bn">${bn}</span><span class="en">${en}</span></div></div>`;
 }
 
-// --- TOP LISTS ---
 function renderTopLists() {
     const q = document.getElementById('search-input').value.toLowerCase().trim();
     const topR = [...DB.receive].filter(p => p.remaining > 0 && (!q || p.name.toLowerCase().includes(q)))
@@ -728,7 +692,6 @@ function renderTopLists() {
     document.getElementById('top-lists').innerHTML = html;
 }
 
-// --- MAIN RENDER ---
 let prevTr = 0, prevTg = 0, prevNet = 0;
 function render() {
     const q = document.getElementById('search-input').value.toLowerCase().trim();
@@ -739,7 +702,6 @@ function render() {
     const rCnt = DB.receive.filter(p => p.remaining > 0).length;
     const gCnt = DB.give.filter(p => p.remaining > 0).length;
 
-    // Animate if changed
     const svR = document.getElementById('sv-r');
     const svG = document.getElementById('sv-g');
     const svN = document.getElementById('sv-n');
@@ -754,7 +716,6 @@ function render() {
     document.getElementById('sv-r-cnt').textContent = LANG === 'bn' ? `${rCnt} জনের কাছে` : `${rCnt} people`;
     document.getElementById('sv-g-cnt').textContent = LANG === 'bn' ? `${gCnt} জনকে` : `${gCnt} people`;
 
-    // Net card styling
     const netCard = document.getElementById('net-card');
     const netSub = document.getElementById('sv-n-sub');
     const netIcon = document.getElementById('net-icon');
@@ -766,10 +727,8 @@ function render() {
 
     renderTopLists();
 
-    // Filter by search
     const filterList = (list) => q ? list.filter(p => p.name.toLowerCase().includes(q)) : list;
 
-    // Receivable
     const sortedR = filterList([...DB.receive]).sort((a,b) => b.remaining - a.remaining);
     const showR = SHOW_ALL.r ? sortedR : sortedR.slice(0,3);
     const htmlR = showR.map(p => renderCard(p, 'receive')).filter(Boolean).join('');
@@ -779,7 +738,6 @@ function render() {
     btnR.querySelector('.bn').textContent = SHOW_ALL.r ? 'কম দেখুন' : `সব দেখুন (${sortedR.length})`;
     btnR.querySelector('.en').textContent = SHOW_ALL.r ? 'Show Less' : `See All (${sortedR.length})`;
 
-    // Payable
     const sortedG = filterList([...DB.give]).sort((a,b) => b.remaining - a.remaining);
     const showG = SHOW_ALL.g ? sortedG : sortedG.slice(0,3);
     const htmlG = showG.map(p => renderCard(p, 'give')).filter(Boolean).join('');
@@ -789,7 +747,6 @@ function render() {
     btnG.querySelector('.bn').textContent = SHOW_ALL.g ? 'কম দেখুন' : `সব দেখুন (${sortedG.length})`;
     btnG.querySelector('.en').textContent = SHOW_ALL.g ? 'Show Less' : `See All (${sortedG.length})`;
 
-    // All records
     if (TAB === 'a') {
         const all = filterList([
             ...DB.receive.map(p => ({...p, t: 'receive'})),
@@ -801,7 +758,6 @@ function render() {
     }
 }
 
-// --- BACKUP / RESTORE ---
 function exportData() {
     const blob = new Blob([JSON.stringify(DB)], {type:"application/json"});
     const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "hisab_backup.json"; a.click();
@@ -813,21 +769,40 @@ function handleImport(e) {
     reader.readAsText(e.target.files[0]);
 }
 
-// --- PIN SYSTEM ---
 const DEFAULT_PIN = '1234';
 let pinBuffer = '';
-let pinMode = 'unlock'; // 'unlock' | 'set-new1' | 'set-new2'
+let pinMode = 'unlock';
 let pinTemp = '';
 
 function pinHash(p) {
-    // Simple djb2 hash — not cryptographic but good enough for local PIN
     let h = 5381;
     for (let i = 0; i < p.length; i++) h = (h * 33) ^ p.charCodeAt(i);
     return (h >>> 0).toString(36);
 }
-
 function getStoredPin() {
     return localStorage.getItem('hisab_pin') || pinHash(DEFAULT_PIN);
+}
+
+function getTrustToken() { return localStorage.getItem('hisab_trust'); }
+function setTrustToken() {
+    const token = Math.random().toString(36).slice(2) + Date.now().toString(36);
+    localStorage.setItem('hisab_trust', token);
+    saveTrustToCloud(token);
+}
+async function saveTrustToCloud(token) {
+    const { data } = await supabaseClient.from('hisab_data').select('data').eq('id', 1).maybeSingle();
+    const current = (data && data.data) ? data.data : DB;
+    if (!current._trustedTokens) current._trustedTokens = [];
+    if (!current._trustedTokens.includes(token)) current._trustedTokens.push(token);
+    if (current._trustedTokens.length > 20) current._trustedTokens = current._trustedTokens.slice(-20);
+    await supabaseClient.from('hisab_data').upsert({ id: 1, data: current });
+}
+async function isTrustedDevice() {
+    const localToken = getTrustToken();
+    if (!localToken) return false;
+    const { data } = await supabaseClient.from('hisab_data').select('data').eq('id', 1).maybeSingle();
+    if (!data || !data.data || !data.data._trustedTokens) return false;
+    return data.data._trustedTokens.includes(localToken);
 }
 
 function updateDots(buf, dotClass) {
@@ -844,17 +819,21 @@ function pinKey(k) {
     document.getElementById('pin-err').textContent = '';
     if (pinBuffer.length === 4) setTimeout(() => handlePinSubmit(), 120);
 }
-
 function pinDel() {
     pinBuffer = pinBuffer.slice(0, -1);
     updateDots(pinBuffer);
 }
 
+function unlockSuccess() {
+    setTrustToken();
+    document.getElementById('pin-screen').style.display = 'none';
+    cloudLoad();
+}
+
 function handlePinSubmit() {
     if (pinMode === 'unlock') {
         if (pinHash(pinBuffer) === getStoredPin()) {
-            document.getElementById('pin-screen').style.display = 'none';
-            cloudLoad();
+            unlockSuccess();
         } else {
             updateDots('1234', 'err');
             document.getElementById('pin-err').textContent = '❌ ভুল PIN! Wrong PIN!';
@@ -865,16 +844,13 @@ function handlePinSubmit() {
             }, 500);
         }
     } else if (pinMode === 'set-new1') {
-        pinTemp = pinBuffer;
-        pinBuffer = '';
-        updateDots('');
+        pinTemp = pinBuffer; pinBuffer = ''; updateDots('');
         pinMode = 'set-new2';
         document.getElementById('pin-sub').textContent = 'আবার দিন / Confirm new PIN';
     } else if (pinMode === 'set-new2') {
         if (pinBuffer === pinTemp) {
             localStorage.setItem('hisab_pin', pinHash(pinBuffer));
-            pinBuffer = ''; pinTemp = '';
-            pinMode = 'unlock';
+            pinBuffer = ''; pinTemp = ''; pinMode = 'unlock';
             document.getElementById('pin-screen').style.display = 'none';
             toast('✅ PIN পরিবর্তন হয়েছে!');
         } else {
@@ -883,8 +859,7 @@ function handlePinSubmit() {
             document.querySelector('.pin-box').classList.add('shake');
             setTimeout(() => {
                 document.querySelector('.pin-box').classList.remove('shake');
-                pinBuffer = ''; pinTemp = ''; pinMode = 'set-new1';
-                updateDots('');
+                pinBuffer = ''; pinTemp = ''; pinMode = 'set-new1'; updateDots('');
                 document.getElementById('pin-sub').textContent = 'নতুন PIN দিন / Enter new PIN';
             }, 500);
         }
@@ -892,22 +867,26 @@ function handlePinSubmit() {
 }
 
 function pinChangeMode() {
-    // First must unlock, then set new
-    pinMode = 'set-new1';
-    pinBuffer = ''; updateDots('');
+    pinMode = 'set-new1'; pinBuffer = ''; updateDots('');
     document.getElementById('pin-sub').textContent = 'নতুন PIN দিন / Enter new PIN';
     document.getElementById('pin-err').textContent = '';
 }
 
 function lockApp() {
-    pinMode = 'unlock';
-    pinBuffer = ''; updateDots('');
+    localStorage.removeItem('hisab_trust');
+    pinMode = 'unlock'; pinBuffer = ''; updateDots('');
     document.getElementById('pin-sub').textContent = 'PIN দিন / Enter PIN';
     document.getElementById('pin-err').textContent = '';
     document.getElementById('pin-screen').style.display = 'flex';
 }
 
-// PIN screen shows on load. cloudLoad() is called only after correct PIN.
+(async () => {
+    const trusted = await isTrustedDevice();
+    if (trusted) {
+        document.getElementById('pin-screen').style.display = 'none';
+        cloudLoad();
+    }
+})();
 </script>
 </body>
 </html>
