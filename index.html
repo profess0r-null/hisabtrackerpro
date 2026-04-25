@@ -95,8 +95,8 @@ body{background:var(--bg);color:var(--text);font-family:'Inter','Hind Siliguri',
 .hb-line{width:20px;height:2.5px;background:var(--text);border-radius:2px;transition:background .3s;}
 
 /* ─── SYNC INDICATOR (bottom fixed) ─── */
-.sync-bar{position:fixed;bottom:0;left:0;right:0;z-index:400;display:flex;justify-content:center;pointer-events:none;}
-.sync-pill{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;padding:6px 14px;border-radius:12px 12px 0 0;background:var(--card);border:1px solid var(--border);border-bottom:none;opacity:0;transform:translateY(100%);transition:opacity .3s,transform .3s;pointer-events:none;}
+.sync-bar{position:fixed;bottom:20px;left:0;right:0;z-index:400;display:flex;justify-content:center;pointer-events:none;}
+.sync-pill{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;padding:6px 14px;border-radius:20px 20px 0 0;background:var(--card);border:1px solid var(--border);opacity:0;transform:translateY(100%);transition:opacity .3s,transform .3s;pointer-events:none;}
 .sync-pill.show{opacity:1;transform:translateY(0);}
 .sync-pill.saving{color:var(--yellow);border-color:rgba(245,158,11,.3);}
 .sync-pill.saved{color:var(--green);border-color:rgba(16,185,129,.3);}
