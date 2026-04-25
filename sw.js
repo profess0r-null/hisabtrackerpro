@@ -1,3 +1,12 @@
+const CACHE = 'hisab-v1';
+const FILES = ['/hisabtrackerpro/', '/hisabtrackerpro/index.html'];
+
+self.addEventListener('install', e => {
+  e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES)));
+});
+
 self.addEventListener('fetch', e => {
-  e.respondWith(fetch(e.request).catch(() => caches.match(e.request)));
+  e.respondWith(
+    fetch(e.request).catch(() => caches.match(e.request))
+  );
 });
