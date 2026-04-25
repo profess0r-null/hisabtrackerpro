@@ -2,6 +2,7 @@
   "name": "হিসাব ট্র্যাকার PRO",
   "short_name": "হিসাব",
   "start_url": "/hisabtrackerpro/",
+  "scope": "/hisabtrackerpro/",
   "display": "standalone",
   "background_color": "#0b0e16",
   "theme_color": "#141929",
@@ -9,7 +10,8 @@
     {
       "src": "icon.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ]
 }
