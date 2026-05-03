@@ -1248,7 +1248,7 @@ async function showApp(){
   document.getElementById('app').style.display='block';
   setSyncState('saving','Loading...');
   await loadData();
-  loadCashData();
+  await loadCashDataCloud();
   logActivity('Login সফল',CUR_USER.email);
   await saveData();
   applyMode();
@@ -1283,8 +1283,37 @@ function loadCashData(){
   if(raw)try{CASH_DB=JSON.parse(raw);}catch(e){CASH_DB={balance:0,history:[]};}
   if(!CASH_DB.history)CASH_DB.history=[];
 }
+async function loadCashDataCloud(){
+  try{
+    const{data,error}=await sb.from('hisab_cash').select('data').eq('id',CUR_USER.id).maybeSingle();
+    if(data&&data.data){
+      CASH_DB=data.data;
+      if(!CASH_DB.history)CASH_DB.history=[];
+      localStorage.setItem(cashKey(),JSON.stringify(CASH_DB));
+    } else if(!error){
+      // first time — check localStorage backup
+      const raw=localStorage.getItem(cashKey());
+      if(raw)try{CASH_DB=JSON.parse(raw);}catch(e){}
+      if(!CASH_DB.history)CASH_DB.history=[];
+      // save to cloud
+      await sb.from('hisab_cash').insert({id:CUR_USER.id,data:CASH_DB});
+    }
+  }catch(e){
+    // fallback to localStorage
+    const raw=localStorage.getItem(cashKey());
+    if(raw)try{CASH_DB=JSON.parse(raw);}catch(e2){}
+    if(!CASH_DB.history)CASH_DB.history=[];
+  }
+}
 function saveCashData(){
   localStorage.setItem(cashKey(),JSON.stringify(CASH_DB));
+  // cloud sync async
+  if(CUR_USER){
+    sb.from('hisab_cash').upsert({id:CUR_USER.id,data:CASH_DB,updated_at:new Date().toISOString()}).then(({error})=>{
+      if(!error)setSyncState('saved','Saved ✓');
+      else setSyncState('fail','Sync failed ✕');
+    });
+  }
 }
 
 // ── CASH TRACKER FUNCTIONS ──
