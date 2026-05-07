@@ -1,5 +1,5 @@
 const CACHE = 'hisab-v1';
-const FILES = ['/hisabtrackerpro/', '/hisabtrackerpro/index.html'];
+const FILES = ['/', '/index.html'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES)));
