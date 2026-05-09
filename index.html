@@ -1194,14 +1194,20 @@ function isTrusted(){return localStorage.getItem(tk())==='1';}
 function setTrusted(){localStorage.setItem(tk(),'1');}
 
 async function checkPin(){
-  if(isTrusted())showApp();
-  else{
-    pinMode='unlock';pinBuf='';updDots('');
-    document.getElementById('pin-err').textContent='';
-    document.getElementById('pin-title').textContent=LANG==='bn'?'PIN দিন':'Enter PIN';
-    document.getElementById('pin-sub').textContent=LANG==='bn'?'আপনার ৪ সংখ্যার PIN লিখুন':'Enter your 4-digit PIN';
-    document.getElementById('pin-screen').style.display='flex';
-  }
+  if(isTrusted()){showApp();return;}
+  // PIN screen দেখানোর আগে cloud থেকে pinHash load করি
+  try{
+    const{data}=await sb.from('hisab_users').select('data').eq('id',CUR_USER.id).maybeSingle();
+    if(data&&data.data&&data.data.pinHash){
+      DB.pinHash=data.data.pinHash;
+      localStorage.setItem(pk(),data.data.pinHash);
+    }
+  }catch(e){}
+  pinMode='unlock';pinBuf='';updDots('');
+  document.getElementById('pin-err').textContent='';
+  document.getElementById('pin-title').textContent=LANG==='bn'?'PIN দিন':'Enter PIN';
+  document.getElementById('pin-sub').textContent=LANG==='bn'?'আপনার ৪ সংখ্যার PIN লিখুন':'Enter your 4-digit PIN';
+  document.getElementById('pin-screen').style.display='flex';
 }
 function openPinChange(){
   closeDrawer();
