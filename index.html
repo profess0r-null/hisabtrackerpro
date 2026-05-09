@@ -1189,7 +1189,7 @@ async function changePassword(){
 function ph(p){let h=5381;for(let i=0;i<p.length;i++)h=(h*33)^p.charCodeAt(i);return(h>>>0).toString(36);}
 function pk(){return'ht_pin_'+CUR_USER.id;}
 function tk(){return'ht_tr_'+CUR_USER.id;}
-function getPin(){return localStorage.getItem(pk())||ph('1234');}
+function getPin(){return DB.pinHash||localStorage.getItem(pk())||ph('1234');}
 function isTrusted(){return localStorage.getItem(tk())==='1';}
 function setTrusted(){localStorage.setItem(tk(),'1');}
 
@@ -1255,7 +1255,9 @@ function handlePin(){
     document.getElementById('pin-sub').textContent=LANG==='bn'?'PIN আবার লিখে নিশ্চিত করুন':'Re-enter your PIN to confirm';
   }else if(pinMode==='set-new2'){
     if(pinBuf===pinTmp){
-      localStorage.setItem(pk(),ph(pinBuf));
+      const hash=ph(pinBuf);
+      localStorage.setItem(pk(),hash);
+      DB.pinHash=hash;
       logActivity('PIN পরিবর্তন করা হয়েছে');
       saveData();
       pinBuf='';pinTmp='';pinMode='unlock';
@@ -1294,6 +1296,8 @@ async function loadData(){
     if(!DB.receive)DB.receive=[];
     if(!DB.give)DB.give=[];
     if(!DB.activityLog)DB.activityLog=[];
+    // PIN cloud থেকে localStorage এ sync
+    if(DB.pinHash) localStorage.setItem(pk(),DB.pinHash);
   }else if(!error){
     await sb.from('hisab_users').insert({id:CUR_USER.id,data:DB});
   }
