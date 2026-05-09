@@ -1189,7 +1189,7 @@ async function changePassword(){
 function ph(p){let h=5381;for(let i=0;i<p.length;i++)h=(h*33)^p.charCodeAt(i);return(h>>>0).toString(36);}
 function pk(){return'ht_pin_'+CUR_USER.id;}
 function tk(){return'ht_tr_'+CUR_USER.id;}
-function getPin(){return DB.pinHash||localStorage.getItem(pk())||ph('1234');}
+function getPin(){return DB.pinHash||ph('1234');}
 function isTrusted(){return localStorage.getItem(tk())==='1';}
 function setTrusted(){localStorage.setItem(tk(),'1');}
 
