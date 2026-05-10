@@ -37,10 +37,8 @@ body{background:var(--bg);color:var(--text);font-family:'Inter','Hind Siliguri',
 [data-lang="bn"] .en{display:none!important;}
 [data-lang="en"] .bn{display:none!important;}
 
-/* ─── FULLSCREEN ─── */
 .fs{position:fixed;inset:0;z-index:9000;display:flex;align-items:center;justify-content:center;padding:20px;background:var(--bg);overflow-y:auto;}
 
-/* ─── AUTH ─── */
 .auth-wrap{width:100%;max-width:400px;margin:auto;}
 .auth-brand{text-align:center;margin-bottom:32px;}
 .auth-brand-logo{font-size:2.2rem;margin-bottom:8px;}
@@ -63,7 +61,6 @@ body{background:var(--bg);color:var(--text);font-family:'Inter','Hind Siliguri',
 .auth-msg.ok{color:var(--green);}
 .auth-link{font-size:12px;color:var(--muted);text-align:center;margin-top:16px;cursor:pointer;text-decoration:underline;display:block;}
 
-/* ─── PIN ─── */
 .pin-box{background:var(--surface);border:1px solid var(--border);border-radius:24px;padding:36px 28px;width:100%;max-width:320px;text-align:center;box-shadow:var(--shadow);}
 .pin-logo{font-size:2.5rem;margin-bottom:6px;}
 .pin-title{font-size:1.1rem;font-weight:800;margin-bottom:6px;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
@@ -81,7 +78,6 @@ body{background:var(--bg);color:var(--text);font-family:'Inter','Hind Siliguri',
 @keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}
 .shake{animation:shake .4s ease;}
 
-/* ─── HEADER ─── */
 .hdr{border-bottom:1px solid var(--border);padding:0 16px;height:58px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:500;
   background:rgba(11,14,22,.85);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
   box-shadow:0 2px 20px rgba(0,0,0,.2);}
@@ -92,7 +88,6 @@ body{background:var(--bg);color:var(--text);font-family:'Inter','Hind Siliguri',
 .logo-main{font-size:1.05rem;font-weight:900;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;letter-spacing:-.02em;line-height:1.1;}
 .logo-sub{font-size:9.5px;font-weight:700;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;line-height:1;margin-top:1px;}
 
-/* cash mode header */
 .logo-main.cash-mode{background:linear-gradient(135deg,#4ade80,#10b981);-webkit-background-clip:text;background-clip:text;}
 
 .hdr-right{display:flex;align-items:center;gap:10px;}
@@ -100,12 +95,10 @@ body{background:var(--bg);color:var(--text);font-family:'Inter','Hind Siliguri',
 .hamburger:active{background:var(--card);}
 .hb-line{width:20px;height:2.5px;background:var(--text);border-radius:2px;}
 
-/* mode badge in header */
 .mode-badge{font-size:10px;font-weight:800;padding:3px 8px;border-radius:999px;letter-spacing:.05em;text-transform:uppercase;}
 .mode-badge.hisab{background:rgba(56,189,248,.15);color:var(--primary);border:1px solid rgba(56,189,248,.3);}
 .mode-badge.cash{background:rgba(16,185,129,.15);color:var(--green);border:1px solid rgba(16,185,129,.3);}
 
-/* ─── SYNC ─── */
 .sync-bar{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);z-index:400;pointer-events:none;}
 .sync-pill{display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:600;padding:10px 18px;border-radius:999px;background:var(--card);border:1px solid var(--border);box-shadow:0 4px 16px rgba(0,0,0,.25);opacity:0;transform:translateY(12px);transition:opacity .3s,transform .3s;pointer-events:none;white-space:nowrap;}
 .sync-pill.show{opacity:1;transform:translateY(0);}
@@ -116,7 +109,6 @@ body{background:var(--bg);color:var(--text);font-family:'Inter','Hind Siliguri',
 .sync-pill.saving .sync-dot{animation:blink .7s infinite;}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:.25}}
 
-/* ─── DRAWER ─── */
 .drawer-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);z-index:800;opacity:0;pointer-events:none;transition:opacity .3s;}
 .drawer-overlay.on{opacity:1;pointer-events:all;}
 .drawer{position:fixed;top:0;right:0;height:100%;width:min(310px,88vw);background:var(--surface);border-left:1px solid var(--border);z-index:801;transform:translateX(110%);transition:transform .3s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column;overflow:hidden;}
@@ -138,7 +130,6 @@ body{background:var(--bg);color:var(--text);font-family:'Inter','Hind Siliguri',
 .drw-icon{font-size:16px;width:22px;text-align:center;flex-shrink:0;}
 .drw-item.danger{color:var(--red);}
 
-/* switch mode button in drawer */
 .drw-item.switch-mode{background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);color:var(--yellow);border-radius:10px;margin:4px 6px;width:calc(100% - 12px);}
 .drw-item.switch-mode.to-hisab{background:rgba(56,189,248,.08);border-color:rgba(56,189,248,.2);color:var(--primary);}
 
@@ -148,7 +139,6 @@ body{background:var(--bg);color:var(--text);font-family:'Inter','Hind Siliguri',
 .theme-opt:active{transform:scale(.97);}
 .theme-opt.on{border-color:var(--primary);color:var(--primary);background:rgba(56,189,248,.08);}
 
-/* ─── MODALS ─── */
 .overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(6px);z-index:2000;display:none;align-items:center;justify-content:center;padding:16px;}
 .overlay.on{display:flex;}
 .modal{background:var(--surface);border:1px solid var(--border);border-radius:22px;padding:24px;width:100%;max-width:420px;max-height:90vh;overflow-y:auto;box-shadow:var(--shadow);}
@@ -164,10 +154,8 @@ body{background:var(--bg);color:var(--text);font-family:'Inter','Hind Siliguri',
 .alog-action{font-weight:700;color:var(--text);}
 .alog-meta{font-size:11px;color:var(--muted);margin-top:2px;}
 
-/* ─── MAIN ─── */
 .wrap{max-width:900px;margin:0 auto;padding:20px;padding-bottom:40px;}
 
-/* summary cards */
 .summary{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;}
 .sc{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:18px 16px;text-align:center;box-shadow:var(--shadow);transition:transform .15s;}
 .sc:active{transform:scale(.98);}
@@ -182,12 +170,10 @@ body{background:var(--bg);color:var(--text);font-family:'Inter','Hind Siliguri',
 .net-val{font-size:32px;font-weight:900;}
 .net-icon{font-size:34px;opacity:.6;}
 
-/* search */
 .search-wrap{margin-bottom:20px;position:relative;}
 .search-wrap input{padding-left:42px;background:var(--surface);border:1px solid var(--border);border-radius:12px;font-size:14px;}
 .si{position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:16px;pointer-events:none;}
 
-/* top lists */
 .top-s{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:16px;box-shadow:var(--shadow);}
 .top-sh{font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px;}
 .top-row{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--border);}
@@ -198,12 +184,10 @@ body{background:var(--bg);color:var(--text);font-family:'Inter','Hind Siliguri',
 .top-age.mid{color:var(--yellow);}.top-age.old{color:var(--red);}
 .top-amt{font-size:14px;font-weight:800;flex-shrink:0;}
 
-/* tabs */
 .tabs{display:flex;gap:7px;background:var(--bg2);padding:5px;border-radius:14px;margin-bottom:22px;border:1px solid var(--border);overflow-x:auto;-webkit-overflow-scrolling:touch;}
 .tab{flex:1;min-width:88px;padding:10px;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;color:var(--muted);background:transparent;white-space:nowrap;transition:background .2s,color .2s;-webkit-tap-highlight-color:transparent;}
 .tab.on{background:var(--surface);color:var(--primary);box-shadow:0 2px 8px rgba(0,0,0,.12);}
 
-/* form */
 .af{background:var(--surface);border-radius:20px;padding:20px;margin-bottom:22px;border:1px solid var(--border);box-shadow:var(--shadow);}
 .af-head{font-size:1rem;font-weight:800;margin-bottom:14px;}
 .af-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:10px;margin-bottom:12px;}
@@ -218,12 +202,10 @@ input:focus{border-color:var(--primary);}
 .sbtn-y{background:var(--cash-grad);}
 .sbtn:active{opacity:.85;transform:scale(.99);}
 
-/* section header */
 .sec-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
 .sec-lbl{font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;}
 .see-all{font-size:12px;font-weight:700;color:var(--primary);background:none;border:1px solid var(--primary);cursor:pointer;padding:4px 10px;border-radius:7px;display:none;}
 
-/* cards */
 .pcard{background:var(--surface);border:1px solid var(--border);border-radius:16px;margin-bottom:10px;overflow:hidden;}
 .pcard.settled{opacity:.45;}
 @keyframes fadeIn{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:translateY(0)}}
@@ -254,22 +236,16 @@ input:focus{border-color:var(--primary);}
 .btn-a{flex:1;height:42px;border-radius:9px;border:1px solid var(--border);background:var(--card);color:var(--text);font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;font-size:13px;min-width:42px;-webkit-tap-highlight-color:transparent;}
 .btn-a:active{opacity:.6;}
 
-/* empty state */
 .empty{text-align:center;padding:40px 20px;}
 .empty-i{font-size:48px;margin-bottom:10px;opacity:.6;}
 .empty-t{font-size:14px;font-weight:600;color:var(--muted);}
 .empty-s{font-size:12px;color:var(--muted);margin-top:4px;opacity:.7;}
 
-/* toast */
 .toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--card);padding:10px 18px;border-radius:999px;border:1px solid var(--border);transition:.35s;z-index:9999;font-weight:600;font-size:13px;white-space:nowrap;pointer-events:none;box-shadow:0 4px 16px rgba(0,0,0,.25);}
 .toast.on{transform:translateX(-50%) translateY(0);}
 
-/* ════════════════════════════════
-   CASH TRACKER
-════════════════════════════════ */
 #cash-app{display:none;}
 
-/* Cash balance card */
 .cash-hero{background:linear-gradient(135deg,#1a2e1a,#1e3320);border:1.5px solid rgba(16,185,129,.3);border-radius:24px;padding:32px 24px;margin-bottom:20px;text-align:center;position:relative;overflow:hidden;}
 [data-theme="light"] .cash-hero{background:linear-gradient(135deg,#ecfdf5,#d1fae5);}
 .cash-hero::before{content:'';position:absolute;top:-40px;right:-40px;width:160px;height:160px;background:radial-gradient(circle,rgba(16,185,129,.15),transparent 70%);border-radius:50%;}
@@ -280,14 +256,12 @@ input:focus{border-color:var(--primary);}
 [data-theme="light"] .cash-hero-amt{color:#059669;}
 [data-theme="light"] .cash-hero-sub{color:#10b981;}
 
-/* cash quick actions */
 .cash-actions{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:24px;}
 .cash-btn{padding:16px;border-radius:16px;border:none;font-size:15px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;-webkit-tap-highlight-color:transparent;transition:transform .1s,opacity .15s;}
 .cash-btn:active{transform:scale(.97);opacity:.85;}
 .cash-btn-add{background:linear-gradient(135deg,var(--green),#059669);color:#fff;}
 .cash-btn-sub{background:linear-gradient(135deg,var(--red),#dc2626);color:#fff;}
 
-/* cash form */
 .cash-form{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:20px;margin-bottom:20px;box-shadow:var(--shadow);}
 .cash-form.hidden{display:none;}
 .cash-form-title{font-size:14px;font-weight:800;margin-bottom:14px;display:flex;align-items:center;gap:8px;}
@@ -296,7 +270,6 @@ input:focus{border-color:var(--primary);}
 .cash-type-tab.add.on{border-color:var(--green);color:var(--green);background:var(--green-bg);}
 .cash-type-tab.sub.on{border-color:var(--red);color:var(--red);background:var(--red-bg);}
 
-/* cash history */
 .cash-history-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
 .cash-history-title{font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;}
 .cash-clear-btn{font-size:11px;font-weight:700;color:var(--red);background:none;border:1px solid rgba(239,68,68,.3);border-radius:6px;padding:3px 8px;cursor:pointer;}
@@ -314,7 +287,6 @@ input:focus{border-color:var(--primary);}
 .cash-del-btn{background:var(--card);border:1px solid var(--border);cursor:pointer;color:var(--muted);font-size:12px;padding:7px 9px;border-radius:8px;-webkit-tap-highlight-color:transparent;transition:all .15s;flex-shrink:0;}
 .cash-del-btn:active{background:rgba(239,68,68,.1);border-color:var(--red);color:var(--red);}
 
-/* budget bar */
 .budget-bar-wrap{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:14px 16px;margin-bottom:16px;}
 .budget-bar-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
 .budget-bar-lbl{font-size:12px;font-weight:700;color:var(--text2);}
@@ -324,12 +296,10 @@ input:focus{border-color:var(--primary);}
 .budget-bar-sub{font-size:11px;color:var(--muted);margin-top:6px;}
 .budget-set-btn{font-size:11px;font-weight:700;color:var(--primary);background:none;border:1px solid rgba(56,189,248,.3);border-radius:6px;padding:3px 8px;cursor:pointer;}
 
-/* category filter */
 .cat-filter{display:flex;gap:7px;margin-bottom:16px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:4px;}
 .cat-pill{font-size:12px;padding:6px 13px;border-radius:999px;background:var(--card);border:1px solid var(--border);cursor:pointer;font-weight:600;color:var(--text2);white-space:nowrap;-webkit-tap-highlight-color:transparent;transition:all .15s;flex-shrink:0;}
 .cat-pill.on{background:rgba(56,189,248,.1);border-color:var(--primary);color:var(--primary);}
 
-/* slide type selector for hisab */
 .type-slider{display:flex;background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:4px;margin-bottom:16px;position:relative;}
 .type-slider-track{position:absolute;top:4px;left:4px;width:calc(33.333% - 3px);height:calc(100% - 8px);border-radius:10px;background:var(--surface);box-shadow:0 2px 8px rgba(0,0,0,.15);transition:transform .22s cubic-bezier(.34,1.56,.64,1);}
 .type-slider-track.mid{transform:translateX(calc(100% + 2px));}
@@ -340,7 +310,6 @@ input:focus{border-color:var(--primary);}
 .type-slider-opt.active-a{color:var(--primary);}
 .type-slider-opt.inactive{color:var(--muted);}
 
-/* swipe on cards */
 .pcard{position:relative;overflow:hidden;}
 .pcard-inner{will-change:transform;transform:translateZ(0);}
 .swipe-action{position:absolute;top:0;bottom:0;width:90px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;opacity:0;pointer-events:none;flex-direction:column;gap:4px;transition:opacity .08s linear;}
@@ -349,18 +318,14 @@ input:focus{border-color:var(--primary);}
 .swipe-action-icon{font-size:22px;}
 .swipe-action-lbl{font-size:10px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;}
 
-/* settlement suggestion */
 .settle-suggest{background:linear-gradient(135deg,rgba(99,102,241,.08),rgba(56,189,248,.06));border:1px solid rgba(99,102,241,.2);border-radius:14px;padding:12px 14px;margin-bottom:16px;display:flex;align-items:center;gap:10px;}
 .settle-icon{font-size:20px;flex-shrink:0;}
 .settle-text{font-size:13px;font-weight:600;flex:1;color:var(--text2);}
 .settle-amt{font-size:14px;font-weight:800;color:var(--primary);flex-shrink:0;}
 
-/* sc tap */
 .sc{cursor:pointer;}
 .sc:active{transform:scale(.97);}
 
-
-/* cash stats row */
 .cash-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px;}
 .cash-stat{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px 10px;text-align:center;}
 .cash-stat-lbl{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px;}
@@ -369,7 +334,6 @@ input:focus{border-color:var(--primary);}
 </head>
 <body>
 
-<!-- ══ AUTH ══ -->
 <div class="fs" id="auth-screen">
   <div class="auth-wrap">
     <div class="auth-brand">
@@ -410,7 +374,6 @@ input:focus{border-color:var(--primary);}
   </div>
 </div>
 
-<!-- ══ PIN ══ -->
 <div class="fs" id="pin-screen" style="display:none">
   <div class="pin-box">
     <div class="pin-logo">🔒</div>
@@ -441,7 +404,6 @@ input:focus{border-color:var(--primary);}
   </div>
 </div>
 
-<!-- ══ HISAB APP ══ -->
 <div id="app" style="display:none">
 
 <header class="hdr">
@@ -462,7 +424,6 @@ input:focus{border-color:var(--primary);}
   </div>
 </header>
 
-<!-- SYNC BAR -->
 <div class="sync-bar">
   <div class="sync-pill" id="sync-pill">
     <div class="sync-dot"></div>
@@ -470,7 +431,6 @@ input:focus{border-color:var(--primary);}
   </div>
 </div>
 
-<!-- DRAWER -->
 <div class="drawer-overlay" id="drw-overlay" onclick="closeDrawer()"></div>
 <div class="drawer" id="drw">
   <div class="drw-user-card">
@@ -488,7 +448,6 @@ input:focus{border-color:var(--primary);}
     </div>
   </div>
   <div class="drawer-body">
-    <!-- Switch mode -->
     <div class="drw-sec">অ্যাপ মোড / Switch Mode</div>
     <button class="drw-item switch-mode" id="switch-mode-btn" onclick="switchMode()">
       <span class="drw-icon" id="switch-mode-icon">💵</span>
@@ -549,7 +508,6 @@ input:focus{border-color:var(--primary);}
 
 <input type="file" id="importFile" style="display:none" accept=".json" onchange="handleImport(event)">
 
-<!-- ══ HISAB CONTENT ══ -->
 <div id="hisab-content">
 <div class="wrap">
   <div class="summary">
@@ -580,7 +538,6 @@ input:focus{border-color:var(--primary);}
 
   <div id="top-lists" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;margin-bottom:22px;"></div>
 
-  <!-- Slide type selector with All -->
   <div class="type-slider" id="type-slider">
     <div class="type-slider-track" id="slider-track"></div>
     <button class="type-slider-opt active-r" id="slider-r" onclick="sliderSwitch('r')">
@@ -639,20 +596,17 @@ input:focus{border-color:var(--primary);}
 
   <div id="sec-a" style="display:none"><div id="lst-a"></div></div>
 </div>
-</div><!-- /#hisab-content -->
+</div>
 
-<!-- ══ CASH TRACKER CONTENT ══ -->
 <div id="cash-content" style="display:none">
 <div class="wrap">
 
-  <!-- Balance hero -->
   <div class="cash-hero">
     <div class="cash-hero-lbl"><span class="bn">💵 নগদ ব্যালেন্স</span><span class="en">💵 Cash Balance</span></div>
     <div class="cash-hero-amt" id="cash-balance">৳০</div>
     <div class="cash-hero-sub" id="cash-hero-sub"><span class="bn">সর্বশেষ লেনদেন নেই</span><span class="en">No transactions yet</span></div>
   </div>
 
-  <!-- Budget bar -->
   <div class="budget-bar-wrap" id="budget-wrap" style="display:none">
     <div class="budget-bar-top">
       <span class="budget-bar-lbl"><span class="bn">মাসিক বাজেট</span><span class="en">Monthly Budget</span></span>
@@ -665,7 +619,6 @@ input:focus{border-color:var(--primary);}
     <div class="budget-bar-sub" id="budget-sub"></div>
   </div>
 
-  <!-- Stats row -->
   <div class="cash-stats">
     <div class="cash-stat">
       <div class="cash-stat-lbl"><span class="bn">মোট আয়</span><span class="en">Total In</span></div>
@@ -681,7 +634,6 @@ input:focus{border-color:var(--primary);}
     </div>
   </div>
 
-  <!-- Quick action buttons -->
   <div class="cash-actions">
     <button class="cash-btn cash-btn-add" onclick="openCashForm('add')">
       ➕ <span class="bn">টাকা যোগ</span><span class="en">Add Money</span>
@@ -691,14 +643,12 @@ input:focus{border-color:var(--primary);}
     </button>
   </div>
 
-  <!-- Set budget button if not set -->
   <div id="budget-cta" style="text-align:center;margin-bottom:16px;">
     <button onclick="setBudget()" style="font-size:12px;font-weight:700;color:var(--primary);background:none;border:1px solid rgba(56,189,248,.25);border-radius:8px;padding:6px 14px;cursor:pointer;">
       📊 <span class="bn">মাসিক বাজেট সেট করুন</span><span class="en">Set Monthly Budget</span>
     </button>
   </div>
 
-  <!-- Cash form -->
   <div class="cash-form hidden" id="cash-form">
     <div class="cash-form-title">
       <span id="cash-form-icon">➕</span>
@@ -715,14 +665,12 @@ input:focus{border-color:var(--primary);}
     </div>
   </div>
 
-  <!-- Category filter -->
   <div class="cat-filter" id="cash-cat-filter">
     <span class="cat-pill on" onclick="filterCash('all',this)"><span class="bn">সব</span><span class="en">All</span></span>
     <span class="cat-pill" onclick="filterCash('add',this)">⬆️ <span class="bn">আয়</span><span class="en">Income</span></span>
     <span class="cat-pill" onclick="filterCash('sub',this)">⬇️ <span class="bn">খরচ</span><span class="en">Expense</span></span>
   </div>
 
-  <!-- History -->
   <div class="cash-history-header">
     <span class="cash-history-title"><span class="bn">📜 ইতিহাস</span><span class="en">📜 History</span></span>
     <button class="cash-clear-btn" onclick="clearCashHistory()"><span class="bn">সব মুছুন</span><span class="en">Clear All</span></button>
@@ -730,11 +678,10 @@ input:focus{border-color:var(--primary);}
   <div id="cash-history-list"></div>
 
 </div>
-</div><!-- /#cash-content -->
+</div>
 
-</div><!-- /#app -->
+</div>
 
-<!-- MODALS -->
 <div class="overlay" id="m-pay"><div class="modal">
   <div class="modal-title">💸 <span class="bn">পরিশোধ</span><span class="en">Payment</span></div>
   <div class="modal-sub" id="m-pay-s"></div>
@@ -812,15 +759,13 @@ let CASH_FILTER='all';
 let cashFormMode='add';
 let pTr=0,pTg=0,pNet=0,pinBuf='',pinMode='unlock',pinTmp='';
 let syncTimer=null;
-let APP_MODE=localStorage.getItem('ht_mode')||'hisab'; // 'hisab' or 'cash'
-// ── SLIDER SWITCH (hisab) ──
+let APP_MODE=localStorage.getItem('ht_mode')||'hisab'; 
 function sliderSwitch(type){
   TAB=type;
   const track=document.getElementById('slider-track');
   const btnR=document.getElementById('slider-r');
   const btnG=document.getElementById('slider-g');
   const btnA=document.getElementById('slider-a');
-  // track position
   track.className='type-slider-track'+(type==='g'?' mid':type==='a'?' right':'');
   btnR.className='type-slider-opt '+(type==='r'?'active-r':'inactive');
   btnG.className='type-slider-opt '+(type==='g'?'active-g':'inactive');
@@ -841,7 +786,6 @@ function renderAll(){
   all.filter(p=>p.remaining>0).forEach(p=>{const el=document.getElementById('card-'+p.id);if(el)initSwipe(el,p._type,p.id);});
 }
 
-// ── SWIPE GESTURE on pcard ──
 function initSwipe(el,type,id){
   let sx=0,sy=0,dx=0,dragging=false,moved=false,locked=false;
   const inner=el.querySelector('.pcard-inner');
@@ -866,7 +810,6 @@ function initSwipe(el,type,id){
     }
   }
   function snap(dir){
-    // bounce out then snap back
     const out=dir*90;
     setPos(out,true);
     leftHint.style.opacity=0;
@@ -900,7 +843,6 @@ function initSwipe(el,type,id){
       if(Math.abs(dx)>5) moved=true; else return;
     }
     e.preventDefault();
-    // resistance at edges
     const raw=dx;
     const clamped=raw>0
       ?Math.min(110, raw*(raw<THRESHOLD?1:0.4))
@@ -922,7 +864,6 @@ function initSwipe(el,type,id){
       snap(-1);
       setTimeout(()=>{locked=false;},500);
     } else {
-      // snap back with spring
       inner.style.transition='transform .3s cubic-bezier(.34,1.56,.64,1)';
       inner.style.transform='';
       setHint(0);
@@ -931,7 +872,6 @@ function initSwipe(el,type,id){
   });
 }
 
-// ── BUDGET ──
 function setBudget(){
   const cur=CASH_DB.budget||'';
   const val=prompt(LANG==='bn'?'মাসিক বাজেট দিন (৳):':'Set monthly budget (৳):',cur);
@@ -944,7 +884,6 @@ function setBudget(){
   toast('✅ '+(LANG==='bn'?'বাজেট সেট হয়েছে':'Budget set!'));
 }
 
-// ── CASH FILTER ──
 function filterCash(type,el){
   CASH_FILTER=type;
   document.querySelectorAll('.cat-pill').forEach(p=>p.classList.remove('on'));
@@ -952,14 +891,12 @@ function filterCash(type,el){
   renderCash();
 }
 
-// ── SETTLEMENT SUGGESTION ──
 function renderSettlement(){
   const box=document.getElementById('settle-box');
   if(!box)return;
   const totalR=DB.receive.reduce((s,p)=>s+p.remaining,0);
   const totalG=DB.give.reduce((s,p)=>s+p.remaining,0);
   if(totalR===0&&totalG===0){box.style.display='none';return;}
-  // find best settlement
   const topR=[...DB.receive].filter(p=>p.remaining>0).sort((a,b)=>b.remaining-a.remaining)[0];
   const topG=[...DB.give].filter(p=>p.remaining>0).sort((a,b)=>b.remaining-a.remaining)[0];
   if(!topR&&!topG){box.style.display='none';return;}
@@ -975,15 +912,11 @@ function renderSettlement(){
   box.style.display='block';
 }
 
-
-// init
 document.documentElement.setAttribute('data-lang',LANG);
 applyThemeSilent(THEME);
 
-// PWA
 if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
 
-// ── EYE TOGGLE ──
 function toggleEye(inputId,btn){
   const inp=document.getElementById(inputId);
   const show=inp.type==='password';
@@ -991,7 +924,6 @@ function toggleEye(inputId,btn){
   btn.textContent=show?'🙈':'👁️';
 }
 
-// ── THEME ──
 function applyThemeSilent(t){
   THEME=t;
   document.documentElement.setAttribute('data-theme',t);
@@ -1009,7 +941,6 @@ function syncThemeBtns(){
   lt.className='theme-opt'+(THEME==='light'?' on':'');
 }
 
-// ── MODE SWITCH ──
 function switchMode(){
   closeDrawer();
   APP_MODE=APP_MODE==='hisab'?'cash':'hisab';
@@ -1020,7 +951,6 @@ function applyMode(){
   const isHisab=APP_MODE==='hisab';
   document.getElementById('hisab-content').style.display=isHisab?'block':'none';
   document.getElementById('cash-content').style.display=isHisab?'none':'block';
-  // header
   const logoText=document.getElementById('hdr-logo-text');
   const badge=document.getElementById('mode-badge');
   const switchBtn=document.getElementById('switch-mode-btn');
@@ -1046,7 +976,6 @@ function applyMode(){
   }
 }
 
-// ── DRAWER ──
 function openDrawer(){
   syncThemeBtns();
   document.getElementById('drw').classList.add('on');
@@ -1059,7 +988,6 @@ function closeDrawer(){
   document.body.style.overflow='';
 }
 
-// ── SYNC ──
 function setSyncState(state,txt){
   const p=document.getElementById('sync-pill');
   const t=document.getElementById('sync-txt');
@@ -1072,7 +1000,6 @@ function setSyncState(state,txt){
   }
 }
 
-// ── ACTIVITY LOG ──
 function logActivity(action,detail=''){
   if(!DB.activityLog)DB.activityLog=[];
   DB.activityLog.unshift({ts:Date.now(),action,detail});
@@ -1087,7 +1014,6 @@ function openActivityLog(){
   document.getElementById('m-log').classList.add('on');
 }
 
-// ── AUTH ──
 let authMode='login';
 function switchAuthTab(mode,el){
   authMode=mode;
@@ -1161,7 +1087,6 @@ sb.auth.onAuthStateChange(async(event,session)=>{
   }
 });
 
-// ── PROFILE ──
 function openProfile(){
   closeDrawer();
   document.getElementById('m-profile-email').textContent=CUR_USER?.email||'';
@@ -1185,7 +1110,6 @@ async function changePassword(){
   setTimeout(()=>cm('m-profile'),1500);
 }
 
-// ── PIN ──
 function ph(p){let h=5381;for(let i=0;i<p.length;i++)h=(h*33)^p.charCodeAt(i);return(h>>>0).toString(36);}
 function pk(){return'ht_pin_'+CUR_USER.id;}
 function tk(){return'ht_tr_'+CUR_USER.id;}
@@ -1195,7 +1119,6 @@ function setTrusted(){localStorage.setItem(tk(),'1');}
 
 async function checkPin(){
   if(isTrusted()){showApp();return;}
-  // PIN screen দেখানোর আগে cloud থেকে pinHash load করি
   try{
     const{data}=await sb.from('hisab_users').select('data').eq('id',CUR_USER.id).maybeSingle();
     if(data&&data.data&&data.data.pinHash){
@@ -1284,7 +1207,6 @@ function handlePin(){
   }
 }
 
-// ── DATA ──
 async function showApp(){
   document.getElementById('app').style.display='block';
   setSyncState('saving','Loading...');
@@ -1302,7 +1224,6 @@ async function loadData(){
     if(!DB.receive)DB.receive=[];
     if(!DB.give)DB.give=[];
     if(!DB.activityLog)DB.activityLog=[];
-    // PIN cloud থেকে localStorage এ sync
     if(DB.pinHash) localStorage.setItem(pk(),DB.pinHash);
   }else if(!error){
     await sb.from('hisab_users').insert({id:CUR_USER.id,data:DB});
@@ -1319,7 +1240,6 @@ async function saveData(){
   }
 }
 
-// ── CASH DATA (local only) ──
 function cashKey(){return'ht_cash_'+(CUR_USER?CUR_USER.id:'guest');}
 function loadCashData(){
   const raw=localStorage.getItem(cashKey());
@@ -1334,15 +1254,12 @@ async function loadCashDataCloud(){
       if(!CASH_DB.history)CASH_DB.history=[];
       localStorage.setItem(cashKey(),JSON.stringify(CASH_DB));
     } else if(!error){
-      // first time — check localStorage backup
       const raw=localStorage.getItem(cashKey());
       if(raw)try{CASH_DB=JSON.parse(raw);}catch(e){}
       if(!CASH_DB.history)CASH_DB.history=[];
-      // save to cloud
       await sb.from('hisab_cash').insert({id:CUR_USER.id,data:CASH_DB});
     }
   }catch(e){
-    // fallback to localStorage
     const raw=localStorage.getItem(cashKey());
     if(raw)try{CASH_DB=JSON.parse(raw);}catch(e2){}
     if(!CASH_DB.history)CASH_DB.history=[];
@@ -1350,7 +1267,6 @@ async function loadCashDataCloud(){
 }
 function saveCashData(){
   localStorage.setItem(cashKey(),JSON.stringify(CASH_DB));
-  // cloud sync async
   if(CUR_USER){
     sb.from('hisab_cash').upsert({id:CUR_USER.id,data:CASH_DB,updated_at:new Date().toISOString()}).then(({error})=>{
       if(!error)setSyncState('saved','Saved ✓');
@@ -1359,7 +1275,6 @@ function saveCashData(){
   }
 }
 
-// ── CASH TRACKER FUNCTIONS ──
 function openCashForm(mode){
   cashFormMode=mode;
   const form=document.getElementById('cash-form');
@@ -1420,7 +1335,6 @@ function deleteCashEntry(id){
   const entry=CASH_DB.history.find(h=>h.id===id);
   if(!entry)return;
   if(!confirm('এই লেনদেন মুছবেন?'))return;
-  // reverse balance
   if(entry.type==='add') CASH_DB.balance-=entry.amt;
   else CASH_DB.balance+=entry.amt;
   CASH_DB.balance=Math.max(0,CASH_DB.balance);
@@ -1439,15 +1353,12 @@ function clearCashHistory(){
 function renderCash(){
   const bal=CASH_DB.balance||0;
   const hist=CASH_DB.history||[];
-  // balance
   document.getElementById('cash-balance').textContent='৳'+fmt(bal);
-  // stats
   const totalIn=hist.filter(h=>h.type==='add').reduce((s,h)=>s+h.amt,0);
   const totalOut=hist.filter(h=>h.type==='sub').reduce((s,h)=>s+h.amt,0);
   document.getElementById('cash-total-in').textContent='৳'+fmt(totalIn);
   document.getElementById('cash-total-out').textContent='৳'+fmt(totalOut);
   document.getElementById('cash-txn-count').textContent=hist.length;
-  // last txn
   const sub=document.getElementById('cash-hero-sub');
   if(hist.length>0){
     const last=hist[0];
@@ -1457,7 +1368,6 @@ function renderCash(){
   } else {
     sub.innerHTML='<span class="bn">কোনো লেনদেন নেই</span><span class="en" style="display:none">No transactions yet</span>';
   }
-  // budget bar
   const budget=CASH_DB.budget||0;
   const budgetWrap=document.getElementById('budget-wrap');
   const budgetCta=document.getElementById('budget-cta');
@@ -1478,9 +1388,7 @@ function renderCash(){
     budgetWrap.style.display='none';
     budgetCta.style.display='block';
   }
-  // filter history
   const filtered=CASH_FILTER==='all'?hist:hist.filter(h=>h.type===CASH_FILTER);
-  // history list
   const list=document.getElementById('cash-history-list');
   if(filtered.length===0){
     list.innerHTML=`<div class="empty"><div class="empty-i">💵</div><div class="empty-t"><span class="bn">${CASH_FILTER==='all'?'কোনো লেনদেন নেই':'কোনো রেকর্ড নেই'}</span><span class="en">${CASH_FILTER==='all'?'No transactions yet':'No records found'}</span></div><div class="empty-s"><span class="bn">উপরের বাটন দিয়ে শুরু করুন</span><span class="en">Use the buttons above to get started</span></div></div>`;
@@ -1499,7 +1407,6 @@ function renderCash(){
   `).join('');
 }
 
-// ── FORMAT ──
 function fmt(n){return Number(n).toLocaleString('en-IN');}
 function fmtD(v){
   let d=typeof v==='number'||(typeof v==='string'&&/^\d{10,}$/.test(v))?new Date(Number(v)):new Date(v);
@@ -1507,19 +1414,16 @@ function fmtD(v){
   return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
 }
 
-// ── AGING ──
 function firstTs(p){const a=p.history.filter(h=>h.t==='add');return a.length?Math.min(...a.map(h=>Number(h.id)||Number(p.id))):p.id;}
 function ageDays(p){return Math.floor((Date.now()-firstTs(p))/86400000);}
 function ageBadge(d){const l=LANG==='bn'?`${d} দিন`:`${d}d`;return d<=7?{cls:'',l}:d<=30?{cls:'mid',l}:{cls:'old',l:l+' ⚠️'};}
 
-// ── COUNT-UP ──
 function countUp(el,target,pre=''){
   const dur=450,s=performance.now();
   const up=n=>{const p=Math.min((n-s)/dur,1),e=1-Math.pow(1-p,3);el.textContent=pre+fmt(Math.round(target*e));if(p<1)requestAnimationFrame(up);else el.textContent=pre+fmt(target);};
   requestAnimationFrame(up);
 }
 
-// ── UI ──
 function toast(msg){
   const t=document.getElementById('toast');
   const p=document.getElementById('sync-pill');
@@ -1543,7 +1447,6 @@ function switchTab(t,ev){
 function setQ(v,id){document.getElementById(id).value=v;}
 function toggleSA(k){SA[k]=!SA[k];render();}
 
-// ── ENTRIES ──
 function addEntry(type){
   const p=type==='receive'?'r':'g';
   const name=document.getElementById(p+'-n').value.trim();
@@ -1620,7 +1523,6 @@ function deleteEntry(type,id){
   }
 }
 
-// ── WHATSAPP ──
 function copyWA(type,id){
   const p=DB[type].find(x=>x.id===id);
   const d=ageDays(p);
@@ -1633,7 +1535,6 @@ function copyWA(type,id){
   navigator.clipboard?navigator.clipboard.writeText(t).then(()=>toast('📋 Copied!')).catch(cp):cp();
 }
 
-// ── RENDER CARD ──
 function renderCard(p,type){
   const settled=p.remaining<=0;
   if(settled&&TAB!=='a')return'';
@@ -1680,7 +1581,6 @@ function renderCard(p,type){
 }
 function emptyS(bn,en,ic){return`<div class="empty"><div class="empty-i">${ic}</div><div class="empty-t"><span class="bn">${bn}</span><span class="en">${en}</span></div></div>`;}
 
-// ── TOP LISTS ──
 function renderTop(){
   const q=document.getElementById('srch').value.toLowerCase().trim();
   const mk=(list,col,bnt,ent)=>{
@@ -1692,7 +1592,6 @@ function renderTop(){
   document.getElementById('top-lists').innerHTML=mk(tR,'var(--green)','🏆 সর্বোচ্চ পাওনাদার','🏆 Top Receivables')+mk(tG,'var(--red)','🏆 সর্বোচ্চ দেনাদার','🏆 Top Payables');
 }
 
-// ── MAIN RENDER ──
 function render(){
   const q=document.getElementById('srch').value.toLowerCase().trim();
   const tr=DB.receive.reduce((s,p)=>s+p.remaining,0);
@@ -1735,7 +1634,6 @@ function render(){
   if(TAB==='a') renderAll();
 }
 
-// ── BACKUP ──
 function exportData(){const b=new Blob([JSON.stringify(DB)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='hisab_backup.json';a.click();}
 function triggerImport(){document.getElementById('importFile').click();}
 function handleImport(e){
