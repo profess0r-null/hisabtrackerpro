@@ -1650,37 +1650,19 @@ function deleteEntry(type,id){
 function copyWA(type,id){
   const p=DB[type].find(x=>x.id===id);
   const d=ageDays(p);
-  const bn=LANG==='bn';
-  const lbl=type==='receive'?(bn?'তুমি আমাকে দেবে':'You owe me'):(bn?'আমি তোমাকে দেবো':'I owe you');
   const recent=p.history.slice(0,5);
-  let t='';
-  if(bn){
-    t+=`🧾 হিসাব | ${p.name}\n\n`;
-    t+=`💵 ${lbl}: ৳${fmt(p.remaining)}\n`;
-    t+=`📅 বকেয়া: ${d} দিন\n`;
-    if(recent.length){
-      t+=`\nHistory:\n`;
-      recent.forEach(h=>{
-        const sign=h.t==='add'?'+':'-';
-        t+=`${fmtD(h.date)} — ${h.note}: ${sign}৳${fmt(h.amt)}\n`;
-      });
-    }
-    if(p.history.length>5) t+=`আরো ${p.history.length-5}টি\n`;
-    t+=`\n— Hisab Tracker PRO`;
-  } else {
-    t+=`🧾 Hisab | ${p.name}\n\n`;
-    t+=`💵 ${lbl}: ৳${fmt(p.remaining)}\n`;
-    t+=`📅 Pending: ${d} day${d!==1?'s':''}\n`;
-    if(recent.length){
-      t+=`\nHistory:\n`;
-      recent.forEach(h=>{
-        const sign=h.t==='add'?'+':'-';
-        t+=`${fmtD(h.date)} — ${h.note}: ${sign}৳${fmt(h.amt)}\n`;
-      });
-    }
-    if(p.history.length>5) t+=`+${p.history.length-5} more\n`;
-    t+=`\n— Hisab Tracker PRO`;
+  let t=`🧾 হিসাব | ${p.name}\n\n`;
+  t+=`💵 পাওয়া: ৳${fmt(p.remaining)}\n`;
+  t+=`📅 বকেয়া: ${d} দিন\n`;
+  if(recent.length){
+    t+=`\nHistory:\n`;
+    recent.forEach(h=>{
+      const sign=h.t==='add'?'+':'-';
+      t+=`${fmtD(h.date)} — ${h.note}: ${sign}৳${fmt(h.amt)}\n`;
+    });
   }
+  if(p.history.length>5) t+=`আরো ${p.history.length-5}টি\n`;
+  t+=`\n— Hisab Tracker PRO`;
   const cp=()=>{const ta=document.createElement('textarea');ta.value=t;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);toast('📋 Copied!');};
   navigator.clipboard?navigator.clipboard.writeText(t).then(()=>toast('📋 Copied!')).catch(cp):cp();
 }
