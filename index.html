@@ -1560,7 +1560,8 @@ function addEntry(type){
     const wasSettled=person.remaining===0;
     if(wasSettled){
       person.original=amt;person.remaining=amt;
-      person.clearedAt=ts;person.history=[hist];
+      person.clearedAt=ts;
+      person.history.unshift(hist);
     } else {
       person.original+=amt;person.remaining+=amt;person.history.unshift(hist);
     }
@@ -1602,17 +1603,18 @@ function confirmAddMore(){
   if(isNaN(amt)||amt<=0)return;
   const p=DB[CTX.type].find(x=>x.id===CTX.id);
   const wasSettled=p.remaining===0;
+  const ts=Date.now();
+  const hist={id:ts,date:ts,amt,note,t:'add'};
   if(wasSettled){
     p.original=amt;
     p.remaining=amt;
-    p.clearedAt=Date.now();
-    p.history=[];
+    p.clearedAt=ts;
+    p.history=[hist];
   } else {
     p.original+=amt;
     p.remaining+=amt;
+    p.history.unshift(hist);
   }
-  const ts=Date.now();p.history.unshift({id:ts,date:ts,amt,note,t:'add'});
-  if(wasSettled) p.clearedAt=ts;
   logActivity('পরিমাণ যোগ',`${p.name} — ৳${fmt(amt)}`);
   cm('m-add');saveData();render();toast(LANG==='bn'?'➕ যোগ হয়েছে!':'➕ Added!');
 }
@@ -1689,8 +1691,6 @@ function renderCard(p,type){
         <div class="ps-i"><div class="ps-l bn">শোধ</div><div class="ps-l en">Paid</div><div class="ps-v" style="color:var(--green)">৳${fmt(p.original-p.remaining)}</div></div>
         <div class="ps-i"><div class="ps-l bn">লেনদেন</div><div class="ps-l en">Txns</div><div class="ps-v">${p.history.length}</div></div>
       </div>
-      <div class="hh">HISTORY</div>
-      ${p.history.map(h=>`<div class="hi ${h.t==='add'?'ar':'pr'}"><span>${fmtD(h.date)} — ${h.note}</span><b style="color:var(--${h.t==='add'?'green':'red'})">${h.t==='add'?'+':'-'} ৳${fmt(h.amt)}</b></div>`).join('')}
       <div class="arow">
         <button class="btn-a" onclick="openPay('${type}',${p.id})">💸 <span class="bn">শোধ</span><span class="en">Pay</span></button>
         <button class="btn-a" onclick="openAddMore('${type}',${p.id})">➕ <span class="bn">যোগ</span><span class="en">Add</span></button>
@@ -1698,6 +1698,9 @@ function renderCard(p,type){
         <button class="btn-a" onclick="copyWA('${type}',${p.id})">📋</button>
         <button class="btn-a" style="color:var(--red);border-color:var(--red);flex:0.5" onclick="deleteEntry('${type}',${p.id})">🗑️</button>
       </div>
+      <div class="hh" style="margin-top:14px;">HISTORY</div>
+      ${p.history.slice(0,5).map(h=>`<div class="hi ${h.t==='add'?'ar':'pr'}"><span>${fmtD(h.date)} — ${h.note}</span><b style="color:var(--${h.t==='add'?'green':'red'})">${h.t==='add'?'+':'-'} ৳${fmt(h.amt)}</b></div>`).join('')}
+      ${p.history.length>5?`<div style="font-size:11px;color:var(--muted);text-align:center;margin-top:6px;">+${p.history.length-5} more</div>`:''}
     </div>
     </div>
   </div>`;
@@ -1740,18 +1743,18 @@ function render(){
   else{ns.textContent=LANG==='bn'?'= সমান':'= Balanced';ni.textContent='⚖️';}
   renderTop();
   const fl=list=>q?list.filter(p=>p.name.toLowerCase().includes(q)):list;
-  const sR=fl([...DB.receive]).sort((a,b)=>b.remaining-a.remaining);
+  const sR=fl([...DB.receive].filter(p=>p.remaining>0)).sort((a,b)=>b.remaining-a.remaining);
   const shR=SA.r?sR:sR.slice(0,3);
   document.getElementById('lst-r').innerHTML=shR.map(p=>renderCard(p,'receive')).filter(Boolean).join('')||emptyS('কোনো পাওনা নেই','No receivables','📭');
-  shR.filter(p=>p.remaining>0).forEach(p=>{const el=document.getElementById('card-'+p.id);if(el)initSwipe(el,'receive',p.id);});
+  shR.forEach(p=>{const el=document.getElementById('card-'+p.id);if(el)initSwipe(el,'receive',p.id);});
   const bR=document.getElementById('sa-r');
   bR.style.display=sR.length>3?'inline-flex':'none';
   bR.querySelector('.bn').textContent=SA.r?'কম দেখুন':`সব দেখুন (${sR.length})`;
   bR.querySelector('.en').textContent=SA.r?'Show Less':`See All (${sR.length})`;
-  const sG=fl([...DB.give]).sort((a,b)=>b.remaining-a.remaining);
+  const sG=fl([...DB.give].filter(p=>p.remaining>0)).sort((a,b)=>b.remaining-a.remaining);
   const shG=SA.g?sG:sG.slice(0,3);
   document.getElementById('lst-g').innerHTML=shG.map(p=>renderCard(p,'give')).filter(Boolean).join('')||emptyS('কোনো দেনা নেই','No payables','🎉');
-  shG.filter(p=>p.remaining>0).forEach(p=>{const el=document.getElementById('card-'+p.id);if(el)initSwipe(el,'give',p.id);});
+  shG.forEach(p=>{const el=document.getElementById('card-'+p.id);if(el)initSwipe(el,'give',p.id);});
   const bG=document.getElementById('sa-g');
   bG.style.display=sG.length>3?'inline-flex':'none';
   bG.querySelector('.bn').textContent=SA.g?'কম দেখুন':`সব দেখুন (${sG.length})`;
