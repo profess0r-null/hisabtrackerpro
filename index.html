@@ -41,6 +41,12 @@ body{background:var(--bg);color:var(--text);font-family:'Inter','Hind Siliguri',
 /* ─── FULLSCREEN ─── */
 .fs{position:fixed;inset:0;z-index:9000;display:flex;align-items:center;justify-content:center;padding:20px;background:var(--bg);overflow-y:auto;}
 
+/* ─── VERIFIED BANNER ─── */
+.verified-banner{background:linear-gradient(135deg,rgba(16,185,129,.15),rgba(16,185,129,.08));border:1.5px solid rgba(16,185,129,.4);border-radius:16px;padding:18px 20px;margin-bottom:20px;text-align:center;}
+.verified-icon{font-size:2.4rem;margin-bottom:8px;}
+.verified-title{font-size:1.05rem;font-weight:900;color:#10b981;margin-bottom:4px;}
+.verified-sub{font-size:13px;color:var(--text2);}
+
 /* ─── AUTH ─── */
 .auth-wrap{width:100%;max-width:400px;margin:auto;}
 .auth-brand{text-align:center;margin-bottom:32px;}
@@ -373,6 +379,11 @@ input:focus{border-color:var(--primary);}
 <!-- ══ AUTH ══ -->
 <div class="fs" id="auth-screen">
   <div class="auth-wrap">
+    <div id="verified-banner" class="verified-banner" style="display:none">
+      <div class="verified-icon">✅</div>
+      <div class="verified-title">Email Verified!</div>
+      <div class="verified-sub">আপনার email verify হয়েছে। এখন login করুন।</div>
+    </div>
     <div class="auth-brand">
       <div class="auth-brand-logo">📒</div>
       <div class="auth-brand-name">হিসাব ট্র্যাকার</div>
@@ -981,6 +992,16 @@ function renderSettlement(){
 document.documentElement.setAttribute('data-lang',LANG);
 applyThemeSilent(THEME);
 
+(function checkVerifyHash(){
+  const hash=window.location.hash;
+  const params=new URLSearchParams(window.location.search);
+  const type=params.get('type')||new URLSearchParams(hash.replace('#','?')).get('type');
+  if(type==='signup'||type==='email_change'||hash.includes('access_token')){
+    sessionStorage.setItem('ht_verify_flow','1');
+    window.history.replaceState(null,'',window.location.pathname);
+  }
+})();
+
 // PWA
 if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
 
@@ -1151,6 +1172,18 @@ async function signOut(){
 }
 
 sb.auth.onAuthStateChange(async(event,session)=>{
+  if(event==='USER_UPDATED'||event==='SIGNED_IN'){
+    if(session&&session.user&&session.user.email_confirmed_at){
+      const wasVerifyFlow=sessionStorage.getItem('ht_verify_flow');
+      if(wasVerifyFlow){
+        sessionStorage.removeItem('ht_verify_flow');
+        document.getElementById('verified-banner').style.display='block';
+        document.getElementById('auth-screen').style.display='flex';
+        await sb.auth.signOut();
+        return;
+      }
+    }
+  }
   if(session&&session.user){
     CUR_USER=session.user;
     document.getElementById('auth-screen').style.display='none';
