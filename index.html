@@ -42,10 +42,10 @@ body{background:var(--bg);color:var(--text);font-family:'Inter','Hind Siliguri',
 .fs{position:fixed;inset:0;z-index:9000;display:flex;align-items:center;justify-content:center;padding:20px;background:var(--bg);overflow-y:auto;}
 
 /* ─── VERIFIED BANNER ─── */
-.verified-banner{background:linear-gradient(135deg,rgba(16,185,129,.15),rgba(16,185,129,.08));border:1.5px solid rgba(16,185,129,.4);border-radius:16px;padding:18px 20px;margin-bottom:20px;text-align:center;}
-.verified-icon{font-size:2.4rem;margin-bottom:8px;}
-.verified-title{font-size:1.05rem;font-weight:900;color:#10b981;margin-bottom:4px;}
-.verified-sub{font-size:13px;color:var(--text2);}
+.verified-banner{background:#f0fdf4;border:1.5px solid #86efac;border-radius:16px;padding:22px 20px;margin-bottom:24px;text-align:center;}
+.verified-icon{font-size:2.6rem;margin-bottom:8px;}
+.verified-title{font-size:1.1rem;font-weight:900;color:#16a34a;margin-bottom:4px;}
+.verified-sub{font-size:13px;color:#15803d;}
 
 /* ─── AUTH ─── */
 .auth-wrap{width:100%;max-width:400px;margin:auto;}
@@ -811,6 +811,16 @@ input:focus{border-color:var(--primary);}
 <div class="toast" id="toast"></div>
 
 <script>
+(function(){
+  const h=window.location.hash;
+  const p=new URLSearchParams(window.location.search);
+  const t=p.get('type')||new URLSearchParams(h.replace('#','?')).get('type');
+  if(t==='signup'||t==='email_change'||h.includes('access_token')){
+    sessionStorage.setItem('ht_verify_flow','1');
+    window.history.replaceState(null,'',window.location.pathname);
+  }
+})();
+
 const SB_URL='https://hmqckyecenigcjikfjob.supabase.co';
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhtcWNreWVjZW5pZ2NqaWtmam9iIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY5MzUzMDMsImV4cCI6MjA5MjUxMTMwM30.1pyoIp6-GegOVERyroNm0MlkPe4VOAiBL-bU-iJP2gU';
 const sb=supabase.createClient(SB_URL,SB_KEY);
@@ -992,16 +1002,6 @@ function renderSettlement(){
 document.documentElement.setAttribute('data-lang',LANG);
 applyThemeSilent(THEME);
 
-(function checkVerifyHash(){
-  const hash=window.location.hash;
-  const params=new URLSearchParams(window.location.search);
-  const type=params.get('type')||new URLSearchParams(hash.replace('#','?')).get('type');
-  if(type==='signup'||type==='email_change'||hash.includes('access_token')){
-    sessionStorage.setItem('ht_verify_flow','1');
-    window.history.replaceState(null,'',window.location.pathname);
-  }
-})();
-
 // PWA
 if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
 
@@ -1172,17 +1172,14 @@ async function signOut(){
 }
 
 sb.auth.onAuthStateChange(async(event,session)=>{
-  if(event==='USER_UPDATED'||event==='SIGNED_IN'){
-    if(session&&session.user&&session.user.email_confirmed_at){
-      const wasVerifyFlow=sessionStorage.getItem('ht_verify_flow');
-      if(wasVerifyFlow){
-        sessionStorage.removeItem('ht_verify_flow');
-        document.getElementById('verified-banner').style.display='block';
-        document.getElementById('auth-screen').style.display='flex';
-        await sb.auth.signOut();
-        return;
-      }
-    }
+  if(sessionStorage.getItem('ht_verify_flow')==='1'){
+    sessionStorage.removeItem('ht_verify_flow');
+    document.getElementById('app').style.display='none';
+    document.getElementById('pin-screen').style.display='none';
+    document.getElementById('auth-screen').style.display='flex';
+    document.getElementById('verified-banner').style.display='block';
+    await sb.auth.signOut();
+    return;
   }
   if(session&&session.user){
     CUR_USER=session.user;
