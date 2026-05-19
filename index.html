@@ -825,6 +825,9 @@ const SB_URL='https://hmqckyecenigcjikfjob.supabase.co';
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhtcWNreWVjZW5pZ2NqaWtmam9iIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY5MzUzMDMsImV4cCI6MjA5MjUxMTMwM30.1pyoIp6-GegOVERyroNm0MlkPe4VOAiBL-bU-iJP2gU';
 const sb=supabase.createClient(SB_URL,SB_KEY);
 
+// Track anonymous visit
+(async()=>{try{await sb.from('visits').insert({user_agent:navigator.userAgent,logged_in:false});}catch(e){}})();
+
 let DB={receive:[],give:[],activityLog:[]};
 let CASH_DB={balance:0,history:[]};
 let LANG=localStorage.getItem('ht_lang')||'bn';
@@ -1319,6 +1322,8 @@ function handlePin(){
 async function showApp(){
   document.getElementById('app').style.display='block';
   setSyncState('saving','Loading...');
+  // Track logged-in visit
+  (async()=>{try{await sb.from('visits').insert({user_agent:navigator.userAgent,logged_in:true});}catch(e){}})();
   await loadData();
   await loadCashDataCloud();
   logActivity('Login সফল',CUR_USER.email);
