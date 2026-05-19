@@ -270,13 +270,15 @@ function showAdmin(){
 
 // ── HELPERS ──
 function fmtDT(v){
+    if(!v)return'—';
     const d=new Date(v);
-    if(isNaN(d))return String(v);
+    if(isNaN(d.getTime()))return String(v);
     return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
 }
 function fmtDate(v){
+    if(!v)return'—';
     const d=new Date(v);
-    if(isNaN(d))return String(v);
+    if(isNaN(d.getTime()))return String(v);
     return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
 }
 function parseUA(ua){
@@ -389,14 +391,17 @@ async function loadVisitStats(){
     document.getElementById('device-pills').innerHTML=mkPills(deviceCount)||'<span style="color:var(--muted);font-size:13px">No data</span>';
     document.getElementById('browser-pills').innerHTML=mkPills(browserCount)||'<span style="color:var(--muted);font-size:13px">No data</span>';
 
-    // Recent visits table
+    // Recent visits table — ts field from Supabase is ISO string
     const recent=visits.slice(0,50);
     document.getElementById('visits-tbody').innerHTML=recent.length
         ?recent.map(v=>{
             const{device,browser,os}=parseUA(v.user_agent);
+            // Supabase returns 'ts' as ISO timestamp string
+            const tsDisplay=fmtDT(v.ts||v.created_at||'');
+            const deviceIcon=device==='Mobile'?'📱':device==='Tablet'?'📋':'🖥️';
             return`<tr>
-                <td>${fmtDT(v.ts)}</td>
-                <td>${device==='Mobile'?'📱':'device'==='Tablet'?'📋':'🖥️'} ${device}</td>
+                <td>${tsDisplay}</td>
+                <td>${deviceIcon} ${device}</td>
                 <td>${browser}</td>
                 <td>${os}</td>
                 <td>${v.logged_in?'<span class="badge-active">✓ Logged In</span>':'—'}</td>
@@ -407,12 +412,19 @@ async function loadVisitStats(){
 
 async function loadUsers(){
     const{data:users,error}=await sb.from('hisab_users').select('id,data,updated_at').order('updated_at',{ascending:false});
-    if(error||!users){
-        document.getElementById('users-tbody').innerHTML='<tr><td colspan="3" class="empty-state">❌ Could not load users.</td></tr>';
+    if(error){
+        document.getElementById('users-tbody').innerHTML=`<tr><td colspan="3" class="empty-state">❌ Error: ${error.message}</td></tr>`;
+        return;
+    }
+    if(!users||users.length===0){
+        document.getElementById('users-tbody').innerHTML='<tr><td colspan="3" class="empty-state">কোনো user নেই</td></tr>';
         return;
     }
 
-    // Also update user count in stats
+    // Update user count stat card
+    const grid=document.getElementById('stats-grid');
+    const old=grid.querySelector('.stat-card.red');
+    if(old)old.remove();
     const uCard=document.createElement('div');
     uCard.className='stat-card red';
     uCard.innerHTML=`
@@ -421,28 +433,24 @@ async function loadUsers(){
         <div class="stat-val red">${users.length}</div>
         <div class="stat-sub">মোট account</div>
     `;
-    const grid=document.getElementById('stats-grid');
-    // remove old user card if exists
-    const old=grid.querySelector('.stat-card.red');
-    if(old)old.remove();
     grid.appendChild(uCard);
 
-    document.getElementById('users-tbody').innerHTML=users.length
-        ?users.map(u=>{
-            const email=u.data?._email||'—';
-            const rCount=(u.data?.receive||[]).length;
-            const gCount=(u.data?.give||[]).length;
-            const initial=email!=='—'?email.charAt(0).toUpperCase():'?';
-            return`<tr>
-                <td>
-                    <span class="user-avatar">${initial}</span>
-                    ${u.id.slice(0,8)}...
-                </td>
-                <td>${fmtDate(u.updated_at)}</td>
-                <td>📥 ${rCount} পাওনা &nbsp; 📤 ${gCount} দেনা</td>
-            </tr>`;
-        }).join('')
-        :'<tr><td colspan="3" class="empty-state">কোনো user নেই</td></tr>';
+    document.getElementById('users-tbody').innerHTML=users.map(u=>{
+        const rCount=(u.data?.receive||[]).length;
+        const gCount=(u.data?.give||[]).length;
+        const rTotal=(u.data?.receive||[]).reduce((s,p)=>s+(p.remaining||0),0);
+        const gTotal=(u.data?.give||[]).reduce((s,p)=>s+(p.remaining||0),0);
+        const lastSeen=u.updated_at?fmtDT(u.updated_at):'—';
+        const uid=u.id?u.id.slice(0,12)+'...':'—';
+        return`<tr>
+            <td><span class="user-avatar">U</span>${uid}</td>
+            <td>${lastSeen}</td>
+            <td>
+                📥 ${rCount}টি (৳${Number(rTotal).toLocaleString('en-IN')} বাকি)<br>
+                📤 ${gCount}টি (৳${Number(gTotal).toLocaleString('en-IN')} বাকি)
+            </td>
+        </tr>`;
+    }).join('');
 }
 
 // Auto refresh every 60 seconds
