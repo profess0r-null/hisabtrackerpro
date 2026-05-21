@@ -1622,19 +1622,20 @@ function calculateLoanTotal(principal,fees=0,loanDateStr=null){
   now.setHours(0,0,0,0);
   const daysToCharge = Math.max(0, Math.min(maxDays, Math.floor((now - loanDate) / 86400000)));
   
-  const fullInterest = principal * 0.030823;
-  const dailyInterest = fullInterest / 90;
-  const interest = Math.round(dailyInterest * daysToCharge);
+  const r = 0.015;
+  const emi = (principal * r * Math.pow(1 + r, 3)) / (Math.pow(1 + r, 3) - 1);
+  const fullInterest = (emi * 3) - principal;
   const processingFee = Math.round(principal * 0.00575);
   const totalRepayment = principal + fullInterest + processingFee + fees;
   
   return {
-    interest,
+    interest: Math.round(fullInterest),
     fullInterest: Math.round(fullInterest),
     processingFee,
     fees,
     daysToCharge,
-    totalRepayment: Math.round(totalRepayment)
+    totalRepayment: Math.round(totalRepayment),
+    emi: Math.round(emi)
   };
 }
 function getLoanBreakdown(p){
@@ -1646,7 +1647,21 @@ function getLoanBreakdown(p){
   const breakdown = calculateLoanTotal(p.original, fees, loanDate.toISOString().split('T')[0]);
   const paidAmount = p.history.filter(h => h.t === 'pay').reduce((s, h) => s + h.amt, 0);
   
-  const interestCovered = Math.min(paidAmount, breakdown.interest);
+  const monthsActive = Math.min(3, Math.ceil(breakdown.daysToCharge / 30) || 1);
+  let currentInterest = 0;
+  let tempPrincipal = p.original;
+  let tempPaid = paidAmount;
+  
+  for (let i = 1; i <= monthsActive; i++) {
+    const monthInterest = Math.round(tempPrincipal * 0.015);
+    currentInterest += monthInterest;
+    const interestCovered = Math.min(tempPaid, monthInterest);
+    tempPaid -= interestCovered;
+    tempPrincipal = Math.max(0, tempPrincipal - tempPaid);
+    tempPaid = 0;
+  }
+  
+  const interestCovered = Math.min(paidAmount, currentInterest);
   const principalReduction = paidAmount - interestCovered;
   const remainingPrincipal = Math.max(0, p.original - principalReduction);
   
@@ -1657,6 +1672,7 @@ function getLoanBreakdown(p){
   
   return {
     ...breakdown,
+    interest: currentInterest,
     paidAmount,
     remainingPrincipal,
     progressPercent
@@ -1862,8 +1878,6 @@ function renderCard(p,type){
       if(displayAmt<0) displayAmt=0;
       pct=breakdown.progressPercent;
       
-      const emiEst = Math.round(breakdown.totalRepayment / 3);
-      
       loanBreakdownHtml=`<div style="background:var(--card);border-radius:8px;padding:8px;margin-top:8px;font-size:12px;line-height:1.8;border-left:2px solid var(--primary);">
         <div style="font-weight:700;margin-bottom:6px;color:var(--primary);display:flex;justify-content:space-between;">
           <span>🏦 Reducing Balance Loan Details</span>
@@ -1880,8 +1894,8 @@ function renderCard(p,type){
         
         <div style="border-top:1px solid var(--border);padding-top:6px;margin-top:4px;background:rgba(56,189,248,0.05);padding:6px;border-radius:6px;margin-bottom:6px;">
           <div style="display:flex;justify-content:space-between;font-weight:700;color:var(--primary);">
-            <span>🗓️ Estimated EMI (3x):</span>
-            <span>৳${fmt(emiEst)} /mo</span>
+            <span>🗓️ Established EMI:</span>
+            <span>৳${fmt(breakdown.emi)} /mo</span>
           </div>
         </div>
 
