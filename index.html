@@ -620,7 +620,7 @@ input:focus{border-color:var(--primary);}
           <input id="r-fee" type="text" placeholder="All Fees (e.g., 5,10,15)">
           <input id="r-loan-date" type="date">
         </div>
-        <div style="font-size:11px;color:var(--muted);padding:6px;background:var(--card);border-radius:6px;margin-top:8px;">Interest: 3.08% • Processing: 0.575% • 3-Month Loan</div>
+        <div style="font-size:11px;color:var(--muted);padding:6px;background:var(--card);border-radius:6px;margin-top:8px;">Interest: bKash-style (daily multiplier) • Processing: 0.575% • Max: 90 days</div>
       </div>
       <div class="qtags">
         <span class="qtag" onclick="setQ('Hawlat','r-no')">Hawlat</span>
@@ -1564,11 +1564,19 @@ function fmtD(v){
 
 // ── AGING ──
 function firstTs(p){
+  if(p.loanData && p.loanData.loanDate) return new Date(p.loanData.loanDate).getTime();
   if(p.clearedAt) return p.clearedAt;
   const a=p.history.filter(h=>h.t==='add');
   return a.length?Math.min(...a.map(h=>Number(h.id)||Number(p.id))):p.id;
 }
-function ageDays(p){   const isLoan=p.loanData||p.history.some(h=>h.note.toLowerCase().includes('loan'));    if(isLoan&&p.loanData?.loanDate){     const d=new Date(p.loanData.loanDate);     d.setHours(0,0,0,0);      const now=new Date();     now.setHours(0,0,0,0);      return Math.max(       0,       Math.floor((now-d)/86400000)     );   }    return Math.floor(     (Date.now()-firstTs(p))/86400000   ); }\
+function ageDays(p){
+  if(p.loanData && p.loanData.loanDate){
+    const ld = new Date(p.loanData.loanDate); ld.setHours(0,0,0,0);
+    const now = new Date(); now.setHours(0,0,0,0);
+    return Math.max(0, Math.floor((now - ld) / 86400000));
+  }
+  return Math.floor((Date.now()-firstTs(p))/86400000);
+}
 function ageBadge(d){const l=LANG==='bn'?`${d} দিন`:`${d}d`;return d<=7?{cls:'',l}:d<=30?{cls:'mid',l}:{cls:'old',l:l+' ⚠️'};}
 
 // ── COUNT-UP ──
@@ -1607,63 +1615,18 @@ function parseFeeString(str){
   return str.split(',').map(s=>parseFloat(s.trim())).filter(n=>!isNaN(n)&&n>0).reduce((a,b)=>a+b,0);
 }
 function calculateLoanTotal(principal,fees=0,loanDateStr=null){
-  const fullInterestRate=0.030823;
-  const processingRate=0.00575;
-  const totalDays=90;
-
-  let loanDate=loanDateStr?new Date(loanDateStr):new Date();
-
+  const maxDays=90;
+  let loanDate = loanDateStr ? new Date(loanDateStr) : new Date();
   loanDate.setHours(0,0,0,0);
-
-  const now=new Date();
+  const now = new Date();
   now.setHours(0,0,0,0);
-
-  const daysPassed=Math.max(
-    0,
-    Math.min(
-      totalDays,
-      Math.floor((now-loanDate)/86400000)
-    )
-  );
-
-  const fullInterest=+(principal*fullInterestRate).toFixed(2);
-
-  const dailyInterest=+(fullInterest/totalDays).toFixed(4);
-
-  const currentInterest=+(
-    dailyInterest*daysPassed
-  ).toFixed(2);
-
-  const processingFee=+(
-    principal*processingRate
-  ).toFixed(2);
-
-  const totalRepayment=+(
-    principal+currentInterest
-  ).toFixed(2);
-
-  const netAmount=+(
-    principal-processingFee
-  ).toFixed(2);
-
-  return{
-    principal,
-    fees,
-    processingFee,
-    netAmount,
-
-    daysPassed,
-
-    totalDays,
-
-    dailyInterest,
-
-    currentInterest,
-
-    fullInterest,
-
-    totalRepayment
-  };
+  const daysToCharge = Math.max(0, Math.min(maxDays, Math.floor((now - loanDate) / 86400000)));
+  const fullInterest = principal * 0.030823;
+  const dailyInterest = fullInterest / 90;
+  const interest = Math.round(dailyInterest * daysToCharge);
+  const processingFee = Math.round(principal * 0.00575);
+  const total = principal + interest + processingFee + fees;
+  return {interest, fullInterest: Math.round(fullInterest), processingFee, fees, daysToCharge, total};
 }
 function getLoanBreakdown(p){
   const isLoan=p.loanData||p.history.some(h=>h.note.toLowerCase().includes('loan'));
@@ -1791,14 +1754,17 @@ function updateLoanCalcBreakdown(p){
   const fees=parseFeeString(document.getElementById('ed-fee').value);
   const loanDateStr=document.getElementById('ed-loan-date').value;
   const breakdown=calculateLoanTotal(newAmt,fees,loanDateStr);
+  const currentPayable=p.remaining+(newAmt-p.original)+breakdown.interest+breakdown.processingFee+fees;
   const html=`
-    <div>💵 Loan: ৳${fmt(breakdown.principal)}</div>
-    <div>💰 Interest Paid: ৳${fmt(breakdown.currentInterest)} 💰 Full Interest: ৳${fmt(breakdown.fullInterest)} 📅 Days: ${breakdown.daysPassed}/90: ৳${fmt(breakdown.interest)}</div>
-    <div>⚙️ Processing (0.575%): ৳${fmt(breakdown.processingFee)}</div>
+    <div>💵 Principal: ৳${fmt(newAmt)}</div>
+    <div>📅 Days Passed: ${breakdown.daysToCharge}/90</div>
+    <div>💰 Interest Paid: ৳${fmt(breakdown.interest)}</div>
+    <div>📈 Full Interest: ৳${fmt(breakdown.fullInterest)}</div>
+    <div>⚙️ Processing Fee: ৳${fmt(breakdown.processingFee)}</div>
     <div>💸 Extra Fees: ৳${fmt(breakdown.fees)}</div>
   `;
   document.getElementById('ed-calc-breakdown').innerHTML=html;
-  document.getElementById('ed-total-due').textContent=fmt(breakdown.totalRepayment+breakdown.fees);
+  document.getElementById('ed-total-due').textContent=fmt(currentPayable);
 }
 function confirmEdit(){
   const amt=parseFloat(document.getElementById('ed-amt').value);
@@ -1864,24 +1830,22 @@ function renderCard(p,type){
   if(type==='receive'){
     const breakdown=getLoanBreakdown(p);
     if(breakdown){
-      displayAmt=breakdown.totalRepayment+breakdown.fees;
-      pct=p.original>0 ?Math.round( Math.max( 0, Math.min( 100, ((p.original-p.remaining)/p.original)*100 ) ) ) :0;
+      displayAmt=p.remaining+breakdown.interest+breakdown.processingFee+breakdown.fees;
+      pct=p.original>0?Math.round(Math.max(0,Math.min(100,((p.original-p.remaining)/p.original)*100))):0;
       loanBreakdownHtml=`<div style="background:var(--card);border-radius:8px;padding:8px;margin-top:8px;font-size:12px;line-height:1.8;border-left:2px solid var(--primary);">
         <div style="font-weight:700;margin-bottom:6px;color:var(--primary);">🏦 Loan Breakdown</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:6px;">
-          <div>💵 Loan Amount<br><span style="font-weight:700;font-size:13px;">৳${fmt(breakdown.principal)}</span></div>
-          <div>💰 Interest Paid: ৳${fmt(breakdown.currentInterest)} 💰 Full Interest: ৳${fmt(breakdown.fullInterest)} 📅 Days: ${breakdown.daysPassed}/90<br><span style="font-weight:700;color:var(--green);font-size:13px;">৳${fmt(breakdown.interest)}</span></div>
-          <div>⚙️ Processing (0.575%)<br><span style="font-weight:700;color:var(--yellow);font-size:13px;">৳${fmt(breakdown.processingFee)}</span></div>
+          <div>💵 Principal<br><span style="font-weight:700;font-size:13px;">৳${fmt(p.original)}</span></div>
+          <div>💰 Interest Paid<br><span style="font-weight:700;color:var(--green);font-size:13px;">৳${fmt(breakdown.interest)}</span></div>
+          <div>📈 Full Interest<br><span style="font-weight:700;color:var(--muted);font-size:13px;">৳${fmt(breakdown.fullInterest)}</span></div>
+          <div>⚙️ Processing Fee<br><span style="font-weight:700;color:var(--yellow);font-size:13px;">৳${fmt(breakdown.processingFee)}</span></div>
           <div>💸 Extra Fees<br><span style="font-weight:700;color:var(--yellow);font-size:13px;">৳${fmt(breakdown.fees)}</span></div>
+          <div>📅 Days Passed<br><span style="font-weight:700;font-size:13px;">${breakdown.daysToCharge}/90</span></div>
         </div>
         <div style="border-top:1px solid var(--border);padding-top:6px;margin-top:6px;">
           <div style="display:flex;justify-content:space-between;font-weight:700;">
-            <span>Total Repayment:</span>
-            <span style="color:var(--green);font-size:14px;">৳${fmt(breakdown.totalRepayment+breakdown.fees)}</span>
-          </div>
-          <div style="display:flex;justify-content:space-between;font-weight:700;color:var(--muted);font-size:11px;margin-top:4px;">
-            <span>Net Amount (after fee):</span>
-            <span>৳${fmt(breakdown.netAmount)}</span>
+            <span>Total Due:</span>
+            <span style="color:var(--green);font-size:14px;">৳${fmt(displayAmt)}</span>
           </div>
         </div>
       </div>`;
