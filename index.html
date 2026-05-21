@@ -1754,17 +1754,21 @@ function updateLoanCalcBreakdown(p){
   const fees=parseFeeString(document.getElementById('ed-fee').value);
   const loanDateStr=document.getElementById('ed-loan-date').value;
   const breakdown=calculateLoanTotal(newAmt,fees,loanDateStr);
-  const currentPayable=p.remaining+(newAmt-p.original)+breakdown.interest+breakdown.processingFee+fees;
+  
+  const maxTotal=newAmt+breakdown.fullInterest+breakdown.processingFee+fees;
+  const monthlyInstallment=Math.round(maxTotal/3);
+
   const html=`
     <div>💵 Principal: ৳${fmt(newAmt)}</div>
     <div>📅 Days Passed: ${breakdown.daysToCharge}/90</div>
-    <div>💰 Interest Paid: ৳${fmt(breakdown.interest)}</div>
-    <div>📈 Full Interest: ৳${fmt(breakdown.fullInterest)}</div>
+    <div>💰 Interest Accumulated: ৳${fmt(breakdown.interest)}</div>
+    <div>📈 3-Month Max Interest: ৳${fmt(breakdown.fullInterest)}</div>
     <div>⚙️ Processing Fee: ৳${fmt(breakdown.processingFee)}</div>
-    <div>💸 Extra Fees: ৳${fmt(breakdown.fees)}</div>
+    <div>💸 Extra Fees: ৳${fmt(fees)}</div>
+    <div style="margin-top:6px;padding-top:4px;border-top:1px dashed var(--border);color:var(--primary);font-weight:700;">🗓️ Est. Installment (3x): ৳${fmt(monthlyInstallment)}/mo</div>
   `;
   document.getElementById('ed-calc-breakdown').innerHTML=html;
-  document.getElementById('ed-total-due').textContent=fmt(currentPayable);
+  document.getElementById('ed-total-due').textContent=fmt(maxTotal);
 }
 function confirmEdit(){
   const amt=parseFloat(document.getElementById('ed-amt').value);
@@ -1830,22 +1834,39 @@ function renderCard(p,type){
   if(type==='receive'){
     const breakdown=getLoanBreakdown(p);
     if(breakdown){
+      // মার্ক করা জায়গায় আজকের দিন পর্যন্ত চার্জ দেখাবে
       displayAmt=p.remaining+breakdown.interest+breakdown.processingFee+breakdown.fees;
       pct=p.original>0?Math.round(Math.max(0,Math.min(100,((p.original-p.remaining)/p.original)*100))):0;
+      
+      // ৩ মাসের সর্বোচ্চ সম্ভাব্য টোটাল (Principal + Full Interest + Processing Fee + Extra Fees)
+      const maxTotal=p.original+breakdown.fullInterest+breakdown.processingFee+breakdown.fees;
+      // প্রতি মাসের ৩টি সমান কিস্তির পরিমাণ
+      const monthlyInstallment=Math.round(maxTotal/3);
+
       loanBreakdownHtml=`<div style="background:var(--card);border-radius:8px;padding:8px;margin-top:8px;font-size:12px;line-height:1.8;border-left:2px solid var(--primary);">
-        <div style="font-weight:700;margin-bottom:6px;color:var(--primary);">🏦 Loan Breakdown</div>
+        <div style="font-weight:700;margin-bottom:6px;color:var(--primary);display:flex;justify-content:space-between;">
+          <span>🏦 Loan Breakdown</span>
+          <span style="color:var(--yellow);font-weight:800;">📅 ${breakdown.daysToCharge}/90 Days</span>
+        </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:6px;">
           <div>💵 Principal<br><span style="font-weight:700;font-size:13px;">৳${fmt(p.original)}</span></div>
-          <div>💰 Interest Paid<br><span style="font-weight:700;color:var(--green);font-size:13px;">৳${fmt(breakdown.interest)}</span></div>
-          <div>📈 Full Interest<br><span style="font-weight:700;color:var(--muted);font-size:13px;">৳${fmt(breakdown.fullInterest)}</span></div>
+          <div>💰 Interest Accumulated<br><span style="font-weight:700;color:var(--green);font-size:13px;">৳${fmt(breakdown.interest)}</span></div>
+          <div>📈 3-Month Max Interest<br><span style="font-weight:700;color:var(--muted);font-size:13px;">৳${fmt(breakdown.fullInterest)}</span></div>
           <div>⚙️ Processing Fee<br><span style="font-weight:700;color:var(--yellow);font-size:13px;">৳${fmt(breakdown.processingFee)}</span></div>
           <div>💸 Extra Fees<br><span style="font-weight:700;color:var(--yellow);font-size:13px;">৳${fmt(breakdown.fees)}</span></div>
-          <div>📅 Days Passed<br><span style="font-weight:700;font-size:13px;">${breakdown.daysToCharge}/90</span></div>
         </div>
+        
+        <div style="border-top:1px solid var(--border);padding-top:6px;margin-top:4px;background:rgba(56,189,248,0.05);padding:6px;border-radius:6px;margin-bottom:6px;">
+          <div style="display:flex;justify-content:space-between;font-weight:700;color:var(--primary);">
+            <span>🗓️ Monthly Installment (3x):</span>
+            <span>৳${fmt(monthlyInstallment)} /mo</span>
+          </div>
+        </div>
+
         <div style="border-top:1px solid var(--border);padding-top:6px;margin-top:6px;">
           <div style="display:flex;justify-content:space-between;font-weight:700;">
-            <span>Total Due:</span>
-            <span style="color:var(--green);font-size:14px;">৳${fmt(displayAmt)}</span>
+            <span>Maximum Total Due (90d):</span>
+            <span style="color:var(--red);font-size:14px;">৳${fmt(maxTotal)}</span>
           </div>
         </div>
       </div>`;
@@ -1908,7 +1929,16 @@ function renderTop(){
 // ── MAIN RENDER ──
 function render(){
   const q=document.getElementById('srch').value.toLowerCase().trim();
-  const tr=DB.receive.reduce((s,p)=>s+p.remaining,0);
+  
+  // লোন থাকলে রিয়েল-টাইম চার্জসহ হিসাব করবে ওভারঅল টোটালে
+  const tr=DB.receive.reduce((s,p)=>{
+    const breakdown=getLoanBreakdown(p);
+    if(breakdown){
+      return s+(p.remaining+breakdown.interest+breakdown.processingFee+breakdown.fees);
+    }
+    return s+p.remaining;
+  },0);
+  
   const tg=DB.give.reduce((s,p)=>s+p.remaining,0);
   const net=tr-tg;
   const rc=DB.receive.filter(p=>p.remaining>0).length;
