@@ -1568,7 +1568,7 @@ function firstTs(p){
   const a=p.history.filter(h=>h.t==='add');
   return a.length?Math.min(...a.map(h=>Number(h.id)||Number(p.id))):p.id;
 }
-function ageDays(p){return Math.floor((Date.now()-firstTs(p))/86400000);}
+function ageDays(p){   const isLoan=p.loanData||p.history.some(h=>h.note.toLowerCase().includes('loan'));    if(isLoan&&p.loanData?.loanDate){     const d=new Date(p.loanData.loanDate);     d.setHours(0,0,0,0);      const now=new Date();     now.setHours(0,0,0,0);      return Math.max(       0,       Math.floor((now-d)/86400000)     );   }    return Math.floor(     (Date.now()-firstTs(p))/86400000   ); }\
 function ageBadge(d){const l=LANG==='bn'?`${d} দিন`:`${d}d`;return d<=7?{cls:'',l}:d<=30?{cls:'mid',l}:{cls:'old',l:l+' ⚠️'};}
 
 // ── COUNT-UP ──
@@ -1607,27 +1607,63 @@ function parseFeeString(str){
   return str.split(',').map(s=>parseFloat(s.trim())).filter(n=>!isNaN(n)&&n>0).reduce((a,b)=>a+b,0);
 }
 function calculateLoanTotal(principal,fees=0,loanDateStr=null){
-  const interestRate=0.030823;
+  const fullInterestRate=0.030823;
   const processingRate=0.00575;
-  
-  const interest=Math.round(principal*interestRate*100)/100;
-  const processingFee=Math.round(principal*processingRate*100)/100;
-  const totalRepayment=Math.round((principal+interest)*100)/100;
-  const netAmount=Math.round((principal-processingFee)*100)/100;
-  
-  let loanDate;
-  if(loanDateStr){
-    loanDate=new Date(loanDateStr);
-    loanDate.setHours(0,0,0,0);
-  } else {
-    loanDate=new Date();
-    loanDate.setHours(0,0,0,0);
-  }
+  const totalDays=90;
+
+  let loanDate=loanDateStr?new Date(loanDateStr):new Date();
+
+  loanDate.setHours(0,0,0,0);
+
   const now=new Date();
   now.setHours(0,0,0,0);
-  const daysToCharge=Math.min(90,Math.floor((now-loanDate)/(86400000)));
-  
-  return{interest,processingFee,fees,daysToCharge,totalRepayment,netAmount,principal};
+
+  const daysPassed=Math.max(
+    0,
+    Math.min(
+      totalDays,
+      Math.floor((now-loanDate)/86400000)
+    )
+  );
+
+  const fullInterest=+(principal*fullInterestRate).toFixed(2);
+
+  const dailyInterest=+(fullInterest/totalDays).toFixed(4);
+
+  const currentInterest=+(
+    dailyInterest*daysPassed
+  ).toFixed(2);
+
+  const processingFee=+(
+    principal*processingRate
+  ).toFixed(2);
+
+  const totalRepayment=+(
+    principal+currentInterest
+  ).toFixed(2);
+
+  const netAmount=+(
+    principal-processingFee
+  ).toFixed(2);
+
+  return{
+    principal,
+    fees,
+    processingFee,
+    netAmount,
+
+    daysPassed,
+
+    totalDays,
+
+    dailyInterest,
+
+    currentInterest,
+
+    fullInterest,
+
+    totalRepayment
+  };
 }
 function getLoanBreakdown(p){
   const isLoan=p.loanData||p.history.some(h=>h.note.toLowerCase().includes('loan'));
@@ -1757,7 +1793,7 @@ function updateLoanCalcBreakdown(p){
   const breakdown=calculateLoanTotal(newAmt,fees,loanDateStr);
   const html=`
     <div>💵 Loan: ৳${fmt(breakdown.principal)}</div>
-    <div>💰 Interest (3.08%): ৳${fmt(breakdown.interest)}</div>
+    <div>💰 Interest Paid: ৳${fmt(breakdown.currentInterest)} 💰 Full Interest: ৳${fmt(breakdown.fullInterest)} 📅 Days: ${breakdown.daysPassed}/90: ৳${fmt(breakdown.interest)}</div>
     <div>⚙️ Processing (0.575%): ৳${fmt(breakdown.processingFee)}</div>
     <div>💸 Extra Fees: ৳${fmt(breakdown.fees)}</div>
   `;
@@ -1829,12 +1865,12 @@ function renderCard(p,type){
     const breakdown=getLoanBreakdown(p);
     if(breakdown){
       displayAmt=breakdown.totalRepayment+breakdown.fees;
-      pct=displayAmt>0?Math.round(Math.max(0,Math.min(100,(1-(p.remaining)/displayAmt)*100))):0;
+      pct=p.original>0 ?Math.round( Math.max( 0, Math.min( 100, ((p.original-p.remaining)/p.original)*100 ) ) ) :0;
       loanBreakdownHtml=`<div style="background:var(--card);border-radius:8px;padding:8px;margin-top:8px;font-size:12px;line-height:1.8;border-left:2px solid var(--primary);">
         <div style="font-weight:700;margin-bottom:6px;color:var(--primary);">🏦 Loan Breakdown</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:6px;">
           <div>💵 Loan Amount<br><span style="font-weight:700;font-size:13px;">৳${fmt(breakdown.principal)}</span></div>
-          <div>💰 Interest (3.08%)<br><span style="font-weight:700;color:var(--green);font-size:13px;">৳${fmt(breakdown.interest)}</span></div>
+          <div>💰 Interest Paid: ৳${fmt(breakdown.currentInterest)} 💰 Full Interest: ৳${fmt(breakdown.fullInterest)} 📅 Days: ${breakdown.daysPassed}/90<br><span style="font-weight:700;color:var(--green);font-size:13px;">৳${fmt(breakdown.interest)}</span></div>
           <div>⚙️ Processing (0.575%)<br><span style="font-weight:700;color:var(--yellow);font-size:13px;">৳${fmt(breakdown.processingFee)}</span></div>
           <div>💸 Extra Fees<br><span style="font-weight:700;color:var(--yellow);font-size:13px;">৳${fmt(breakdown.fees)}</span></div>
         </div>
