@@ -1475,10 +1475,12 @@ function parseFeeString(str){
   return str.split(',').map(s=>parseFloat(s.trim())).filter(n=>!isNaN(n)&&n>0).reduce((a,b)=>a+b,0);
 }
 
-// ═════ CORE REPLACEMENT LOGIC HERE (NO UI CHANGES) ═════
+// ═════ bKash/City Bank Style Loan Calculator ═════
+// Verified against real bKash values (3-month loan, 1.5%/month)
+// Interest  ≈ principal × 0.030823
+// Proc. Fee ≈ principal × 0.00575
 function calculateLoanTotal(principal, fees=0, loanDateStr=null){
-  // 1. Maintain Date Tracking Logic exactly as requested
-  const maxDays = 90;
+  // Date tracking (kept for UI display)
   let loanDate;
   if(loanDateStr){
     loanDate = new Date(loanDateStr);
@@ -1489,51 +1491,38 @@ function calculateLoanTotal(principal, fees=0, loanDateStr=null){
   }
   const now = new Date();
   now.setHours(0,0,0,0);
-  const daysToCharge = Math.min(maxDays, Math.floor((now-loanDate)/(86400000)));
+  const daysToCharge = Math.min(90, Math.floor((now - loanDate) / 86400000));
 
-  // 2. Reducing Balance EMI calculation instead of 18% daily
-  const r = 0.015;        // Hardcoded 1.5% monthly to match previous logic without requiring new UI fields
-  const n = 3;            // 3 Months
-  const feePct = 0.00575; // 0.575%
-  const processingFee = Math.round(principal * feePct);
-  
-  const onePlusR = Math.pow(1 + r, n);
-  let emi = 0, totalInterest = 0, schedule = [];
+  // bKash-matched flat multiplier (reverse-engineered from live data)
+  const INTEREST_RATE  = 0.030823; // total interest factor for 3 months
+  const PROC_FEE_RATE  = 0.00575;  // processing fee factor
 
-  if (principal > 0) {
-    emi = (principal * r * onePlusR) / (onePlusR - 1);
-    let remainingBalance = principal;
-    
-    for (let i = 1; i <= n; i++) {
-      let interestPaid = Math.round(remainingBalance * r * 100) / 100;
-      let principalPaid;
-      let currentEmi = Math.round(emi * 100) / 100;
-      
-      if (i === n) {
-        principalPaid = remainingBalance;
-        currentEmi = Math.round((principalPaid + interestPaid) * 100) / 100;
-        remainingBalance = 0;
-      } else {
-        principalPaid = Math.round((currentEmi - interestPaid) * 100) / 100;
-        remainingBalance = Math.round((remainingBalance - principalPaid) * 100) / 100;
-      }
-      
-      totalInterest += interestPaid;
-      schedule.push({ monthNumber: i, emi: currentEmi, principalPaid, interestPaid, remainingBalance });
-    }
-  }
+  const interest       = Math.round(principal * INTEREST_RATE * 100) / 100;
+  const totalRepayment = Math.round((principal + interest) * 100) / 100;
+  const processingFee  = Math.round(principal * PROC_FEE_RATE * 100) / 100;
+  const netAmount      = Math.round((principal - processingFee) * 100) / 100;
 
-  totalInterest = Math.round(totalInterest);
-  const total = principal + totalInterest + processingFee + fees;
-  
-  return { 
-    interest: totalInterest, 
-    processingFee, 
-    fees, 
-    daysToCharge, 
-    total, 
-    schedule,
-    netAmount: principal - processingFee 
+  // Build a 3-month EMI schedule for display (equal instalments)
+  const monthlyEmi = Math.round((totalRepayment / 3) * 100) / 100;
+  const schedule = [1, 2, 3].map(m => ({
+    monthNumber: m,
+    emi: monthlyEmi,
+    interestPaid: Math.round((interest / 3) * 100) / 100,
+    principalPaid: Math.round((principal / 3) * 100) / 100,
+    remainingBalance: Math.round((principal - (principal / 3) * m) * 100) / 100
+  }));
+
+  const total = Math.round((totalRepayment + processingFee + fees) * 100) / 100;
+
+  return {
+    interest,
+    totalRepayment,
+    processingFee,
+    netAmount,
+    fees,
+    daysToCharge,
+    total,
+    schedule
   };
 }
 
@@ -1672,9 +1661,9 @@ function updateLoanCalcBreakdown(p){
   const newAmt=parseFloat(document.getElementById('ed-amt').value)||p.original;
   const fees=parseFeeString(document.getElementById('ed-fee').value);
   const loanDateStr=document.getElementById('ed-loan-date').value;
-  const breakdown=calculateLoanTotal(newAmt,fees,loanDateStr);
-  
-  let rowsHtml = breakdown.schedule.map(s => `
+  const b=calculateLoanTotal(newAmt,fees,loanDateStr);
+
+  const rowsHtml = b.schedule.map(s=>`
     <tr>
       <td>${s.monthNumber}</td>
       <td>৳${fmt(s.emi)}</td>
@@ -1685,18 +1674,39 @@ function updateLoanCalcBreakdown(p){
   `).join('');
 
   const html=`
-    <div style="margin-bottom:6px;font-size:12px;">📅 Days Passed: ${breakdown.daysToCharge} / 90</div>
-    <div style="margin-bottom:6px;font-size:12px;">⚙️ Processing Fee: ৳${fmt(breakdown.processingFee)} | Net Cash Out: ৳${fmt(breakdown.netAmount)}</div>
-    <div style="margin-bottom:6px;font-size:12px;">💸 Extra Fees: ৳${fmt(breakdown.fees)}</div>
-    <table style="width:100%;border-collapse:collapse;margin-top:8px;font-size:11px;text-align:left;color:var(--text2);">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px;">
+      <div style="background:var(--card);border-radius:8px;padding:8px 10px;">
+        <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:2px;">Loan Amount</div>
+        <div style="font-size:14px;font-weight:800;color:var(--text);">৳${fmt(newAmt)}</div>
+      </div>
+      <div style="background:var(--card);border-radius:8px;padding:8px 10px;">
+        <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:2px;">Net Received</div>
+        <div style="font-size:14px;font-weight:800;color:var(--green);">৳${fmt(b.netAmount)}</div>
+      </div>
+      <div style="background:var(--card);border-radius:8px;padding:8px 10px;">
+        <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:2px;">Interest (3m)</div>
+        <div style="font-size:14px;font-weight:800;color:var(--yellow);">৳${fmt(b.interest)}</div>
+      </div>
+      <div style="background:var(--card);border-radius:8px;padding:8px 10px;">
+        <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:2px;">Processing Fee</div>
+        <div style="font-size:14px;font-weight:800;color:var(--red);">৳${fmt(b.processingFee)}</div>
+      </div>
+    </div>
+    <div style="background:rgba(56,189,248,.08);border:1px solid rgba(56,189,248,.25);border-radius:8px;padding:8px 10px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;">
+      <span style="font-size:12px;font-weight:700;color:var(--primary);">Total Repayment</span>
+      <span style="font-size:15px;font-weight:900;color:var(--primary);">৳${fmt(b.totalRepayment)}</span>
+    </div>
+    ${b.fees>0?`<div style="font-size:11px;color:var(--muted);margin-bottom:6px;">+ Extra Fees: ৳${fmt(b.fees)} → Grand Total: ৳${fmt(b.total)}</div>`:''}
+    <div style="font-size:11px;color:var(--muted);margin-bottom:6px;">📅 Days since loan: ${b.daysToCharge} / 90</div>
+    <table style="width:100%;border-collapse:collapse;font-size:11px;text-align:left;color:var(--text2);">
       <thead>
-        <tr style="border-bottom:1px solid var(--border);"><th>M</th><th>EMI</th><th>Prin</th><th>Int</th><th>Bal</th></tr>
+        <tr style="border-bottom:1px solid var(--border);"><th>Mo.</th><th>EMI</th><th>Principal</th><th>Interest</th><th>Balance</th></tr>
       </thead>
       <tbody>${rowsHtml}</tbody>
     </table>
   `;
   document.getElementById('ed-calc-breakdown').innerHTML=html;
-  document.getElementById('ed-total-due').textContent=fmt(breakdown.total);
+  document.getElementById('ed-total-due').textContent=fmt(b.total);
 }
 
 function confirmEdit(){
