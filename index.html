@@ -1622,25 +1622,19 @@ function calculateLoanTotal(principal,fees=0,loanDateStr=null){
   now.setHours(0,0,0,0);
   const daysToCharge = Math.max(0, Math.min(maxDays, Math.floor((now - loanDate) / 86400000)));
   
-  const p = principal;
-  const r = 0.015; 
-  const n = 3;
-  const emi = (p * r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1);
-  const totalRepayment = (emi * n) + fees;
-  const fullInterest = (emi * n) - p;
-  
-  const dailyInterestRate = 0.18 / 365;
-  const interest = Math.round(p * dailyInterestRate * daysToCharge);
-  const processingFee = Math.round(p * 0.00575);
+  const fullInterest = principal * 0.030823;
+  const dailyInterest = fullInterest / 90;
+  const interest = Math.round(dailyInterest * daysToCharge);
+  const processingFee = Math.round(principal * 0.00575);
+  const totalRepayment = principal + fullInterest + processingFee + fees;
   
   return {
-    interest, 
-    fullInterest: Math.round(fullInterest), 
-    processingFee, 
-    fees, 
-    daysToCharge, 
-    totalRepayment: Math.round(totalRepayment),
-    emi: Math.round(emi)
+    interest,
+    fullInterest: Math.round(fullInterest),
+    processingFee,
+    fees,
+    daysToCharge,
+    totalRepayment: Math.round(totalRepayment)
   };
 }
 function getLoanBreakdown(p){
@@ -1652,10 +1646,9 @@ function getLoanBreakdown(p){
   const breakdown = calculateLoanTotal(p.original, fees, loanDate.toISOString().split('T')[0]);
   const paidAmount = p.history.filter(h => h.t === 'pay').reduce((s, h) => s + h.amt, 0);
   
-  let remainingPrincipal = p.original;
-  if (paidAmount > breakdown.interest) {
-    remainingPrincipal = Math.max(0, p.original - (paidAmount - breakdown.interest));
-  }
+  const interestCovered = Math.min(paidAmount, breakdown.interest);
+  const principalReduction = paidAmount - interestCovered;
+  const remainingPrincipal = Math.max(0, p.original - principalReduction);
   
   let progressPercent = 0;
   if (breakdown.totalRepayment > 0) {
@@ -1865,8 +1858,11 @@ function renderCard(p,type){
   if(type==='receive'){
     const breakdown=getLoanBreakdown(p);
     if(breakdown){
-      displayAmt=breakdown.remainingPrincipal+breakdown.interest+breakdown.processingFee+breakdown.fees;
+      displayAmt=breakdown.remainingPrincipal+breakdown.interest+breakdown.processingFee+breakdown.fees-breakdown.paidAmount;
+      if(displayAmt<0) displayAmt=0;
       pct=breakdown.progressPercent;
+      
+      const emiEst = Math.round(breakdown.totalRepayment / 3);
       
       loanBreakdownHtml=`<div style="background:var(--card);border-radius:8px;padding:8px;margin-top:8px;font-size:12px;line-height:1.8;border-left:2px solid var(--primary);">
         <div style="font-weight:700;margin-bottom:6px;color:var(--primary);display:flex;justify-content:space-between;">
@@ -1877,15 +1873,15 @@ function renderCard(p,type){
           <div>💵 Original Principal<br><span style="font-weight:700;font-size:13px;">৳${fmt(p.original)}</span></div>
           <div>📉 Remaining Principal<br><span style="font-weight:700;color:var(--primary);font-size:13px;">৳${fmt(breakdown.remainingPrincipal)}</span></div>
           <div>💰 Paid Amount<br><span style="font-weight:700;color:var(--green);font-size:13px;">৳${fmt(breakdown.paidAmount)}</span></div>
-          <div>⏳ Current Interest<br><span style="font-weight:700;color:var(--orange||'#f97316');font-size:13px;">৳${fmt(breakdown.interest)}</span></div>
+          <div>⏳ Current Interest<br><span style="font-weight:700;color:#f97316;font-size:13px;">৳${fmt(breakdown.interest)}</span></div>
           <div>📈 Full Interest<br><span style="font-weight:700;color:var(--muted);font-size:13px;">৳${fmt(breakdown.fullInterest)}</span></div>
           <div>⚙️ Processing Fee<br><span style="font-weight:700;color:var(--yellow);font-size:13px;">৳${fmt(breakdown.processingFee)}</span></div>
         </div>
         
         <div style="border-top:1px solid var(--border);padding-top:6px;margin-top:4px;background:rgba(56,189,248,0.05);padding:6px;border-radius:6px;margin-bottom:6px;">
           <div style="display:flex;justify-content:space-between;font-weight:700;color:var(--primary);">
-            <span>🗓️ Established EMI:</span>
-            <span>৳${fmt(breakdown.emi)} /mo</span>
+            <span>🗓️ Estimated EMI (3x):</span>
+            <span>৳${fmt(emiEst)} /mo</span>
           </div>
         </div>
 
@@ -1920,7 +1916,7 @@ function renderCard(p,type){
     <div class="pbody">
       <div class="psum">
         <div class="ps-i"><div class="ps-l bn">মূল</div><div class="ps-l en">Original</div><div class="ps-v" style="color:${col}">৳${fmt(p.original)}</div></div>
-        <div class="ps-i"><div class="ps-l bn">শোধ</div><div class="ps-l en">Paid</div><div class="ps-v" style="color:var(--green)">৳${fmt(p.original-p.remaining)}</div></div>
+        <div class="ps-i"><div class="ps-l bn">শোধ</div><div class="ps-l en">Paid</div><div class="ps-v" style="color:var(--green)">৳${fmt(type==='receive'&&getLoanBreakdown(p)?getLoanBreakdown(p).paidAmount:(p.original-p.remaining))}</div></div>
         <div class="ps-i"><div class="ps-l bn">লেনদেন</div><div class="ps-l en">Txns</div><div class="ps-v">${p.history.length}</div></div>
       </div>
       ${loanBreakdownHtml}
@@ -1959,7 +1955,9 @@ function render(){
   const tr=DB.receive.reduce((s,p)=>{
     const breakdown=getLoanBreakdown(p);
     if(breakdown){
-      return s+(breakdown.remainingPrincipal+breakdown.interest+breakdown.processingFee+breakdown.fees);
+      let currentPayable=breakdown.remainingPrincipal+breakdown.interest+breakdown.processingFee+breakdown.fees-breakdown.paidAmount;
+      if(currentPayable<0) currentPayable=0;
+      return s+currentPayable;
     }
     return s+p.remaining;
   },0);
