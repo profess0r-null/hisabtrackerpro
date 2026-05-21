@@ -1647,20 +1647,19 @@ function getLoanBreakdown(p){
   const breakdown = calculateLoanTotal(p.original, fees, loanDate.toISOString().split('T')[0]);
   const paidAmount = p.history.filter(h => h.t === 'pay').reduce((s, h) => s + h.amt, 0);
   
+  // ১. দিন অনুযায়ী কারেন্ট ইন্টারেস্ট (Reducing Balance Schedule অনুযায়ী লাইভ কাউন্ট)
   const monthsActive = Math.min(3, Math.ceil(breakdown.daysToCharge / 30) || 1);
   let currentInterest = 0;
   let tempPrincipal = p.original;
-  let tempPaid = paidAmount;
-  
   for (let i = 1; i <= monthsActive; i++) {
     const monthInterest = Math.round(tempPrincipal * 0.015);
     currentInterest += monthInterest;
-    const interestCovered = Math.min(tempPaid, monthInterest);
-    tempPaid -= interestCovered;
-    tempPrincipal = Math.max(0, tempPrincipal - tempPaid);
-    tempPaid = 0;
+    // রিডিউসিং ট্র্যাকিং এর জন্য কাল্পনিক কিস্তি সমন্বয়
+    const estimatedEmi = Math.round(breakdown.totalRepayment / 3);
+    tempPrincipal = Math.max(0, tempPrincipal - (estimatedEmi - monthInterest));
   }
   
+  // ২. পেমেন্ট ডিস্ট্রিবিউশন লজিক: আগে ইন্টারেস্ট কভার হবে, তারপর আসল কমবে
   const interestCovered = Math.min(paidAmount, currentInterest);
   const principalReduction = paidAmount - interestCovered;
   const remainingPrincipal = Math.max(0, p.original - principalReduction);
@@ -1741,8 +1740,17 @@ function confirmPay(){
   const note=document.getElementById('pn').value||'Payment';
   if(isNaN(amt)||amt<=0)return;
   const p=DB[CTX.type].find(x=>x.id===CTX.id);
-  p.remaining=Math.max(0,p.remaining-amt);
-  const ts=Date.now();p.history.unshift({id:ts,date:ts,amt,note,t:'pay'});
+  
+  const ts=Date.now();
+  p.history.unshift({id:ts,date:ts,amt,note,t:'pay'});
+  
+  const breakdown = getLoanBreakdown(p);
+  if(breakdown) {
+    p.remaining = Math.max(0, breakdown.totalRepayment - breakdown.paidAmount);
+  } else {
+    p.remaining = Math.max(0, p.remaining - amt);
+  }
+  
   if(p.remaining===0) p.clearedAt=ts;
   logActivity('পরিশোধ',`${p.name} — ৳${fmt(amt)}`);
   cm('m-pay');saveData();render();toast(LANG==='bn'?'💸 পরিশোধ হয়েছে!':'💸 Recorded!');
@@ -1843,8 +1851,13 @@ function copyWA(type,id){
   const p=DB[type].find(x=>x.id===id);
   const d=ageDays(p);
   const recent=p.history.slice(0,5);
+  const breakdown=getLoanBreakdown(p);
+  let remAmt=p.remaining;
+  if(type==='receive'&&breakdown){
+    remAmt=breakdown.totalRepayment-breakdown.paidAmount;
+  }
   let t=`🧾 হিসাব | ${p.name}\n\n`;
-  t+=`💵 পাওয়া: ৳${fmt(p.remaining)}\n`;
+  t+=`💵 পাওয়া: ৳${fmt(remAmt)}\n`;
   t+=`📅 বকেয়া: ${d} দিন\n`;
   if(recent.length){
     t+=`\nHistory:\n`;
@@ -1874,7 +1887,7 @@ function renderCard(p,type){
   if(type==='receive'){
     const breakdown=getLoanBreakdown(p);
     if(breakdown){
-      displayAmt=breakdown.remainingPrincipal+breakdown.interest+breakdown.processingFee+breakdown.fees-breakdown.paidAmount;
+      displayAmt=breakdown.totalRepayment-breakdown.paidAmount;
       if(displayAmt<0) displayAmt=0;
       pct=breakdown.progressPercent;
       
@@ -1969,7 +1982,7 @@ function render(){
   const tr=DB.receive.reduce((s,p)=>{
     const breakdown=getLoanBreakdown(p);
     if(breakdown){
-      let currentPayable=breakdown.remainingPrincipal+breakdown.interest+breakdown.processingFee+breakdown.fees-breakdown.paidAmount;
+      let currentPayable=breakdown.totalRepayment-breakdown.paidAmount;
       if(currentPayable<0) currentPayable=0;
       return s+currentPayable;
     }
