@@ -83,7 +83,7 @@ body{background:var(--bg);color:var(--text);font-family:'Inter','Hind Siliguri',
 .pin-key{height:60px;border-radius:14px;border:1px solid var(--border);background:var(--card);color:var(--text);font-size:1.35rem;font-weight:700;cursor:pointer;transition:background .1s,transform .1s;display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent;}
 .pin-key:active{background:var(--primary);color:#fff;transform:scale(.93);}
 .pin-key.del{font-size:1rem;color:var(--muted);}
-.pin-err{font-size:13px;color:var(--red);font-weight:600;min-height:18px;margin-bottom:4px;}
+.pin-dark{font-size:13px;color:var(--red);font-weight:600;min-height:18px;margin-bottom:4px;}
 .pin-link{font-size:12px;color:var(--muted);cursor:pointer;text-decoration:underline;margin-top:12px;display:inline-block;}
 @keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}
 .shake{animation:shake .4s ease;}
@@ -130,364 +130,7 @@ body{background:var(--bg);color:var(--text);font-family:'Inter','Hind Siliguri',
 .drawer.on{transform:translateX(0);}
 .drw-user-card{padding:20px 18px 16px;background:linear-gradient(135deg,rgba(56,189,248,.12),rgba(129,140,248,.08));border-bottom:1px solid var(--border);}
 .drw-user-top{display:flex;align-items:center;gap:12px;margin-bottom:0;}
-.drw-avatar{width:44px;height:44px;border-radius:14px;background:var(--grad);display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:900;color:#fff;flex-shrink:0;-webkit-text-fill-color:#fff;letter-spacing:0;}
-.drw-user-info{flex:1;min-width:0;}
-.drw-app-name{font-size:11px;font-weight:800;color:var(--primary);text-transform:uppercase;letter-spacing:.08em;margin-bottom:2px;}
-.drw-username{font-size:14px;font-weight:800;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.drw-email-row{display:flex;align-items:center;gap:6px;margin-top:8px;padding:7px 10px;background:var(--card);border-radius:10px;border:1px solid var(--border);}
-.drw-email-icon{font-size:13px;flex-shrink:0;}
-.drw-email-text{font-size:12px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0;}
-.drw-close{width:30px;height:30px;border:none;background:var(--card);border-radius:8px;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--text2);border:1px solid var(--border);}
-.drawer-body{flex:1;padding:8px 6px 20px;overflow-y:auto;}
-.drw-sec{font-size:10px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;padding:12px 10px 5px;}
-.drw-item{display:flex;align-items:center;gap:11px;padding:11px 12px;border-radius:10px;cursor:pointer;font-size:14px;font-weight:600;color:var(--text);margin-bottom:1px;border:none;background:none;width:100%;text-align:left;-webkit-tap-highlight-color:transparent;}
-.drw-item:active{background:var(--card);}
-.drw-icon{font-size:16px;width:22px;text-align:center;flex-shrink:0;}
-.drw-item.danger{color:var(--red);}
-
-/* switch mode button in drawer */
-.drw-item.switch-mode{background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);color:var(--yellow);border-radius:10px;margin:4px 6px;width:calc(100% - 12px);}
-.drw-item.switch-mode.to-hisab{background:rgba(56,189,248,.08);border-color:rgba(56,189,248,.2);color:var(--primary);}
-
-.drw-divider{height:1px;background:var(--border);margin:5px 10px;}
-.theme-row{display:flex;gap:8px;padding:4px 10px 4px;}
-.theme-opt{flex:1;height:42px;border-radius:12px;border:2px solid var(--border);background:var(--card);cursor:pointer;font-size:13px;font-weight:700;color:var(--text2);transition:all .2s;display:flex;align-items:center;justify-content:center;gap:6px;}
-.theme-opt:active{transform:scale(.97);}
-.theme-opt.on{border-color:var(--primary);color:var(--primary);background:rgba(56,189,248,.08);}
-
-/* ─── MODALS ─── */
-.overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(6px);z-index:2000;display:none;align-items:center;justify-content:center;padding:16px;}
-.overlay.on{display:flex;}
-.modal{background:var(--surface);border:1px solid var(--border);border-radius:22px;padding:24px;width:100%;max-width:420px;max-height:90vh;overflow-y:auto;box-shadow:var(--shadow);}
-.modal-title{font-weight:900;font-size:1.05rem;margin-bottom:4px;}
-.modal-sub{font-size:13px;color:var(--muted);margin-bottom:16px;}
-.modal .inp-wrap{margin-bottom:10px;}
-.modal-btns{display:flex;gap:10px;margin-top:16px;}
-.modal-msg{font-size:13px;font-weight:600;min-height:18px;margin-top:8px;}
-.modal-msg.err{color:var(--red);}
-.modal-msg.ok{color:var(--green);}
-.alog-item{padding:10px 0;border-bottom:1px solid var(--border);font-size:13px;}
-.alog-item:last-child{border-bottom:none;}
-.alog-action{font-weight:700;color:var(--text);}
-.alog-meta{font-size:11px;color:var(--muted);margin-top:2px;}
-
-/* ─── MAIN ─── */
-.wrap{max-width:900px;margin:0 auto;padding:20px;padding-bottom:40px;}
-
-/* summary cards */
-.summary{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;}
-.sc{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:18px 16px;text-align:center;box-shadow:var(--shadow);transition:transform .15s;}
-.sc:active{transform:scale(.98);}
-.sc-net{background:var(--surface);border:2px solid var(--border);border-radius:20px;padding:16px 22px;box-shadow:var(--shadow);display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:24px;transition:border-color .3s,background .3s;}
-.sc-net.pos{border-color:rgba(16,185,129,.5);background:linear-gradient(135deg,rgba(16,185,129,.08),rgba(16,185,129,.04));}
-.sc-net.neg{border-color:rgba(239,68,68,.5);background:linear-gradient(135deg,rgba(239,68,68,.08),rgba(239,68,68,.04));}
-.sc-net.zero{border-color:rgba(99,102,241,.4);background:linear-gradient(135deg,rgba(99,102,241,.08),rgba(99,102,241,.04));}
-.sc-lbl{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px;}
-.sc-val{font-size:26px;font-weight:900;}
-.sc-val.g{color:var(--green);}.sc-val.r{color:var(--red);}
-.sc-sub{font-size:11px;color:var(--muted);margin-top:3px;font-weight:600;}
-.net-val{font-size:32px;font-weight:900;}
-.net-icon{font-size:34px;opacity:.6;}
-
-/* search */
-.search-wrap{margin-bottom:20px;position:relative;}
-.search-wrap input{padding-left:42px;background:var(--surface);border:1px solid var(--border);border-radius:12px;font-size:14px;}
-.si{position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:16px;pointer-events:none;}
-
-/* top lists */
-.top-s{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:16px;box-shadow:var(--shadow);}
-.top-sh{font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px;}
-.top-row{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--border);}
-.top-row:last-child{border-bottom:none;}
-.top-rank{font-size:11px;font-weight:800;color:var(--muted);width:22px;flex-shrink:0;}
-.top-name{font-size:14px;font-weight:700;flex:1;}
-.top-age{font-size:11px;color:var(--muted);flex-shrink:0;}
-.top-age.mid{color:var(--yellow);}.top-age.old{color:var(--red);}
-.top-amt{font-size:14px;font-weight:800;flex-shrink:0;}
-
-/* tabs */
-.tabs{display:flex;gap:7px;background:var(--bg2);padding:5px;border-radius:14px;margin-bottom:22px;border:1px solid var(--border);overflow-x:auto;-webkit-overflow-scrolling:touch;}
-.tab{flex:1;min-width:88px;padding:10px;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;color:var(--muted);background:transparent;white-space:nowrap;transition:background .2s,color .2s;-webkit-tap-highlight-color:transparent;}
-.tab.on{background:var(--surface);color:var(--primary);box-shadow:0 2px 8px rgba(0,0,0,.12);}
-
-/* form */
-.af{background:var(--surface);border-radius:20px;padding:20px;margin-bottom:22px;border:1px solid var(--border);box-shadow:var(--shadow);}
-.af-head{font-size:1rem;font-weight:800;margin-bottom:14px;}
-.af-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:10px;margin-bottom:12px;}
-input{width:100%;padding:13px 14px;border-radius:12px;border:2px solid var(--border);background:var(--bg2);color:var(--text);font-size:15px;outline:none;font-family:inherit;transition:border-color .2s,background .3s;}
-input:focus{border-color:var(--primary);}
-.qtags{display:flex;gap:7px;margin-bottom:12px;flex-wrap:wrap;}
-.qtag{font-size:12px;padding:5px 11px;border-radius:8px;background:var(--card);border:1px solid var(--border);cursor:pointer;font-weight:600;color:var(--text2);-webkit-tap-highlight-color:transparent;}
-.qtag:active{opacity:.7;}
-.sbtn{width:100%;padding:14px;border-radius:12px;border:none;font-size:15px;font-weight:800;cursor:pointer;color:#fff;transition:opacity .15s,transform .1s;-webkit-tap-highlight-color:transparent;}
-.sbtn-g{background:linear-gradient(135deg,var(--green),#059669);}
-.sbtn-r{background:linear-gradient(135deg,var(--red),#dc2626);}
-.sbtn-y{background:var(--cash-grad);}
-.sbtn:active{opacity:.85;transform:scale(.99);}
-
-/* section header */
-.sec-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
-.sec-lbl{font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;}
-.see-all{font-size:12px;font-weight:700;color:var(--primary);background:none;border:1px solid var(--primary);cursor:pointer;padding:4px 10px;border-radius:7px;display:none;}
-
-/* cards */
-.pcard{background:var(--surface);border:1px solid var(--border);border-radius:16px;margin-bottom:10px;overflow:hidden;}
-.pcard.settled{opacity:.45;}
-@keyframes fadeIn{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:translateY(0)}}
-.pcard{animation:fadeIn .18s ease;}
-.pt{padding:15px 17px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;gap:10px;min-height:68px;-webkit-tap-highlight-color:transparent;}
-.pt-l{flex:1;min-width:0;}
-.pname{font-size:1rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.pbadge{font-size:11px;font-weight:600;color:var(--muted);margin-top:2px;}
-.pbadge.mid{color:var(--yellow);}.pbadge.old{color:var(--red);}
-.pt-r{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0;}
-.pamt{font-size:1.15rem;font-weight:800;}
-.pbar-wrap{width:68px;}
-.pbar{height:3px;border-radius:2px;background:var(--border);overflow:hidden;}
-.pbar-fill{height:100%;border-radius:2px;transition:width .5s ease;}
-.pbar-lbl{font-size:10px;color:var(--muted);text-align:right;margin-top:2px;}
-.pbody{display:none;border-top:1px solid var(--border);background:var(--bg2);padding:14px;}
-.pbody.on{display:block;}
-.psum{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px;padding:12px;background:var(--card);border-radius:12px;border:1px solid var(--border);}
-.ps-i{text-align:center;}
-.ps-l{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;margin-bottom:3px;}
-.ps-v{font-size:14px;font-weight:800;}
-.hi{display:flex;justify-content:space-between;padding:7px 9px;border-radius:8px;margin-bottom:3px;font-size:13px;gap:8px;}
-.hi.ar{background:var(--green-bg);}.hi.pr{background:var(--red-bg);}
-.hi span{color:var(--text2);flex:1;min-width:0;font-size:12px;}
-.hi b{flex-shrink:0;}
-.hh{font-weight:800;font-size:10px;color:var(--muted);margin-bottom:7px;text-transform:uppercase;letter-spacing:.05em;}
-.arow{display:flex;gap:7px;margin-top:12px;flex-wrap:wrap;}
-.btn-a{flex:1;height:42px;border-radius:9px;border:1px solid var(--border);background:var(--card);color:var(--text);font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;font-size:13px;min-width:42px;-webkit-tap-highlight-color:transparent;}
-.btn-a:active{opacity:.6;}
-
-/* empty state */
-.empty{text-align:center;padding:40px 20px;}
-.empty-i{font-size:48px;margin-bottom:10px;opacity:.6;}
-.empty-t{font-size:14px;font-weight:600;color:var(--muted);}
-.empty-s{font-size:12px;color:var(--muted);margin-top:4px;opacity:.7;}
-
-/* toast */
-.toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--card);padding:10px 18px;border-radius:999px;border:1px solid var(--border);transition:.35s;z-index:9999;font-weight:600;font-size:13px;white-space:nowrap;pointer-events:none;box-shadow:0 4px 16px rgba(0,0,0,.25);}
-.toast.on{transform:translateX(-50%) translateY(0);}
-
-/* ════════════════════════════════
-   CASH TRACKER
-════════════════════════════════ */
-#cash-app{display:none;}
-
-/* Cash balance card */
-.cash-hero{background:linear-gradient(135deg,#1a2e1a,#1e3320);border:1.5px solid rgba(16,185,129,.3);border-radius:24px;padding:32px 24px;margin-bottom:20px;text-align:center;position:relative;overflow:hidden;}
-[data-theme="light"] .cash-hero{background:linear-gradient(135deg,#ecfdf5,#d1fae5);}
-.cash-hero::before{content:'';position:absolute;top:-40px;right:-40px;width:160px;height:160px;background:radial-gradient(circle,rgba(16,185,129,.15),transparent 70%);border-radius:50%;}
-.cash-hero::after{content:'';position:absolute;bottom:-30px;left:-30px;width:120px;height:120px;background:radial-gradient(circle,rgba(16,185,129,.08),transparent 70%);border-radius:50%;}
-.cash-hero-lbl{font-size:11px;font-weight:800;color:var(--green);text-transform:uppercase;letter-spacing:.12em;margin-bottom:10px;opacity:.8;}
-.cash-hero-amt{font-size:52px;font-weight:900;color:#4ade80;line-height:1;margin-bottom:8px;font-variant-numeric:tabular-nums;text-shadow:0 0 40px rgba(74,222,128,.2);}
-.cash-hero-sub{font-size:12px;color:rgba(74,222,128,.6);font-weight:500;}
-[data-theme="light"] .cash-hero-amt{color:#059669;}
-[data-theme="light"] .cash-hero-sub{color:#10b981;}
-
-/* cash quick actions */
-.cash-actions{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:24px;}
-.cash-btn{padding:16px;border-radius:16px;border:none;font-size:15px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;-webkit-tap-highlight-color:transparent;transition:transform .1s,opacity .15s;}
-.cash-btn:active{transform:scale(.97);opacity:.85;}
-.cash-btn-add{background:linear-gradient(135deg,var(--green),#059669);color:#fff;}
-.cash-btn-sub{background:linear-gradient(135deg,var(--red),#dc2626);color:#fff;}
-
-/* cash form */
-.cash-form{background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:20px;margin-bottom:20px;box-shadow:var(--shadow);}
-.cash-form.hidden{display:none;}
-.cash-form-title{font-size:14px;font-weight:800;margin-bottom:14px;display:flex;align-items:center;gap:8px;}
-.cash-type-tabs{display:flex;gap:6px;margin-bottom:14px;}
-.cash-type-tab{flex:1;padding:9px;border-radius:10px;border:2px solid var(--border);background:transparent;cursor:pointer;font-size:13px;font-weight:700;color:var(--muted);transition:all .2s;}
-.cash-type-tab.add.on{border-color:var(--green);color:var(--green);background:var(--green-bg);}
-.cash-type-tab.sub.on{border-color:var(--red);color:var(--red);background:var(--red-bg);}
-
-/* cash history */
-.cash-history-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
-.cash-history-title{font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;}
-.cash-clear-btn{font-size:11px;font-weight:700;color:var(--red);background:none;border:1px solid rgba(239,68,68,.3);border-radius:6px;padding:3px 8px;cursor:pointer;}
-
-.cash-entry{display:flex;align-items:center;gap:12px;padding:13px 14px;background:var(--surface);border:1px solid var(--border);border-radius:14px;margin-bottom:8px;animation:fadeIn .18s ease;}
-.cash-entry-icon{width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
-.cash-entry-icon.plus{background:rgba(16,185,129,.12);}
-.cash-entry-icon.minus{background:rgba(239,68,68,.1);}
-.cash-entry-info{flex:1;min-width:0;}
-.cash-entry-note{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.cash-entry-date{font-size:11px;color:var(--muted);margin-top:2px;}
-.cash-entry-amt{font-size:16px;font-weight:800;flex-shrink:0;}
-.cash-entry-amt.plus{color:var(--green);}
-.cash-entry-amt.minus{color:var(--red);}
-.cash-del-btn{background:var(--card);border:1px solid var(--border);cursor:pointer;color:var(--muted);font-size:12px;padding:7px 9px;border-radius:8px;-webkit-tap-highlight-color:transparent;transition:all .15s;flex-shrink:0;}
-.cash-del-btn:active{background:rgba(239,68,68,.1);border-color:var(--red);color:var(--red);}
-
-/* budget bar */
-.budget-bar-wrap{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:14px 16px;margin-bottom:16px;}
-.budget-bar-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
-.budget-bar-lbl{font-size:12px;font-weight:700;color:var(--text2);}
-.budget-bar-pct{font-size:12px;font-weight:800;}
-.budget-bar{height:8px;border-radius:999px;background:var(--border);overflow:hidden;}
-.budget-bar-fill{height:100%;border-radius:999px;transition:width .6s ease;}
-.budget-bar-sub{font-size:11px;color:var(--muted);margin-top:6px;}
-.budget-set-btn{font-size:11px;font-weight:700;color:var(--primary);background:none;border:1px solid rgba(56,189,248,.3);border-radius:6px;padding:3px 8px;cursor:pointer;}
-
-/* category filter */
-.cat-filter{display:flex;gap:7px;margin-bottom:16px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:4px;}
-.cat-pill{font-size:12px;padding:6px 13px;border-radius:999px;background:var(--card);border:1px solid var(--border);cursor:pointer;font-weight:600;color:var(--text2);white-space:nowrap;-webkit-tap-highlight-color:transparent;transition:all .15s;flex-shrink:0;}
-.cat-pill.on{background:rgba(56,189,248,.1);border-color:var(--primary);color:var(--primary);}
-
-/* slide type selector for hisab */
-.type-slider{display:flex;background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:4px;margin-bottom:16px;position:relative;}
-.type-slider-track{position:absolute;top:4px;left:4px;width:calc(33.333% - 3px);height:calc(100% - 8px);border-radius:10px;background:var(--surface);box-shadow:0 2px 8px rgba(0,0,0,.15);transition:transform .22s cubic-bezier(.34,1.56,.64,1);}
-.type-slider-track.mid{transform:translateX(calc(100% + 2px));}
-.type-slider-track.right{transform:translateX(calc(200% + 4px));}
-.type-slider-opt{flex:1;padding:10px 6px;border:none;background:transparent;font-size:13px;font-weight:700;cursor:pointer;border-radius:10px;position:relative;z-index:1;transition:color .18s;-webkit-tap-highlight-color:transparent;white-space:nowrap;}
-.type-slider-opt.active-r{color:var(--green);}
-.type-slider-opt.active-g{color:var(--red);}
-.type-slider-opt.active-a{color:var(--primary);}
-.type-slider-opt.inactive{color:var(--muted);}
-
-/* swipe on cards */
-.pcard{position:relative;overflow:hidden;}
-.pcard-inner{will-change:transform;transform:translateZ(0);}
-.swipe-action{position:absolute;top:0;bottom:0;width:90px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;opacity:0;pointer-events:none;flex-direction:column;gap:4px;transition:opacity .08s linear;}
-.swipe-action.left{left:0;background:linear-gradient(90deg,rgba(16,185,129,.3) 0%,rgba(16,185,129,.0) 100%);color:var(--green);padding-left:14px;justify-content:flex-start;}
-.swipe-action.right{right:0;background:linear-gradient(270deg,rgba(56,189,248,.3) 0%,rgba(56,189,248,.0) 100%);color:var(--primary);padding-right:14px;justify-content:flex-end;}
-.swipe-action-icon{font-size:22px;}
-.swipe-action-lbl{font-size:10px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;}
-
-/* settlement suggestion */
-.settle-suggest{background:linear-gradient(135deg,rgba(99,102,241,.08),rgba(56,189,248,.06));border:1px solid rgba(99,102,241,.2);border-radius:14px;padding:12px 14px;margin-bottom:16px;display:flex;align-items:center;gap:10px;}
-.settle-icon{font-size:20px;flex-shrink:0;}
-.settle-text{font-size:13px;font-weight:600;flex:1;color:var(--text2);}
-.settle-amt{font-size:14px;font-weight:800;color:var(--primary);flex-shrink:0;}
-
-/* sc tap */
-.sc{cursor:pointer;}
-.sc:active{transform:scale(.97);}
-
-
-/* cash stats row */
-.cash-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px;}
-.cash-stat{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px 10px;text-align:center;}
-.cash-stat-lbl{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px;}
-.cash-stat-val{font-size:16px;font-weight:900;}
-</style>
-</head>
-<body>
-
-<!-- ══ AUTH ══ -->
-<div class="fs" id="auth-screen">
-  <div class="auth-wrap">
-    <div id="verified-banner" class="verified-banner" style="display:none">
-      <div class="verified-icon">✅</div>
-      <div class="verified-title">Email Verified!</div>
-      <div class="verified-sub">আপনার email verify হয়েছে। এখন login করুন।</div>
-    </div>
-    <div class="auth-brand">
-      <div class="auth-brand-logo">📒</div>
-      <div class="auth-brand-name">হিসাব ট্র্যাকার</div>
-      <div class="auth-brand-tag">আপনার হিসাব, আপনার নিয়ন্ত্রণে</div>
-    </div>
-    <div class="auth-box">
-      <div class="auth-tabs">
-        <button class="auth-tab on" onclick="switchAuthTab('login',this)">
-          <span class="bn">লগইন</span><span class="en">Login</span>
-        </button>
-        <button class="auth-tab" onclick="switchAuthTab('register',this)">
-          <span class="bn">রেজিস্টার</span><span class="en">Register</span>
-        </button>
-      </div>
-      <div class="inp-wrap">
-        <input class="ai" id="au-email" type="email" placeholder="Email address" autocomplete="email">
-      </div>
-      <div class="inp-wrap">
-        <input class="ai has-eye" id="au-pass" type="password" placeholder="Password" autocomplete="current-password" onkeydown="if(event.key==='Enter')authSubmit()">
-        <button class="eye-btn" onclick="toggleEye('au-pass',this)" tabindex="-1">👁️</button>
-      </div>
-      <div id="au-name-wrap" style="display:none">
-        <div class="inp-wrap">
-          <input class="ai" id="au-name" type="text" placeholder="আপনার নাম (optional)">
-        </div>
-      </div>
-      <button class="auth-btn" id="au-btn" onclick="authSubmit()">
-        <span class="bn">লগইন করুন →</span><span class="en">Login →</span>
-      </button>
-      <div class="auth-msg" id="au-msg"></div>
-      <div class="auth-link" id="au-forgot" onclick="authForgot()">
-        <span class="bn">পাসওয়ার্ড ভুলে গেছেন?</span>
-        <span class="en">Forgot password?</span>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ══ PIN ══ -->
-<div class="fs" id="pin-screen" style="display:none">
-  <div class="pin-box">
-    <div class="pin-logo">🔒</div>
-    <div class="pin-title" id="pin-title">PIN দিন</div>
-    <div class="pin-sub" id="pin-sub">আপনার ৪ সংখ্যার PIN লিখুন</div>
-    <div class="pin-dots">
-      <div class="pin-dot" id="pd0"></div><div class="pin-dot" id="pd1"></div>
-      <div class="pin-dot" id="pd2"></div><div class="pin-dot" id="pd3"></div>
-    </div>
-    <div class="pin-grid">
-      <button class="pin-key" onclick="pinKey('1')">1</button>
-      <button class="pin-key" onclick="pinKey('2')">2</button>
-      <button class="pin-key" onclick="pinKey('3')">3</button>
-      <button class="pin-key" onclick="pinKey('4')">4</button>
-      <button class="pin-key" onclick="pinKey('5')">5</button>
-      <button class="pin-key" onclick="pinKey('6')">6</button>
-      <button class="pin-key" onclick="pinKey('7')">7</button>
-      <button class="pin-key" onclick="pinKey('8')">8</button>
-      <button class="pin-key" onclick="pinKey('9')">9</button>
-      <button class="pin-key" onclick="pinKey('0')" style="grid-column:2">0</button>
-      <button class="pin-key del" onclick="pinDel()">⌫</button>
-    </div>
-    <div class="pin-err" id="pin-err"></div>
-    <span class="pin-link" onclick="signOut()">
-      <span class="bn">অন্য account দিয়ে login করুন</span>
-      <span class="en">Switch account</span>
-    </span>
-  </div>
-</div>
-
-<!-- ══ HISAB APP ══ -->
-<div id="app" style="display:none">
-
-<header class="hdr">
-  <div class="logo">
-    <span class="logo-icon">📒</span>
-    <div class="logo-text">
-      <span class="logo-main" id="hdr-logo-text">হিসাব ট্র্যাকার</span>
-      <span class="logo-sub">PRO Edition</span>
-    </div>
-  </div>
-  <div class="hdr-right">
-    <span class="mode-badge hisab" id="mode-badge">HISAB</span>
-    <button class="hamburger" onclick="openDrawer()" aria-label="Menu">
-      <div class="hb-line"></div>
-      <div class="hb-line"></div>
-      <div class="hb-line"></div>
-    </button>
-  </div>
-</header>
-
-<!-- SYNC BAR -->
-<div class="sync-bar">
-  <div class="sync-pill" id="sync-pill">
-    <div class="sync-dot"></div>
-    <span id="sync-txt">Saved</span>
-  </div>
-</div>
-
-<!-- DRAWER -->
-<div class="drawer-overlay" id="drw-overlay" onclick="closeDrawer()"></div>
-<div class="drawer" id="drw">
-  <div class="drw-user-card">
-    <div class="drw-user-top">
-      <div class="drw-avatar" id="drw-av">?</div>
+.drw-avatar" id="drw-av">?</div>
       <div class="drw-user-info">
         <div class="drw-app-name">হিসাব PRO</div>
         <div class="drw-username" id="drw-name">User</div>
@@ -1019,7 +662,6 @@ function renderSettlement(){
   box.style.display='block';
 }
 
-
 // init
 document.documentElement.setAttribute('data-lang',LANG);
 applyThemeSilent(THEME);
@@ -1229,12 +871,12 @@ async function changePassword(){
   const cf=document.getElementById('pr-cf').value;
   const msg=document.getElementById('pr-msg');
   if(np.length<6){msg.className='modal-msg err';msg.textContent='কমপক্ষে ৬ অক্ষর!';return;}
-  if(np!==cf){msg.className='modal-msg err';msg.textContent='Password মিলছে না!';return;}
+  if(np!==cf){msg.className='modal-msg err';msg.textContent='Password miltece na!';return;}
   const{error}=await sb.auth.updateUser({password:np});
   if(error){msg.className='modal-msg err';msg.textContent='❌ '+error.message;return;}
-  logActivity('Password পরিবর্তন করা হয়েছে');
+  logActivity('Password poriborton kora hoyece');
   await saveData();
-  msg.className='modal-msg ok';msg.textContent='✅ পাসওয়ার্ড পরিবর্তন হয়েছে!';
+  msg.className='modal-msg ok';msg.textContent='✅ Password poriborton hoyece!';
   setTimeout(()=>cm('m-profile'),1500);
 }
 
@@ -1248,7 +890,6 @@ function setTrusted(){localStorage.setItem(tk(),'1');}
 
 async function checkPin(){
   if(isTrusted()){showApp();return;}
-  // PIN screen দেখানোর আগে cloud থেকে pinHash load করি
   try{
     const{data}=await sb.from('hisab_users').select('data').eq('id',CUR_USER.id).maybeSingle();
     if(data&&data.data&&data.data.pinHash){
@@ -1257,31 +898,31 @@ async function checkPin(){
     }
   }catch(e){}
   pinMode='unlock';pinBuf='';updDots('');
-  document.getElementById('pin-err').textContent='';
-  document.getElementById('pin-title').textContent=LANG==='bn'?'PIN দিন':'Enter PIN';
-  document.getElementById('pin-sub').textContent=LANG==='bn'?'আপনার ৪ সংখ্যার PIN লিখুন':'Enter your 4-digit PIN';
+  document.getElementById('pin-dark').textContent='';
+  document.getElementById('pin-title').textContent=LANG==='bn'?'PIN din':'Enter PIN';
+  document.getElementById('pin-sub').textContent=LANG==='bn'?'Apnar 4 shonkhar PIN likhun':'Enter your 4-digit PIN';
   document.getElementById('pin-screen').style.display='flex';
 }
 function openPinChange(){
   closeDrawer();
   pinMode='set-new1';pinBuf='';updDots('');
-  document.getElementById('pin-err').textContent='';
-  document.getElementById('pin-title').textContent=LANG==='bn'?'নতুন PIN দিন':'New PIN';
-  document.getElementById('pin-sub').textContent=LANG==='bn'?'নতুন ৪ সংখ্যার PIN লিখুন':'Enter a new 4-digit PIN';
+  document.getElementById('pin-dark').textContent='';
+  document.getElementById('pin-title').textContent=LANG==='bn'?'Notun PIN din':'New PIN';
+  document.getElementById('pin-sub').textContent=LANG==='bn'?'Notun 4 shonkhar PIN likhun':'Enter a new 4-digit PIN';
   document.getElementById('app').style.display='none';
   document.getElementById('pin-screen').style.display='flex';
 }
 function lockApp(){
   closeDrawer();
-  logActivity('App লক করা হয়েছে');
+  logActivity('App lock kora hoyece');
   saveData();
   localStorage.removeItem(tk());
   document.getElementById('app').style.display='none';
   document.body.style.overflow='';
   pinMode='unlock';pinBuf='';updDots('');
-  document.getElementById('pin-err').textContent='';
-  document.getElementById('pin-title').textContent=LANG==='bn'?'PIN দিন':'Enter PIN';
-  document.getElementById('pin-sub').textContent=LANG==='bn'?'আপনার ৪ সংখ্যার PIN লিখুন':'Enter your 4-digit PIN';
+  document.getElementById('pin-dark').textContent='';
+  document.getElementById('pin-title').textContent=LANG==='bn'?'PIN din':'Enter PIN';
+  document.getElementById('pin-sub').textContent=LANG==='bn'?'Apnar 4 shonkhar PIN likhun':'Enter your 4-digit PIN';
   document.getElementById('pin-screen').style.display='flex';
 }
 function updDots(buf,cls){
@@ -1290,7 +931,7 @@ function updDots(buf,cls){
 function pinKey(k){
   if(pinBuf.length>=4)return;
   pinBuf+=k;updDots(pinBuf);
-  document.getElementById('pin-err').textContent='';
+  document.getElementById('pin-dark').textContent='';
   if(pinBuf.length===4)setTimeout(handlePin,120);
 }
 function pinDel(){pinBuf=pinBuf.slice(0,-1);updDots(pinBuf);}
@@ -1303,35 +944,35 @@ function handlePin(){
       showApp();
     }else{
       updDots('1234','err');
-      document.getElementById('pin-err').textContent=LANG==='bn'?'❌ ভুল PIN!':'❌ Wrong PIN!';
+      document.getElementById('pin-dark').textContent=LANG==='bn'?'❌ Bhul PIN!':'❌ Wrong PIN!';
       box.classList.add('shake');
       setTimeout(()=>{box.classList.remove('shake');pinBuf='';updDots('');},500);
     }
   }else if(pinMode==='set-new1'){
     pinTmp=pinBuf;pinBuf='';updDots('');
     pinMode='set-new2';
-    document.getElementById('pin-title').textContent=LANG==='bn'?'আবার দিন':'Confirm PIN';
-    document.getElementById('pin-sub').textContent=LANG==='bn'?'PIN আবার লিখে নিশ্চিত করুন':'Re-enter your PIN to confirm';
+    document.getElementById('pin-title').textContent=LANG==='bn'?'Abar din':'Confirm PIN';
+    document.getElementById('pin-sub').textContent=LANG==='bn'?'PIN abar likhe nishchit korun':'Re-enter your PIN to confirm';
   }else if(pinMode==='set-new2'){
     if(pinBuf===pinTmp){
       const hash=ph(pinBuf);
       localStorage.setItem(pk(),hash);
       DB.pinHash=hash;
-      logActivity('PIN পরিবর্তন করা হয়েছে');
+      logActivity('PIN poriborton kora hoyece');
       saveData();
       pinBuf='';pinTmp='';pinMode='unlock';
       document.getElementById('pin-screen').style.display='none';
       document.getElementById('app').style.display='block';
-      toast('✅ PIN পরিবর্তন হয়েছে!');
+      toast('✅ PIN poriborton hoyece!');
     }else{
       updDots('1234','err');
-      document.getElementById('pin-err').textContent=LANG==='bn'?'❌ মিলেনি! আবার চেষ্টা করুন।':'❌ Mismatch! Try again.';
+      document.getElementById('pin-dark').textContent=LANG==='bn'?'❌ Mileni! Abar chesta korun।':'❌ Mismatch! Try again.';
       box.classList.add('shake');
       setTimeout(()=>{
         box.classList.remove('shake');pinBuf='';pinTmp='';
         pinMode='set-new1';updDots('');
-        document.getElementById('pin-title').textContent=LANG==='bn'?'নতুন PIN দিন':'New PIN';
-        document.getElementById('pin-sub').textContent=LANG==='bn'?'নতুন ৪ সংখ্যার PIN লিখুন':'Enter a new 4-digit PIN';
+        document.getElementById('pin-title').textContent=LANG==='bn'?'Notun PIN din':'New PIN';
+        document.getElementById('pin-sub').textContent=LANG==='bn'?'Notun 4 shonkhar PIN likhun':'Enter a new 4-digit PIN';
       },500);
     }
   }
@@ -1341,11 +982,10 @@ function handlePin(){
 async function showApp(){
   document.getElementById('app').style.display='block';
   setSyncState('saving','Loading...');
-  // Track logged-in visit
   (async()=>{try{await sb.from('visits').insert({user_agent:navigator.userAgent,logged_in:true});}catch(e){}})();
   await loadData();
   await loadCashDataCloud();
-  logActivity('Login সফল',CUR_USER.email);
+  logActivity('Login shofol',CUR_USER.email);
   await saveData();
   applyMode();
   render();
@@ -1357,7 +997,6 @@ async function loadData(){
     if(!DB.receive)DB.receive=[];
     if(!DB.give)DB.give=[];
     if(!DB.activityLog)DB.activityLog=[];
-    // PIN cloud থেকে localStorage এ sync
     if(DB.pinHash) localStorage.setItem(pk(),DB.pinHash);
   }else if(!error){
     await sb.from('hisab_users').insert({id:CUR_USER.id,data:DB});
@@ -1389,15 +1028,12 @@ async function loadCashDataCloud(){
       if(!CASH_DB.history)CASH_DB.history=[];
       localStorage.setItem(cashKey(),JSON.stringify(CASH_DB));
     } else if(!error){
-      // first time — check localStorage backup
       const raw=localStorage.getItem(cashKey());
       if(raw)try{CASH_DB=JSON.parse(raw);}catch(e){}
       if(!CASH_DB.history)CASH_DB.history=[];
-      // save to cloud
       await sb.from('hisab_cash').insert({id:CUR_USER.id,data:CASH_DB});
     }
   }catch(e){
-    // fallback to localStorage
     const raw=localStorage.getItem(cashKey());
     if(raw)try{CASH_DB=JSON.parse(raw);}catch(e2){}
     if(!CASH_DB.history)CASH_DB.history=[];
@@ -1405,7 +1041,6 @@ async function loadCashDataCloud(){
 }
 function saveCashData(){
   localStorage.setItem(cashKey(),JSON.stringify(CASH_DB));
-  // cloud sync async
   if(CUR_USER){
     sb.from('hisab_cash').upsert({id:CUR_USER.id,data:CASH_DB,updated_at:new Date().toISOString()}).then(({error})=>{
       if(!error)setSyncState('saved','Saved ✓');
@@ -1475,7 +1110,6 @@ function deleteCashEntry(id){
   const entry=CASH_DB.history.find(h=>h.id===id);
   if(!entry)return;
   if(!confirm('এই লেনদেন মুছবেন?'))return;
-  // reverse balance
   if(entry.type==='add') CASH_DB.balance-=entry.amt;
   else CASH_DB.balance+=entry.amt;
   CASH_DB.balance=Math.max(0,CASH_DB.balance);
@@ -1494,15 +1128,12 @@ function clearCashHistory(){
 function renderCash(){
   const bal=CASH_DB.balance||0;
   const hist=CASH_DB.history||[];
-  // balance
   document.getElementById('cash-balance').textContent='৳'+fmt(bal);
-  // stats
   const totalIn=hist.filter(h=>h.type==='add').reduce((s,h)=>s+h.amt,0);
   const totalOut=hist.filter(h=>h.type==='sub').reduce((s,h)=>s+h.amt,0);
   document.getElementById('cash-total-in').textContent='৳'+fmt(totalIn);
   document.getElementById('cash-total-out').textContent='৳'+fmt(totalOut);
   document.getElementById('cash-txn-count').textContent=hist.length;
-  // last txn
   const sub=document.getElementById('cash-hero-sub');
   if(hist.length>0){
     const last=hist[0];
@@ -1512,7 +1143,6 @@ function renderCash(){
   } else {
     sub.innerHTML='<span class="bn">কোনো লেনদেন নেই</span><span class="en" style="display:none">No transactions yet</span>';
   }
-  // budget bar
   const budget=CASH_DB.budget||0;
   const budgetWrap=document.getElementById('budget-wrap');
   const budgetCta=document.getElementById('budget-cta');
@@ -1533,9 +1163,7 @@ function renderCash(){
     budgetWrap.style.display='none';
     budgetCta.style.display='block';
   }
-  // filter history
   const filtered=CASH_FILTER==='all'?hist:hist.filter(h=>h.type===CASH_FILTER);
-  // history list
   const list=document.getElementById('cash-history-list');
   if(filtered.length===0){
     list.innerHTML=`<div class="empty"><div class="empty-i">💵</div><div class="empty-t"><span class="bn">${CASH_FILTER==='all'?'কোনো লেনদেন নেই':'কোনো রেকর্ড নেই'}</span><span class="en">${CASH_FILTER==='all'?'No transactions yet':'No records found'}</span></div><div class="empty-s"><span class="bn">উপরের বাটন দিয়ে শুরু করুন</span><span class="en">Use the buttons above to get started</span></div></div>`;
@@ -1554,14 +1182,6 @@ function renderCash(){
   `).join('');
 }
 
-// ── FORMAT ──
-function fmt(n){return Number(n).toLocaleString('en-IN');}
-function fmtD(v){
-  let d=typeof v==='number'||(typeof v==='string'&&/^\d{10,}$/.test(v))?new Date(Number(v)):new Date(v);
-  if(isNaN(d))return String(v);
-  return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
-}
-
 // ── AGING ──
 function firstTs(p){
   if(p.loanData && p.loanData.loanDate) return new Date(p.loanData.loanDate).getTime();
@@ -1570,12 +1190,16 @@ function firstTs(p){
   return a.length?Math.min(...a.map(h=>Number(h.id)||Number(p.id))):p.id;
 }
 function ageDays(p){
-  if(p.loanData && p.loanData.loanDate){
-    const ld = new Date(p.loanData.loanDate); ld.setHours(0,0,0,0);
-    const now = new Date(); now.setHours(0,0,0,0);
-    return Math.max(0, Math.floor((now - ld) / 86400000));
+  if(p.loanData&&p.loanData.loanDate){
+    const ld=new Date(p.loanData.loanDate);
+    ld.setHours(0,0,0,0);
+    const now=new Date();
+    now.setHours(0,0,0,0);
+    return Math.max(0,Math.floor((now-ld)/86400000));
   }
-  return Math.floor((Date.now()-firstTs(p))/86400000);
+  if(p.clearedAt) return p.clearedAt;
+  const a=p.history.filter(h=>h.t==='add');
+  return a.length?Math.floor((Date.now()-Math.min(...a.map(h=>Number(h.id)||Number(p.id))))/86400000):Math.floor((Date.now()-p.id)/86400000);
 }
 function ageBadge(d){const l=LANG==='bn'?`${d} দিন`:`${d}d`;return d<=7?{cls:'',l}:d<=30?{cls:'mid',l}:{cls:'old',l:l+' ⚠️'};}
 
@@ -1615,66 +1239,50 @@ function parseFeeString(str){
   return str.split(',').map(s=>parseFloat(s.trim())).filter(n=>!isNaN(n)&&n>0).reduce((a,b)=>a+b,0);
 }
 function calculateLoanTotal(principal,fees=0,loanDateStr=null){
+  const fullInterest=principal*0.030823;
+  const processingFee=Math.round(principal*0.00575);
+  const totalRepayment=Math.round(principal+fullInterest+processingFee+fees);
+  const emi=Math.round(totalRepayment/3);
   const maxDays=90;
   let loanDate = loanDateStr ? new Date(loanDateStr) : new Date();
   loanDate.setHours(0,0,0,0);
-  const now = new Date();
+  const now=new Date();
   now.setHours(0,0,0,0);
-  const daysToCharge = Math.max(0, Math.min(maxDays, Math.floor((now - loanDate) / 86400000)));
-  
-  const r = 0.015;
-  const emi = (principal * r * Math.pow(1 + r, 3)) / (Math.pow(1 + r, 3) - 1);
-  const fullInterest = (emi * 3) - principal;
-  const processingFee = Math.round(principal * 0.00575);
-  const totalRepayment = principal + fullInterest + processingFee + fees;
-  
-  return {
-    interest: Math.round(fullInterest),
-    fullInterest: Math.round(fullInterest),
+  const daysToCharge=Math.min(maxDays,Math.max(0,Math.floor((now-loanDate)/86400000)));
+  return{
+    fullInterest:Math.round(fullInterest),
     processingFee,
     fees,
     daysToCharge,
-    totalRepayment: Math.round(totalRepayment),
-    emi: Math.round(emi)
+    totalRepayment,
+    emi,
+    netDisbursed:Math.round(principal-processingFee)
   };
 }
 function getLoanBreakdown(p){
   const isLoan=p.loanData||p.history.some(h=>h.note.toLowerCase().includes('loan'));
   if(!isLoan)return null;
-  const loanDate=p.loanData?.loanDate?new Date(p.loanData.loanDate):new Date(firstTs(p));
+  const loanDate=p.loanData?.loanDate?new Date(p.loanData.loanDate).toISOString().split('T')[0]:new Date(firstTs(p)).toISOString().split('T')[0];
   const fees=p.loanData?.fees||0;
-  
-  const breakdown = calculateLoanTotal(p.original, fees, loanDate.toISOString().split('T')[0]);
-  const paidAmount = p.history.filter(h => h.t === 'pay').reduce((s, h) => s + h.amt, 0);
-  
-  // ১. দিন অনুযায়ী কারেন্ট ইন্টারেস্ট (Reducing Balance Schedule অনুযায়ী লাইভ কাউন্ট)
-  const monthsActive = Math.min(3, Math.ceil(breakdown.daysToCharge / 30) || 1);
-  let currentInterest = 0;
-  let tempPrincipal = p.original;
-  for (let i = 1; i <= monthsActive; i++) {
-    const monthInterest = Math.round(tempPrincipal * 0.015);
-    currentInterest += monthInterest;
-    // রিডিউসিং ট্র্যাকিং এর জন্য কাল্পনিক কিস্তি সমন্বয়
-    const estimatedEmi = Math.round(breakdown.totalRepayment / 3);
-    tempPrincipal = Math.max(0, tempPrincipal - (estimatedEmi - monthInterest));
-  }
-  
-  // ২. পেমেন্ট ডিস্ট্রিবিউশন লজিক: আগে ইন্টারেস্ট কভার হবে, তারপর আসল কমবে
-  const interestCovered = Math.min(paidAmount, currentInterest);
-  const principalReduction = paidAmount - interestCovered;
-  const remainingPrincipal = Math.max(0, p.original - principalReduction);
-  
-  let progressPercent = 0;
-  if (breakdown.totalRepayment > 0) {
-    progressPercent = Math.min(100, Math.round((paidAmount / breakdown.totalRepayment) * 100));
-  }
-  
-  return {
-    ...breakdown,
-    interest: currentInterest,
-    paidAmount,
-    remainingPrincipal,
-    progressPercent
+  const breakdown=calculateLoanTotal(p.original,fees,loanDate);
+  const totalPaidAmount=p.history.filter(h=>h.t==='pay').reduce((s,h)=>s+h.amt,0);
+  const outstandingDue=Math.max(0,breakdown.totalRepayment-totalPaidAmount);
+  const progressPercent=breakdown.totalRepayment>0?Math.min(100,Math.round((totalPaidAmount/breakdown.totalRepayment)*100)):0;
+  const interestCovered = Math.min(totalPaidAmount, breakdown.fullInterest);
+  const remainingPrincipal = Math.max(0, p.original - (totalPaidAmount - interestCovered));
+  return{
+    fullInterest:breakdown.fullInterest,
+    processingFee:breakdown.processingFee,
+    fees:breakdown.fees,
+    daysToCharge:breakdown.daysToCharge,
+    totalRepayment:breakdown.totalRepayment,
+    emi:breakdown.emi,
+    netDisbursed:breakdown.netDisbursed,
+    totalPaidAmount,
+    outstandingDue,
+    progressPercent,
+    interest: breakdown.fullInterest,
+    remainingPrincipal
   };
 }
 function updateLoanNoteFields(){
@@ -1707,16 +1315,28 @@ function addEntry(type){
   if(person){
     const wasSettled=person.remaining===0;
     if(wasSettled){
-      person.original=amt;person.remaining=amt;
-      person.clearedAt=ts;
+      person.original=amt;
+      person.history=[hist];
+      person.clearedAt=null;
+      if(loanData)person.loanData=loanData;
+      const bd=getLoanBreakdown(person);
+      person.remaining=bd?bd.totalRepayment:amt;
+    } else {
+      person.original+=amt;
       person.history.unshift(hist);
       if(loanData)person.loanData=loanData;
-    } else {
-      person.original+=amt;person.remaining+=amt;person.history.unshift(hist);
-      if(loanData)person.loanData=loanData;
+      const bd=getLoanBreakdown(person);
+      if(bd){
+        person.remaining=Math.max(0,bd.totalRepayment-bd.paidAmount);
+      }else{
+        person.remaining+=amt;
+      }
     }
   } else {
-    DB[type].push({id:ts,name,original:amt,remaining:amt,history:[hist],loanData});
+    let personObj={id:ts,name,original:amt,remaining:amt,history:[hist],loanData};
+    const bd=getLoanBreakdown(personObj);
+    personObj.remaining=bd?bd.totalRepayment:amt;
+    DB[type].push(personObj);
   }
   document.getElementById(p+'-n').value='';
   document.getElementById(p+'-a').value='';
@@ -1740,17 +1360,14 @@ function confirmPay(){
   const note=document.getElementById('pn').value||'Payment';
   if(isNaN(amt)||amt<=0)return;
   const p=DB[CTX.type].find(x=>x.id===CTX.id);
-  
   const ts=Date.now();
   p.history.unshift({id:ts,date:ts,amt,note,t:'pay'});
-  
-  const breakdown = getLoanBreakdown(p);
-  if(breakdown) {
-    p.remaining = Math.max(0, breakdown.totalRepayment - breakdown.paidAmount);
-  } else {
-    p.remaining = Math.max(0, p.remaining - amt);
+  const breakdown=getLoanBreakdown(p);
+  if(breakdown){
+    p.remaining=Math.max(0,breakdown.outstandingDue);
+  }else{
+    p.remaining=Math.max(0,p.remaining-amt);
   }
-  
   if(p.remaining===0) p.clearedAt=ts;
   logActivity('পরিশোধ',`${p.name} — ৳${fmt(amt)}`);
   cm('m-pay');saveData();render();toast(LANG==='bn'?'💸 পরিশোধ হয়েছে!':'💸 Recorded!');
@@ -1771,13 +1388,19 @@ function confirmAddMore(){
   const hist={id:ts,date:ts,amt,note,t:'add'};
   if(wasSettled){
     p.original=amt;
-    p.remaining=amt;
-    p.clearedAt=ts;
     p.history=[hist];
+    p.clearedAt=null;
+    const bd=getLoanBreakdown(p);
+    p.remaining=bd?bd.totalRepayment:amt;
   } else {
     p.original+=amt;
-    p.remaining+=amt;
     p.history.unshift(hist);
+    const bd=getLoanBreakdown(p);
+    if(bd){
+      p.remaining=Math.max(0,bd.totalRepayment-bd.paidAmount);
+    }else{
+      p.remaining+=amt;
+    }
   }
   logActivity('পরিমাণ যোগ',`${p.name} — ৳${fmt(amt)}`);
   cm('m-add');saveData();render();toast(LANG==='bn'?'➕ যোগ হয়েছে!':'➕ Added!');
@@ -1805,15 +1428,19 @@ function updateLoanCalcBreakdown(p){
   const fees=parseFeeString(document.getElementById('ed-fee').value);
   const loanDateStr=document.getElementById('ed-loan-date').value;
   const breakdown=calculateLoanTotal(newAmt,fees,loanDateStr);
-  
   const html=`
-    <div>💵 Principal: ৳${fmt(newAmt)}</div>
-    <div>📅 Days Passed: ${breakdown.daysToCharge}/90</div>
-    <div>⏳ Current Interest: ৳${fmt(breakdown.interest)}</div>
-    <div>📈 Amortized Max Interest: ৳${fmt(breakdown.fullInterest)}</div>
-    <div>⚙️ Processing Fee: ৳${fmt(breakdown.processingFee)}</div>
-    <div>💸 Extra Fees: ৳${fmt(fees)}</div>
-    <div style="margin-top:6px;padding-top:4px;border-top:1px dashed var(--border);color:var(--primary);font-weight:700;">🗓️ Target EMI: ৳${fmt(breakdown.emi)}/mo</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+      <div>💵 Principal<br><span style="font-weight:800;">৳${fmt(newAmt)}</span></div>
+      <div>🔄 Net Disbursed<br><span style="font-weight:800;color:var(--green);">৳${fmt(breakdown.netDisbDisbursed||breakdown.netDisbursed)}</span></div>
+      <div>📅 Days Passed<br><span style="font-weight:800;">${breakdown.daysToCharge}/90</span></div>
+      <div>📈 Full Interest (90d)<br><span style="font-weight:800;">৳${fmt(breakdown.fullInterest)}</span></div>
+      <div>⚙️ Processing Fee<br><span style="font-weight:800;">৳${fmt(breakdown.processingFee)}</span></div>
+      <div>💸 Extra Fees<br><span style="font-weight:800;">৳${fmt(fees)}</span></div>
+    </div>
+    <div style="margin-top:8px;padding:8px;background:rgba(56,189,248,0.1);border-radius:6px;border-left:2px solid var(--primary);">
+      <div style="font-weight:700;color:var(--primary);font-size:12px;margin-bottom:4px;">🗓️ Static EMI Schedule</div>
+      <div style="font-weight:800;font-size:13px;color:var(--primary);">৳${fmt(breakdown.emi)} per month × 3</div>
+    </div>
   `;
   document.getElementById('ed-calc-breakdown').innerHTML=html;
   document.getElementById('ed-total-due').textContent=fmt(breakdown.totalRepayment);
@@ -1824,7 +1451,6 @@ function confirmEdit(){
   const p=DB[CTX.type].find(x=>x.id===CTX.id);
   const oldAmt=p.original;
   p.original=amt;
-  p.remaining=p.remaining+(amt-oldAmt);
   
   if(CTX.type==='receive'&&(p.loanData||p.history.some(h=>h.note.toLowerCase().includes('loan')))){
     const fees=parseFeeString(document.getElementById('ed-fee').value);
@@ -1832,6 +1458,10 @@ function confirmEdit(){
     if(!p.loanData)p.loanData={};
     p.loanData.fees=fees;
     p.loanData.loanDate=loanDate;
+    const bd=getLoanBreakdown(p);
+    p.remaining=bd?Math.max(0,bd.totalRepayment-bd.paidAmount):Math.max(0,p.remaining+(amt-oldAmt));
+  } else {
+    p.remaining=Math.max(0,p.remaining+(amt-oldAmt));
   }
   
   logActivity('এন্ট্রি এডিট',`${p.name} — ৳${oldAmt} → ৳${amt}`);
@@ -1854,19 +1484,23 @@ function copyWA(type,id){
   const breakdown=getLoanBreakdown(p);
   let remAmt=p.remaining;
   if(type==='receive'&&breakdown){
-    remAmt=breakdown.totalRepayment-breakdown.paidAmount;
+    remAmt=breakdown.outstandingDue;
   }
   let t=`🧾 হিসাব | ${p.name}\n\n`;
-  t+=`💵 পাওয়া: ৳${fmt(remAmt)}\n`;
-  t+=`📅 বকেয়া: ${d} দিন\n`;
+  t+=`💵 Outstanding: ৳${fmt(remAmt)}\n`;
+  t+=`📅 Pending: ${d} days\n`;
+  if(breakdown){
+    t+=`💰 Total Paid: ৳${fmt(breakdown.totalPaidAmount)}\n`;
+    t+=`📊 Progress: ${breakdown.progressPercent}%\n`;
+  }
   if(recent.length){
-    t+=`\nHistory:\n`;
+    t+=`\nRecent Activity:\n`;
     recent.forEach(h=>{
       const sign=h.t==='add'?'+':'-';
       t+=`${fmtD(h.date)} — ${h.note}: ${sign}৳${fmt(h.amt)}\n`;
     });
   }
-  if(p.history.length>5) t+=`আরো ${p.history.length-5}টি\n`;
+  if(p.history.length>5) t+=`+${p.history.length-5} more\n`;
   t+=`\n— Hisab Tracker PRO`;
   const cp=()=>{const ta=document.createElement('textarea');ta.value=t;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);toast('📋 Copied!');};
   navigator.clipboard?navigator.clipboard.writeText(t).then(()=>toast('📋 Copied!')).catch(cp):cp();
@@ -1882,40 +1516,53 @@ function renderCard(p,type){
   
   let displayAmt=p.remaining;
   let loanBreakdownHtml='';
-  let pct=p.original>0?Math.round(Math.max(0,Math.min(100,(1-p.remaining/p.original)*100))):0;
+  let pct=p.original>0?Math.round(Math.max(0,Math.min(100,((p.original-p.remaining)/p.original)*100))):0;
   
   if(type==='receive'){
     const breakdown=getLoanBreakdown(p);
     if(breakdown){
-      displayAmt=breakdown.totalRepayment-breakdown.paidAmount;
-      if(displayAmt<0) displayAmt=0;
+      displayAmt=breakdown.outstandingDue;
       pct=breakdown.progressPercent;
       
-      loanBreakdownHtml=`<div style="background:var(--card);border-radius:8px;padding:8px;margin-top:8px;font-size:12px;line-height:1.8;border-left:2px solid var(--primary);">
-        <div style="font-weight:700;margin-bottom:6px;color:var(--primary);display:flex;justify-content:space-between;">
-          <span>🏦 Reducing Balance Loan Details</span>
-          <span style="color:var(--yellow);font-weight:800;">📅 ${breakdown.daysToCharge}/90 Days</span>
+      loanBreakdownHtml=`<div style="background:var(--card);border-radius:8px;padding:10px;margin-top:8px;font-size:12px;line-height:1.85;border-left:2px solid var(--primary);">
+        <div style="font-weight:800;margin-bottom:8px;color:var(--primary);display:flex;justify-content:space-between;align-items:center;">
+          <span>🏦 bKash Reducing Balance Loan</span>
+          <span style="color:var(--yellow);font-weight:800;font-size:11px;">📅 ${breakdown.daysToCharge}/90</span>
         </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:6px;">
-          <div>💵 Original Principal<br><span style="font-weight:700;font-size:13px;">৳${fmt(p.original)}</span></div>
-          <div>📉 Remaining Principal<br><span style="font-weight:700;color:var(--primary);font-size:13px;">৳${fmt(breakdown.remainingPrincipal)}</span></div>
-          <div>💰 Paid Amount<br><span style="font-weight:700;color:var(--green);font-size:13px;">৳${fmt(breakdown.paidAmount)}</span></div>
-          <div>⏳ Current Interest<br><span style="font-weight:700;color:#f97316;font-size:13px;">৳${fmt(breakdown.interest)}</span></div>
-          <div>📈 Full Interest<br><span style="font-weight:700;color:var(--muted);font-size:13px;">৳${fmt(breakdown.fullInterest)}</span></div>
-          <div>⚙️ Processing Fee<br><span style="font-weight:700;color:var(--yellow);font-size:13px;">৳${fmt(breakdown.processingFee)}</span></div>
-        </div>
-        
-        <div style="border-top:1px solid var(--border);padding-top:6px;margin-top:4px;background:rgba(56,189,248,0.05);padding:6px;border-radius:6px;margin-bottom:6px;">
-          <div style="display:flex;justify-content:space-between;font-weight:700;color:var(--primary);">
-            <span>🗓️ Established EMI:</span>
-            <span>৳${fmt(breakdown.emi)} /mo</span>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+          <div style="background:var(--bg2);padding:6px;border-radius:6px;">
+            <div style="font-weight:700;color:var(--text2);font-size:11px;">💵 Principal</div>
+            <div style="font-weight:800;font-size:13px;">৳${fmt(p.original)}</div>
+          </div>
+          <div style="background:var(--bg2);padding:6px;border-radius:6px;">
+            <div style="font-weight:700;color:var(--text2);font-size:11px;">💰 Paid</div>
+            <div style="font-weight:800;font-size:13px;color:var(--green);">৳${fmt(breakdown.totalPaidAmount)}</div>
+          </div>
+          <div style="background:var(--bg2);padding:6px;border-radius:6px;">
+            <div style="font-weight:700;color:var(--text2);font-size:11px;">📈 Full Interest</div>
+            <div style="font-weight:800;font-size:13px;">৳${fmt(breakdown.fullInterest)}</div>
+          </div>
+          <div style="background:var(--bg2);padding:6px;border-radius:6px;">
+            <div style="font-weight:700;color:var(--text2);font-size:11px;">⚙️ Processing</div>
+            <div style="font-weight:800;font-size:13px;">৳${fmt(breakdown.processingFee)}</div>
+          </div>
+          <div style="background:var(--bg2);padding:6px;border-radius:6px;">
+            <div style="font-weight:700;color:var(--text2);font-size:11px;">💸 Extra Fees</div>
+            <div style="font-weight:800;font-size:13px;">৳${fmt(breakdown.fees)}</div>
+          </div>
+          <div style="background:var(--bg2);padding:6px;border-radius:6px;">
+            <div style="font-weight:700;color:var(--text2);font-size:11px;">🗓️ EMI/mo</div>
+            <div style="font-weight:800;font-size:13px;">৳${fmt(breakdown.emi)}</div>
           </div>
         </div>
-
-        <div style="border-top:1px solid var(--border);padding-top:6px;margin-top:6px;">
-          <div style="display:flex;justify-content:space-between;font-weight:700;">
-            <span>Total Static Repayment:</span>
-            <span style="color:var(--green);font-size:14px;font-weight:900;">৳${fmt(breakdown.totalRepayment)}</span>
+        <div style="border-top:1px solid var(--border);padding-top:8px;margin-top:6px;background:rgba(56,189,248,0.08);padding:8px;border-radius:6px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+            <span style="color:var(--text2);font-weight:600;">Total Repayment</span>
+            <span style="font-weight:900;color:var(--primary);font-size:14px;">৳${fmt(breakdown.totalRepayment)}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <span style="color:var(--muted);font-size:11px;">Outstanding Due</span>
+            <span style="font-weight:800;color:var(--green);font-size:13px;">৳${fmt(breakdown.outstandingDue)}</span>
           </div>
         </div>
       </div>`;
@@ -1943,7 +1590,7 @@ function renderCard(p,type){
     <div class="pbody">
       <div class="psum">
         <div class="ps-i"><div class="ps-l bn">মূল</div><div class="ps-l en">Original</div><div class="ps-v" style="color:${col}">৳${fmt(p.original)}</div></div>
-        <div class="ps-i"><div class="ps-l bn">শোধ</div><div class="ps-l en">Paid</div><div class="ps-v" style="color:var(--green)">৳${fmt(type==='receive'&&getLoanBreakdown(p)?getLoanBreakdown(p).paidAmount:(p.original-p.remaining))}</div></div>
+        <div class="ps-i"><div class="ps-l bn">শোধ</div><div class="ps-l en">Paid</div><div class="ps-v" style="color:var(--green)">৳${fmt(type==='receive'&&getLoanBreakdown(p)?getLoanBreakdown(p).totalPaidAmount:(p.original-p.remaining))}</div></div>
         <div class="ps-i"><div class="ps-l bn">লেনদেন</div><div class="ps-l en">Txns</div><div class="ps-v">${p.history.length}</div></div>
       </div>
       ${loanBreakdownHtml}
@@ -1978,17 +1625,13 @@ function renderTop(){
 // ── MAIN RENDER ──
 function render(){
   const q=document.getElementById('srch').value.toLowerCase().trim();
-  
   const tr=DB.receive.reduce((s,p)=>{
     const breakdown=getLoanBreakdown(p);
     if(breakdown){
-      let currentPayable=breakdown.totalRepayment-breakdown.paidAmount;
-      if(currentPayable<0) currentPayable=0;
-      return s+currentPayable;
+      return s+breakdown.outstandingDue;
     }
     return s+p.remaining;
   },0);
-  
   const tg=DB.give.reduce((s,p)=>s+p.remaining,0);
   const net=tr-tg;
   const rc=DB.receive.filter(p=>p.remaining>0).length;
@@ -2065,7 +1708,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     });
   }
   if(edDateField){
-    edDateField.addEventListener('input',()=>{
+    document.getElementById('ed-loan-date').addEventListener('input',()=>{
       const p=DB[CTX.type]?.find(x=>x.id===CTX.id);
       if(p)updateLoanCalcBreakdown(p);
     });
