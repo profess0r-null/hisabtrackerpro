@@ -83,7 +83,7 @@ body{background:var(--bg);color:var(--text);font-family:'Inter','Hind Siliguri',
 .pin-key{height:60px;border-radius:14px;border:1px solid var(--border);background:var(--card);color:var(--text);font-size:1.35rem;font-weight:700;cursor:pointer;transition:background .1s,transform .1s;display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent;}
 .pin-key:active{background:var(--primary);color:#fff;transform:scale(.93);}
 .pin-key.del{font-size:1rem;color:var(--muted);}
-.pin-dark{font-size:13px;color:var(--red);font-weight:600;min-height:18px;margin-bottom:4px;}
+.pin-err{font-size:13px;color:var(--red);font-weight:600;min-height:18px;margin-bottom:4px;}
 .pin-link{font-size:12px;color:var(--muted);cursor:pointer;text-decoration:underline;margin-top:12px;display:inline-block;}
 @keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-8px)}40%{transform:translateX(8px)}60%{transform:translateX(-5px)}80%{transform:translateX(5px)}}
 .shake{animation:shake .4s ease;}
@@ -96,7 +96,7 @@ body{background:var(--bg);color:var(--text);font-family:'Inter','Hind Siliguri',
 .logo{display:flex;align-items:center;gap:10px;flex-shrink:0;}
 .logo-icon{font-size:1.4rem;line-height:1;}
 .logo-text{display:flex;flex-direction:column;line-height:1;}
-.logo-main{font-size:1.05rem;font-weight:900;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;letter-spacing:-.02em;line-height:1.1;}
+.logo-main{font-size:1.05rem;font-weight:900;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;letter-spacing:-.03em;line-height:1.1;}
 .logo-sub{font-size:9.5px;font-weight:700;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;line-height:1;margin-top:1px;}
 
 /* cash mode header */
@@ -331,6 +331,7 @@ body{background:var(--bg);color:var(--text);font-family:'Inter','Hind Siliguri',
 
   <!-- Stats row -->
   <div class="cash-stats">
+    <div class="cash-stats">
     <div class="cash-stat">
       <div class="cash-stat-lbl"><span class="bn">মোট আয়</span><span class="en">Total In</span></div>
       <div class="cash-stat-val" id="cash-total-in" style="color:var(--green)">৳০</div>
@@ -553,7 +554,6 @@ function initSwipe(el,type,id){
     }
   }
   function snap(dir){
-    // bounce out then snap back
     const out=dir*90;
     setPos(out,true);
     leftHint.style.opacity=0;
@@ -587,7 +587,6 @@ function initSwipe(el,type,id){
       if(Math.abs(dx)>5) moved=true; else return;
     }
     e.preventDefault();
-    // resistance at edges
     const raw=dx;
     const clamped=raw>0
       ?Math.min(110, raw*(raw<THRESHOLD?1:0.4))
@@ -609,7 +608,6 @@ function initSwipe(el,type,id){
       snap(-1);
       setTimeout(()=>{locked=false;},500);
     } else {
-      // snap back with spring
       inner.style.transition='transform .3s cubic-bezier(.34,1.56,.64,1)';
       inner.style.transform='';
       setHint(0);
@@ -646,7 +644,6 @@ function renderSettlement(){
   const totalR=DB.receive.reduce((s,p)=>s+p.remaining,0);
   const totalG=DB.give.reduce((s,p)=>s+p.remaining,0);
   if(totalR===0&&totalG===0){box.style.display='none';return;}
-  // find best settlement
   const topR=[...DB.receive].filter(p=>p.remaining>0).sort((a,b)=>b.remaining-a.remaining)[0];
   const topG=[...DB.give].filter(p=>p.remaining>0).sort((a,b)=>b.remaining-a.remaining)[0];
   if(!topR&&!topG){box.style.display='none';return;}
@@ -706,7 +703,6 @@ function applyMode(){
   const isHisab=APP_MODE==='hisab';
   document.getElementById('hisab-content').style.display=isHisab?'block':'none';
   document.getElementById('cash-content').style.display=isHisab?'none':'block';
-  // header
   const logoText=document.getElementById('hdr-logo-text');
   const badge=document.getElementById('mode-badge');
   const switchBtn=document.getElementById('switch-mode-btn');
@@ -871,12 +867,12 @@ async function changePassword(){
   const cf=document.getElementById('pr-cf').value;
   const msg=document.getElementById('pr-msg');
   if(np.length<6){msg.className='modal-msg err';msg.textContent='কমপক্ষে ৬ অক্ষর!';return;}
-  if(np!==cf){msg.className='modal-msg err';msg.textContent='Password miltece na!';return;}
+  if(np!==cf){msg.className='modal-msg err';msg.textContent='Password মিলছে না!';return;}
   const{error}=await sb.auth.updateUser({password:np});
   if(error){msg.className='modal-msg err';msg.textContent='❌ '+error.message;return;}
-  logActivity('Password poriborton kora hoyece');
+  logActivity('Password পরিবর্তন করা হয়েছে');
   await saveData();
-  msg.className='modal-msg ok';msg.textContent='✅ Password poriborton hoyece!';
+  msg.className='modal-msg ok';msg.textContent='✅ পাসওয়ার্ড পরিবর্তন হয়েছে!';
   setTimeout(()=>cm('m-profile'),1500);
 }
 
@@ -898,31 +894,31 @@ async function checkPin(){
     }
   }catch(e){}
   pinMode='unlock';pinBuf='';updDots('');
-  document.getElementById('pin-dark').textContent='';
-  document.getElementById('pin-title').textContent=LANG==='bn'?'PIN din':'Enter PIN';
-  document.getElementById('pin-sub').textContent=LANG==='bn'?'Apnar 4 shonkhar PIN likhun':'Enter your 4-digit PIN';
+  document.getElementById('pin-err').textContent='';
+  document.getElementById('pin-title').textContent=LANG==='bn'?'PIN দিন':'Enter PIN';
+  document.getElementById('pin-sub').textContent=LANG==='bn'?'আপনার ৪ সংখ্যার PIN লিখুন':'Enter your 4-digit PIN';
   document.getElementById('pin-screen').style.display='flex';
 }
 function openPinChange(){
   closeDrawer();
   pinMode='set-new1';pinBuf='';updDots('');
-  document.getElementById('pin-dark').textContent='';
-  document.getElementById('pin-title').textContent=LANG==='bn'?'Notun PIN din':'New PIN';
-  document.getElementById('pin-sub').textContent=LANG==='bn'?'Notun 4 shonkhar PIN likhun':'Enter a new 4-digit PIN';
+  document.getElementById('pin-err').textContent='';
+  document.getElementById('pin-title').textContent=LANG==='bn'?'নতুন PIN দিন':'New PIN';
+  document.getElementById('pin-sub').textContent=LANG==='bn'?'নতুন ৪ সংখ্যার PIN লিখুন':'Enter a new 4-digit PIN';
   document.getElementById('app').style.display='none';
   document.getElementById('pin-screen').style.display='flex';
 }
 function lockApp(){
   closeDrawer();
-  logActivity('App lock kora hoyece');
+  logActivity('App লক করা হয়েছে');
   saveData();
   localStorage.removeItem(tk());
   document.getElementById('app').style.display='none';
   document.body.style.overflow='';
   pinMode='unlock';pinBuf='';updDots('');
-  document.getElementById('pin-dark').textContent='';
-  document.getElementById('pin-title').textContent=LANG==='bn'?'PIN din':'Enter PIN';
-  document.getElementById('pin-sub').textContent=LANG==='bn'?'Apnar 4 shonkhar PIN likhun':'Enter your 4-digit PIN';
+  document.getElementById('pin-err').textContent='';
+  document.getElementById('pin-title').textContent=LANG==='bn'?'PIN দিন':'Enter PIN';
+  document.getElementById('pin-sub').textContent=LANG==='bn'?'আপনার ৪ সংখ্যার PIN লিখুন':'Enter your 4-digit PIN';
   document.getElementById('pin-screen').style.display='flex';
 }
 function updDots(buf,cls){
@@ -931,7 +927,7 @@ function updDots(buf,cls){
 function pinKey(k){
   if(pinBuf.length>=4)return;
   pinBuf+=k;updDots(pinBuf);
-  document.getElementById('pin-dark').textContent='';
+  document.getElementById('pin-err').textContent='';
   if(pinBuf.length===4)setTimeout(handlePin,120);
 }
 function pinDel(){pinBuf=pinBuf.slice(0,-1);updDots(pinBuf);}
@@ -944,35 +940,35 @@ function handlePin(){
       showApp();
     }else{
       updDots('1234','err');
-      document.getElementById('pin-dark').textContent=LANG==='bn'?'❌ Bhul PIN!':'❌ Wrong PIN!';
+      document.getElementById('pin-err').textContent=LANG==='bn'?'❌ ভুল PIN!':'❌ Wrong PIN!';
       box.classList.add('shake');
       setTimeout(()=>{box.classList.remove('shake');pinBuf='';updDots('');},500);
     }
   }else if(pinMode==='set-new1'){
     pinTmp=pinBuf;pinBuf='';updDots('');
     pinMode='set-new2';
-    document.getElementById('pin-title').textContent=LANG==='bn'?'Abar din':'Confirm PIN';
-    document.getElementById('pin-sub').textContent=LANG==='bn'?'PIN abar likhe nishchit korun':'Re-enter your PIN to confirm';
+    document.getElementById('pin-title').textContent=LANG==='bn'?'আবার দিন':'Confirm PIN';
+    document.getElementById('pin-sub').textContent=LANG==='bn'?'PIN আবার লিখে নিশ্চিত করুন':'Re-enter your PIN to confirm';
   }else if(pinMode==='set-new2'){
     if(pinBuf===pinTmp){
       const hash=ph(pinBuf);
       localStorage.setItem(pk(),hash);
       DB.pinHash=hash;
-      logActivity('PIN poriborton kora hoyece');
+      logActivity('PIN পরিবর্তন করা হয়েছে');
       saveData();
       pinBuf='';pinTmp='';pinMode='unlock';
       document.getElementById('pin-screen').style.display='none';
       document.getElementById('app').style.display='block';
-      toast('✅ PIN poriborton hoyece!');
+      toast('✅ PIN পরিবর্তন হয়েছে!');
     }else{
       updDots('1234','err');
-      document.getElementById('pin-dark').textContent=LANG==='bn'?'❌ Mileni! Abar chesta korun।':'❌ Mismatch! Try again.';
+      document.getElementById('pin-err').textContent=LANG==='bn'?'❌ মিলেনি! আবার চেষ্টা করুন।':'❌ Mismatch! Try again.';
       box.classList.add('shake');
       setTimeout(()=>{
         box.classList.remove('shake');pinBuf='';pinTmp='';
         pinMode='set-new1';updDots('');
-        document.getElementById('pin-title').textContent=LANG==='bn'?'Notun PIN din':'New PIN';
-        document.getElementById('pin-sub').textContent=LANG==='bn'?'Notun 4 shonkhar PIN likhun':'Enter a new 4-digit PIN';
+        document.getElementById('pin-title').textContent=LANG==='bn'?'নতুন PIN দিন':'New PIN';
+        document.getElementById('pin-sub').textContent=LANG==='bn'?'নতুন ৪ সংখ্যার PIN লিখুন':'Enter a new 4-digit PIN';
       },500);
     }
   }
@@ -985,7 +981,7 @@ async function showApp(){
   (async()=>{try{await sb.from('visits').insert({user_agent:navigator.userAgent,logged_in:true});}catch(e){}})();
   await loadData();
   await loadCashDataCloud();
-  logActivity('Login shofol',CUR_USER.email);
+  logActivity('Login সফল',CUR_USER.email);
   await saveData();
   applyMode();
   render();
@@ -1277,7 +1273,7 @@ function getLoanBreakdown(p){
     daysToCharge:breakdown.daysToCharge,
     totalRepayment:breakdown.totalRepayment,
     emi:breakdown.emi,
-    netDisbursed:breakdown.netDisbursed,
+    netDisbursed:breakdown.netDisbDisbursed||breakdown.netDisbursed,
     totalPaidAmount,
     outstandingDue,
     progressPercent,
@@ -1432,7 +1428,7 @@ function updateLoanCalcBreakdown(p){
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
       <div>💵 Principal<br><span style="font-weight:800;">৳${fmt(newAmt)}</span></div>
       <div>🔄 Net Disbursed<br><span style="font-weight:800;color:var(--green);">৳${fmt(breakdown.netDisbDisbursed||breakdown.netDisbursed)}</span></div>
-      <div>📅 Days Passed<br><span style="font-weight:800;">${breakdown.daysToCharge}/90</span></div>
+      <div>📅 Days Passed<br><span style="font-weight:800;">${breakdown.daysToCharge}<span style="color:var(--muted);">/90</span></span></div>
       <div>📈 Full Interest (90d)<br><span style="font-weight:800;">৳${fmt(breakdown.fullInterest)}</span></div>
       <div>⚙️ Processing Fee<br><span style="font-weight:800;">৳${fmt(breakdown.processingFee)}</span></div>
       <div>💸 Extra Fees<br><span style="font-weight:800;">৳${fmt(fees)}</span></div>
@@ -1561,7 +1557,7 @@ function renderCard(p,type){
             <span style="font-weight:900;color:var(--primary);font-size:14px;">৳${fmt(breakdown.totalRepayment)}</span>
           </div>
           <div style="display:flex;justify-content:space-between;align-items:center;">
-            <span style="color:var(--muted);font-size:11px;">Outstanding Due</span>
+            <span style="color:var(--text2);font-size:11px;">Outstanding Due</span>
             <span style="font-weight:800;color:var(--green);font-size:13px;">৳${fmt(breakdown.outstandingDue)}</span>
           </div>
         </div>
