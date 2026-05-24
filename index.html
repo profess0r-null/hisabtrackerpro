@@ -331,7 +331,6 @@ body{background:var(--bg);color:var(--text);font-family:'Inter','Hind Siliguri',
 
   <!-- Stats row -->
   <div class="cash-stats">
-    <div class="cash-stats">
     <div class="cash-stat">
       <div class="cash-stat-lbl"><span class="bn">মোট আয়</span><span class="en">Total In</span></div>
       <div class="cash-stat-val" id="cash-total-in" style="color:var(--green)">৳০</div>
@@ -1482,7 +1481,7 @@ function copyWA(type,id){
   if(type==='receive'&&breakdown){
     remAmt=breakdown.outstandingDue;
   }
-  let t=`🧾 হিসাব | ${p.name}\n\n`;
+  let t=typeof p.name==='string'?`🧾 হিসাব | ${p.name}\n\n`:`🧾 হিসাব\n\n`;
   t+=`💵 Outstanding: ৳${fmt(remAmt)}\n`;
   t+=`📅 Pending: ${d} days\n`;
   if(breakdown){
@@ -1704,7 +1703,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     });
   }
   if(edDateField){
-    document.getElementById('ed-loan-date').addEventListener('input',()=>{
+    edDateField.addEventListener('input',()=>{
       const p=DB[CTX.type]?.find(x=>x.id===CTX.id);
       if(p)updateLoanCalcBreakdown(p);
     });
