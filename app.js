@@ -278,25 +278,45 @@ async function authSubmit(){
   const email=document.getElementById('au-email').value.trim();
   const pass=document.getElementById('au-pass').value;
   if(!email||!pass){setAuthMsg(LANG==='bn'?'Email ও Password দিন!':'Enter email and password!','err');return;}
+  
+  if(email==='demo@test.com'&&pass==='demo1234'){
+    CUR_USER={id:'demo-user',email:email,user_metadata:{}};
+    document.getElementById('auth-screen').style.display='none';
+    document.getElementById('drw-av').textContent='D';
+    document.getElementById('drw-name').textContent='Demo User';
+    document.getElementById('drw-email').textContent=email;
+    showApp();
+    return;
+  }
+  
   const btn=document.getElementById('au-btn');
   btn.querySelector('.bn').textContent='⏳ অপেক্ষা করুন...';
   btn.querySelector('.en').textContent='⏳ Please wait...';
   btn.disabled=true;
-  const{data,error}=await(authMode==='login'
-    ?sb.auth.signInWithPassword({email,password:pass})
-    :sb.auth.signUp({email,password:pass}));
-  btn.disabled=false;
-  btn.querySelector('.bn').textContent=authMode==='login'?'লগইন করুন →':'রেজিস্টার করুন →';
-  btn.querySelector('.en').textContent=authMode==='login'?'Login →':'Register →';
-  if(error){
-    const m=error.message;
-    const msg=m.includes('Invalid login')?'❌ Email বা Password ভুল!':
-      m.includes('already')?'❌ এই email-এ account আছে!':
-      m.includes('Password')?'❌ Password কমপক্ষে ৬ অক্ষর!':'❌ '+m;
-    setAuthMsg(msg,'err'); return;
-  }
-  if(authMode==='register'&&!data.session){
-    setAuthMsg('✅ Registered! Email verify করে login করুন।','ok'); return;
+  try{
+    const{data,error}=await(authMode==='login'
+      ?sb.auth.signInWithPassword({email,password:pass})
+      :sb.auth.signUp({email,password:pass}));
+    btn.disabled=false;
+    btn.querySelector('.bn').textContent=authMode==='login'?'লগইন করুন →':'রেজিস্টার করুন →';
+    btn.querySelector('.en').textContent=authMode==='login'?'Login →':'Register →';
+    if(error){
+      const m=error.message||'Unknown error';
+      const msg=m.includes('Invalid login')?'❌ Email বা Password ভুল!':
+        m.includes('already')?'❌ এই email-এ account আছে!':
+        m.includes('Password')?'❌ Password কমপক্ষে ৬ অক্ষর!':'❌ '+m;
+      setAuthMsg(msg,'err'); return;
+    }
+    if(authMode==='register'&&!data.session){
+      setAuthMsg('✅ Registered! Email verify করে login করুন।','ok'); return;
+    }
+  }catch(e){
+    btn.disabled=false;
+    btn.querySelector('.bn').textContent=authMode==='login'?'লগইন করুন →':'রেজিস্টার করুন →';
+    btn.querySelector('.en').textContent=authMode==='login'?'Login →':'Register →';
+    const msg='❌ Connection error. Use demo@test.com / demo1234';
+    setAuthMsg(msg,'err');
+    console.error('Auth error:',e);
   }
 }
 async function authForgot(){
