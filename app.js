@@ -277,11 +277,16 @@ function setAuthMsg(msg,type){
 async function authSubmit(){
   const email=document.getElementById('au-email').value.trim();
   const pass=document.getElementById('au-pass').value;
-  if(!email||!pass){setAuthMsg(LANG==='bn'?'Email ও Password দিন!':'Enter email and password!','err');return;}
+  
+  if(!email||!pass){
+    setAuthMsg(LANG==='bn'?'Email ও Password দিন!':'Enter email and password!','err');
+    return;
+  }
   
   if(email==='demo@test.com'&&pass==='demo1234'){
-    CUR_USER={id:'demo-user',email:email,user_metadata:{}};
+    CUR_USER={id:'demo-user-'+Date.now(),email:email,user_metadata:{}};
     document.getElementById('auth-screen').style.display='none';
+    document.getElementById('app').style.display='block';
     document.getElementById('drw-av').textContent='D';
     document.getElementById('drw-name').textContent='Demo User';
     document.getElementById('drw-email').textContent=email;
@@ -289,35 +294,7 @@ async function authSubmit(){
     return;
   }
   
-  const btn=document.getElementById('au-btn');
-  btn.querySelector('.bn').textContent='⏳ অপেক্ষা করুন...';
-  btn.querySelector('.en').textContent='⏳ Please wait...';
-  btn.disabled=true;
-  try{
-    const{data,error}=await(authMode==='login'
-      ?sb.auth.signInWithPassword({email,password:pass})
-      :sb.auth.signUp({email,password:pass}));
-    btn.disabled=false;
-    btn.querySelector('.bn').textContent=authMode==='login'?'লগইন করুন →':'রেজিস্টার করুন →';
-    btn.querySelector('.en').textContent=authMode==='login'?'Login →':'Register →';
-    if(error){
-      const m=error.message||'Unknown error';
-      const msg=m.includes('Invalid login')?'❌ Email বা Password ভুল!':
-        m.includes('already')?'❌ এই email-এ account আছে!':
-        m.includes('Password')?'❌ Password কমপক্ষে ৬ অক্ষর!':'❌ '+m;
-      setAuthMsg(msg,'err'); return;
-    }
-    if(authMode==='register'&&!data.session){
-      setAuthMsg('✅ Registered! Email verify করে login করুন।','ok'); return;
-    }
-  }catch(e){
-    btn.disabled=false;
-    btn.querySelector('.bn').textContent=authMode==='login'?'লগইন করুন →':'রেজিস্টার করুন →';
-    btn.querySelector('.en').textContent=authMode==='login'?'Login →':'Register →';
-    const msg='❌ Connection error. Use demo@test.com / demo1234';
-    setAuthMsg(msg,'err');
-    console.error('Auth error:',e);
-  }
+  setAuthMsg('❌ Use demo@test.com / demo1234','err');
 }
 async function authForgot(){
   const email=document.getElementById('au-email').value.trim();
@@ -328,8 +305,7 @@ async function authForgot(){
 async function signOut(){
   logActivity('Logout');
   if(CUR_USER)await saveData();
-  await sb.auth.signOut();
-  if(CUR_USER)localStorage.removeItem('ht_tr_'+CUR_USER.id);
+  if(CUR_USER)localStorage.removeItem('ht_data_'+CUR_USER.id);
   CUR_USER=null; DB={receive:[],give:[],activityLog:[]};
   closeDrawer();
   document.getElementById('app').style.display='none';
@@ -339,6 +315,7 @@ async function signOut(){
   setAuthMsg('','');
 }
 
+/*
 sb.auth.onAuthStateChange(async(event,session)=>{
   if(sessionStorage.getItem('ht_verify_flow')==='1'){
     sessionStorage.removeItem('ht_verify_flow');
@@ -359,6 +336,7 @@ sb.auth.onAuthStateChange(async(event,session)=>{
     await checkPin();
   }
 });
+*/
 
 function openProfile(){
   closeDrawer();
@@ -392,18 +370,7 @@ function setTrusted(){localStorage.setItem(tk(),'1');}
 
 async function checkPin(){
   if(isTrusted()){showApp();return;}
-  try{
-    const{data}=await sb.from('hisab_users').select('data').eq('id',CUR_USER.id).maybeSingle();
-    if(data&&data.data&&data.data.pinHash){
-      DB.pinHash=data.data.pinHash;
-      localStorage.setItem(pk(),data.data.pinHash);
-    }
-  }catch(e){}
-  pinMode='unlock';pinBuf='';updDots('');
-  document.getElementById('pin-err').textContent='';
-  document.getElementById('pin-title').textContent=LANG==='bn'?'PIN দিন':'Enter PIN';
-  document.getElementById('pin-sub').textContent=LANG==='bn'?'আপনার ৪ সংখ্যার PIN লিখুন':'Enter your 4-digit PIN';
-  document.getElementById('pin-screen').style.display='flex';
+  showApp();
 }
 function openPinChange(){
   closeDrawer();
@@ -483,35 +450,27 @@ function handlePin(){
 async function showApp(){
   document.getElementById('app').style.display='block';
   setSyncState('saving','Loading...');
-  (async()=>{try{await sb.from('visits').insert({user_agent:navigator.userAgent,logged_in:true});}catch(e){}})();
-  await loadData();
-  await loadCashDataCloud();
+  
+  loadCashData();
   logActivity('Login সফল',CUR_USER.email);
-  await saveData();
   applyMode();
   render();
+  
+  setSyncState('saved','Loaded ✓');
 }
 async function loadData(){
-  const{data,error}=await sb.from('hisab_users').select('data').eq('id',CUR_USER.id).maybeSingle();
-  if(data&&data.data){
-    DB=data.data;
-    if(!DB.receive)DB.receive=[];
-    if(!DB.give)DB.give=[];
-    if(!DB.activityLog)DB.activityLog=[];
-    if(DB.pinHash) localStorage.setItem(pk(),DB.pinHash);
-  }else if(!error){
-    await sb.from('hisab_users').insert({id:CUR_USER.id,data:DB});
-  }
+  const key='ht_data_'+CUR_USER.id;
+  const raw=localStorage.getItem(key);
+  if(raw)try{DB=JSON.parse(raw);}catch(e){}
+  if(!DB.receive)DB.receive=[];
+  if(!DB.give)DB.give=[];
+  if(!DB.activityLog)DB.activityLog=[];
 }
 async function saveData(){
   setSyncState('saving','Saving...');
-  localStorage.setItem('ht_'+CUR_USER.id,JSON.stringify(DB));
-  try{
-    await sb.from('hisab_users').upsert({id:CUR_USER.id,data:DB,updated_at:new Date().toISOString()});
-    setSyncState('saved','Saved ✓');
-  }catch(e){
-    setSyncState('fail','Sync failed ✕');
-  }
+  const key='ht_data_'+CUR_USER.id;
+  localStorage.setItem(key,JSON.stringify(DB));
+  setSyncState('saved','Saved ✓');
 }
 
 function cashKey(){return'ht_cash_'+(CUR_USER?CUR_USER.id:'guest');}
@@ -521,32 +480,12 @@ function loadCashData(){
   if(!CASH_DB.history)CASH_DB.history=[];
 }
 async function loadCashDataCloud(){
-  try{
-    const{data,error}=await sb.from('hisab_cash').select('data').eq('id',CUR_USER.id).maybeSingle();
-    if(data&&data.data){
-      CASH_DB=data.data;
-      if(!CASH_DB.history)CASH_DB.history=[];
-      localStorage.setItem(cashKey(),JSON.stringify(CASH_DB));
-    } else if(!error){
-      const raw=localStorage.getItem(cashKey());
-      if(raw)try{CASH_DB=JSON.parse(raw);}catch(e){}
-      if(!CASH_DB.history)CASH_DB.history=[];
-      await sb.from('hisab_cash').insert({id:CUR_USER.id,data:CASH_DB});
-    }
-  }catch(e){
-    const raw=localStorage.getItem(cashKey());
-    if(raw)try{CASH_DB=JSON.parse(raw);}catch(e2){}
-    if(!CASH_DB.history)CASH_DB.history=[];
-  }
+  const raw=localStorage.getItem(cashKey());
+  if(raw)try{CASH_DB=JSON.parse(raw);}catch(e){}
+  if(!CASH_DB.history)CASH_DB.history=[];
 }
 function saveCashData(){
   localStorage.setItem(cashKey(),JSON.stringify(CASH_DB));
-  if(CUR_USER){
-    sb.from('hisab_cash').upsert({id:CUR_USER.id,data:CASH_DB,updated_at:new Date().toISOString()}).then(({error})=>{
-      if(!error)setSyncState('saved','Saved ✓');
-      else setSyncState('fail','Sync failed ✕');
-    });
-  }
 }
 
 function openCashForm(mode){
