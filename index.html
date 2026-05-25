@@ -16,7 +16,6 @@
 </head>
 <body>
 
-<!-- ══ AUTH ══ -->
 <div class="fs" id="auth-screen">
   <div class="auth-wrap">
     <div id="verified-banner" class="verified-banner" style="display:none">
@@ -62,7 +61,6 @@
   </div>
 </div>
 
-<!-- ══ PIN ══ -->
 <div class="fs" id="pin-screen" style="display:none">
   <div class="pin-box">
     <div class="pin-logo">🔒</div>
@@ -93,8 +91,8 @@
   </div>
 </div>
 
-<!-- ══ HISAB APP ══ -->
 <div id="app" style="display:none">
+
 <header class="hdr">
   <div class="logo">
     <span class="logo-icon">📒</span>
@@ -142,6 +140,7 @@
       <span class="drw-icon" id="switch-mode-icon">💵</span>
       <span id="switch-mode-text">Cash Tracker এ যান</span>
     </button>
+
     <div class="drw-divider"></div>
     <div class="drw-sec">থিম / Theme</div>
     <div class="theme-row">
@@ -253,7 +252,7 @@
           <input id="r-fee" type="text" placeholder="All Fees (e.g., 5,10,15)">
           <input id="r-loan-date" type="date">
         </div>
-        <div style="font-size:11px;color:var(--muted);padding:6px;background:var(--card);border-radius:6px;margin-top:8px;">bKash EMI: 3 months, 1.5% monthly • Processing: 0.575%</div>
+        <div style="font-size:11px;color:var(--muted);padding:6px;background:var(--card);border-radius:6px;margin-top:8px;">Interest: bKash-style (daily multiplier) • Processing: 0.575% • Max: 90 days</div>
       </div>
       <div class="qtags">
         <span class="qtag" onclick="setQ('Hawlat','r-no')">Hawlat</span>
@@ -297,11 +296,13 @@
 
 <div id="cash-content" style="display:none">
 <div class="wrap">
+
   <div class="cash-hero">
     <div class="cash-hero-lbl"><span class="bn">💵 নগদ ব্যালেন্স</span><span class="en">💵 Cash Balance</span></div>
     <div class="cash-hero-amt" id="cash-balance">৳০</div>
     <div class="cash-hero-sub" id="cash-hero-sub"><span class="bn">সর্বশেষ লেনদেন নেই</span><span class="en">No transactions yet</span></div>
   </div>
+
   <div class="budget-bar-wrap" id="budget-wrap" style="display:none">
     <div class="budget-bar-top">
       <span class="budget-bar-lbl"><span class="bn">মাসিক বাজেট</span><span class="en">Monthly Budget</span></span>
@@ -313,20 +314,22 @@
     <div class="budget-bar"><div class="budget-bar-fill" id="budget-fill"></div></div>
     <div class="budget-bar-sub" id="budget-sub"></div>
   </div>
+
   <div class="cash-stats">
     <div class="cash-stat">
       <div class="cash-stat-lbl"><span class="bn">মোট আয়</span><span class="en">Total In</span></div>
-      <div class="cash-stat-val" id="cash-total-in" style="color:var(--green)">৳०</div>
+      <div class="cash-stat-val" id="cash-total-in" style="color:var(--green)">৳০</div>
     </div>
     <div class="cash-stat">
       <div class="cash-stat-lbl"><span class="bn">মোট ব্যয়</span><span class="en">Total Out</span></div>
-      <div class="cash-stat-val" id="cash-total-out" style="color:var(--red)">৳०</div>
+      <div class="cash-stat-val" id="cash-total-out" style="color:var(--red)">৳០</div>
     </div>
     <div class="cash-stat">
       <div class="cash-stat-lbl"><span class="bn">লেনদেন</span><span class="en">Transactions</span></div>
-      <div class="cash-stat-val" id="cash-txn-count" style="color:var(--primary)">०</div>
+      <div class="cash-stat-val" id="cash-txn-count" style="color:var(--primary)">০</div>
     </div>
   </div>
+
   <div class="cash-actions">
     <button class="cash-btn cash-btn-add" onclick="openCashForm('add')">
       ➕ <span class="bn">টাকা যোগ</span><span class="en">Add Money</span>
@@ -335,11 +338,13 @@
       ➖ <span class="bn">খরচ করুন</span><span class="en">Expense</span>
     </button>
   </div>
+
   <div id="budget-cta" style="text-align:center;margin-bottom:16px;">
     <button onclick="setBudget()" style="font-size:12px;font-weight:700;color:var(--primary);background:none;border:1px solid rgba(56,189,248,.25);border-radius:8px;padding:6px 14px;cursor:pointer;">
       📊 <span class="bn">মাসিক বাজেট সেট করুন</span><span class="en">Set Monthly Budget</span>
     </button>
   </div>
+
   <div class="cash-form hidden" id="cash-form">
     <div class="cash-form-title">
       <span id="cash-form-icon">➕</span>
@@ -355,22 +360,24 @@
       <button class="sbtn" onclick="closeCashForm()" style="flex:1;background:var(--card);color:var(--text);border:1px solid var(--border);"><span class="bn">বাতিল</span><span class="en">Cancel</span></button>
     </div>
   </div>
+
   <div class="cat-filter" id="cash-cat-filter">
     <span class="cat-pill on" onclick="filterCash('all',this)"><span class="bn">সব</span><span class="en">All</span></span>
     <span class="cat-pill" onclick="filterCash('add',this)">⬆️ <span class="bn">আয়</span><span class="en">Income</span></span>
     <span class="cat-pill" onclick="filterCash('sub',this)">⬇️ <span class="bn">খরচ</span><span class="en">Expense</span></span>
   </div>
+
   <div class="cash-history-header">
     <span class="cash-history-title"><span class="bn">📜 ইতিহাস</span><span class="en">📜 History</span></span>
     <button class="cash-clear-btn" onclick="clearCashHistory()"><span class="bn">সব মুছুন</span><span class="en">Clear All</span></button>
   </div>
   <div id="cash-history-list"></div>
+
 </div>
 </div>
 
 </div>
 
-<!-- MODALS -->
 <div class="overlay" id="m-pay"><div class="modal">
   <div class="modal-title">💸 <span class="bn">পরিশোধ</span><span class="en">Payment</span></div>
   <div class="modal-sub" id="m-pay-s"></div>
@@ -444,6 +451,6 @@
 
 <div class="toast" id="toast"></div>
 
-<script src="app.js"></script>
+<script src="script.js"></script>
 </body>
 </html>
