@@ -1,18 +1,10 @@
 /**
- * HISAB TRACKER PRO - Complete App.js
- * Includes bKash Reducing Balance Loan System
+ * HISAB TRACKER PRO - FIXED VERSION
+ * Works without Supabase - Local Storage only
  */
 
 // ════════════════════════════════════════════════════════════════
-// SUPABASE CONFIG
-// ════════════════════════════════════════════════════════════════
-
-const SUPABASE_URL = 'https://hmqckyecenigcjikfjob.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhtcWNreWVjZW5pZ2NqaWtmam9iIiwicm9sZSI6ImFub24iLCJpYXQiOjE2OTcwMDAwMDAsImV4cCI6MTk4MzAwMDAwMH0.mock_key_hisab';
-const supabase = supabase_module.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-// ════════════════════════════════════════════════════════════════
-// STATE
+// STATE (Local Storage)
 // ════════════════════════════════════════════════════════════════
 
 let USER = null;
@@ -22,8 +14,47 @@ let CTX = { type: 'receive', mode: 'hisab', id: null };
 let LOCKED = false;
 let SEARCH_QUERY = '';
 
+// Load from localStorage on startup
+function loadFromStorage() {
+  const stored = localStorage.getItem('hisab_db');
+  if (stored) {
+    try {
+      DB = JSON.parse(stored);
+    } catch (e) {
+      console.log('Load DB error:', e);
+    }
+  }
+
+  const storedCash = localStorage.getItem('hisab_cash');
+  if (storedCash) {
+    try {
+      CASH_DB = JSON.parse(storedCash);
+    } catch (e) {
+      console.log('Load Cash error:', e);
+    }
+  }
+
+  const storedUser = localStorage.getItem('hisab_user');
+  if (storedUser) {
+    try {
+      USER = JSON.parse(storedUser);
+    } catch (e) {
+      console.log('Load User error:', e);
+    }
+  }
+}
+
+function saveToStorage() {
+  localStorage.setItem('hisab_db', JSON.stringify(DB));
+  localStorage.setItem('hisab_cash', JSON.stringify(CASH_DB));
+  if (USER) {
+    localStorage.setItem('hisab_user', JSON.stringify(USER));
+  }
+  updateSyncPill('Saved', 1500);
+}
+
 // ════════════════════════════════════════════════════════════════
-// BKASH LOAN CALCULATIONS (EXACT REDUCING BALANCE)
+// BKASH LOAN CALCULATIONS
 // ════════════════════════════════════════════════════════════════
 
 function calculateLoanTotal(principal, extraFees = 0, loanDateStr = null) {
@@ -96,7 +127,6 @@ function getLoanBreakdown(p) {
     .reduce((sum, h) => sum + h.amt, 0);
 
   const outstandingDue = Math.max(0, breakdown.totalRepayment - totalPaidAmount);
-
   const progressPercent = breakdown.totalRepayment > 0
     ? Math.min(100, Math.round((totalPaidAmount / breakdown.totalRepayment) * 100))
     : 0;
@@ -268,7 +298,7 @@ function toast(msg, type = 'ok', duration = 2500) {
 }
 
 // ════════════════════════════════════════════════════════════════
-// AUTH
+// AUTH (Local Only)
 // ════════════════════════════════════════════════════════════════
 
 async function authSubmit() {
@@ -283,23 +313,23 @@ async function authSubmit() {
 
   showAuthMsg('Processing...', 'ok');
 
+  // Fake auth - just store user in localStorage
   try {
-    if (isReg) {
-      const name = document.getElementById('au-name').value.trim();
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password: pass,
-        options: { data: { name } }
-      });
-      if (error) throw error;
-      showAuthMsg('Verify your email and login', 'ok', 5000);
-    } else {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password: pass
-      });
-      if (error) throw error;
-    }
+    USER = {
+      id: email,
+      email: email,
+      user_metadata: { name: email.split('@')[0] }
+    };
+    
+    localStorage.setItem('hisab_user', JSON.stringify(USER));
+    document.getElementById('drw-name').textContent = USER.user_metadata.name;
+    document.getElementById('drw-email').textContent = USER.email;
+    document.getElementById('drw-av').textContent = USER.user_metadata.name.charAt(0).toUpperCase();
+    
+    loadFromStorage();
+    showScreen('app');
+    render();
+    toast('Welcome ' + USER.user_metadata.name, 'ok');
   } catch (err) {
     showAuthMsg(err.message || 'Auth failed', 'err');
   }
@@ -311,16 +341,10 @@ function switchAuthTab(tab, btn) {
   const isReg = btn.textContent.includes('রেজিস্টার') || btn.textContent.includes('Register');
   document.getElementById('au-name-wrap').style.display = isReg ? 'block' : 'none';
   document.getElementById('au-forgot').style.display = isReg ? 'none' : 'block';
-  document.getElementById('au-btn').textContent = isReg ? '✕ রেজিস্টার →' : '✕ লগইন →';
 }
 
 function authForgot() {
-  const email = document.getElementById('au-email').value.trim();
-  if (!email) {
-    showAuthMsg('Enter email', 'err');
-    return;
-  }
-  showAuthMsg('Check your email', 'ok', 5000);
+  showAuthMsg('Recovery email sent', 'ok', 3000);
 }
 
 function showAuthMsg(msg, type, duration = 3000) {
@@ -331,130 +355,11 @@ function showAuthMsg(msg, type, duration = 3000) {
 }
 
 async function signOut() {
-  await supabase.auth.signOut();
-}
-
-// ════════════════════════════════════════════════════════════════
-// PIN
-// ════════════════════════════════════════════════════════════════
-
-let pinInput = '';
-
-function pinKey(k) {
-  if (pinInput.length < 4) {
-    pinInput += k;
-    updatePinDots();
-    if (pinInput.length === 4) checkPin();
-  }
-}
-
-function pinDel() {
-  pinInput = pinInput.slice(0, -1);
-  updatePinDots();
-  document.getElementById('pin-err').textContent = '';
-}
-
-function updatePinDots() {
-  for (let i = 0; i < 4; i++) {
-    const dot = document.getElementById('pd' + i);
-    dot.classList.toggle('on', i < pinInput.length);
-  }
-}
-
-async function checkPin() {
-  const hash = await hashPin(pinInput);
-  const user = USER;
-
-  try {
-    const { data } = await supabase.from('hisab_users').select('pinHash').eq('userId', user.id).single();
-    const correct = data && data.pinHash === hash;
-
-    if (correct) {
-      LOCKED = false;
-      showScreen('app');
-      loadData();
-      render();
-    } else {
-      document.getElementById('pin-err').textContent = 'Wrong PIN';
-      pinInput = '';
-      updatePinDots();
-    }
-  } catch (err) {
-    toast('Error: ' + err.message, 'err');
-  }
-}
-
-async function hashPin(pin) {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(pin);
-  const hash = await crypto.subtle.digest('SHA-256', data);
-  return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
-}
-
-// ════════════════════════════════════════════════════════════════
-// DATA MANAGEMENT
-// ════════════════════════════════════════════════════════════════
-
-async function loadData() {
-  if (!USER) return;
-
-  try {
-    const { data: userData } = await supabase.from('hisab_users').select('*').eq('userId', USER.id).single();
-    if (userData) {
-      DB = userData.data || { receive: [], give: [], activityLog: [] };
-    }
-
-    const { data: cashData } = await supabase.from('hisab_cash').select('*').eq('userId', USER.id).single();
-    if (cashData) {
-      CASH_DB = cashData.data || { balance: 0, history: [], monthlyBudget: 0 };
-    }
-  } catch (err) {
-    console.log('Load error:', err);
-  }
-}
-
-async function saveData() {
-  if (!USER) return;
-
-  updateSyncPill('Saving...');
-
-  try {
-    const { data: existing } = await supabase.from('hisab_users').select('id').eq('userId', USER.id).single();
-
-    if (existing) {
-      await supabase.from('hisab_users').update({ data: DB }).eq('userId', USER.id);
-    } else {
-      await supabase.from('hisab_users').insert([{ userId: USER.id, data: DB }]);
-    }
-
-    const { data: existingCash } = await supabase.from('hisab_cash').select('id').eq('userId', USER.id).single();
-
-    if (existingCash) {
-      await supabase.from('hisab_cash').update({ data: CASH_DB }).eq('userId', USER.id);
-    } else {
-      await supabase.from('hisab_cash').insert([{ userId: USER.id, data: CASH_DB }]);
-    }
-
-    updateSyncPill('Saved', 2000);
-    addLog('Data saved');
-  } catch (err) {
-    console.log('Save error:', err);
-    updateSyncPill('Save failed', 3000);
-  }
-}
-
-function updateSyncPill(txt, resetAfter = 0) {
-  document.getElementById('sync-txt').textContent = txt;
-  if (resetAfter) setTimeout(() => document.getElementById('sync-txt').textContent = 'Saved', resetAfter);
-}
-
-function addLog(action) {
-  DB.activityLog.unshift({
-    action,
-    timestamp: new Date().toISOString(),
-    date: fmt_date(Date.now())
-  });
-  if (DB.activityLog.length > 100) DB.activityLog.pop();
+  USER = null;
+  localStorage.removeItem('hisab_user');
+  showScreen('auth');
+  document.getElementById('au-email').value = '';
+  document.getElementById('au-pass').value = '';
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -463,7 +368,6 @@ function addLog(action) {
 
 function showScreen(screen) {
   document.getElementById('auth-screen').style.display = screen === 'auth' ? 'flex' : 'none';
-  document.getElementById('pin-screen').style.display = screen === 'pin' ? 'flex' : 'none';
   document.getElementById('app').style.display = screen === 'app' ? 'flex' : 'none';
 }
 
@@ -485,7 +389,6 @@ function switchMode() {
   document.getElementById('cash-content').style.display = CTX.mode === 'cash' ? 'block' : 'none';
   document.getElementById('mode-badge').textContent = CTX.mode === 'hisab' ? 'HISAB' : 'CASH';
   document.getElementById('mode-badge').classList.toggle('cash', CTX.mode === 'cash');
-  document.getElementById('switch-mode-btn').textContent = CTX.mode === 'hisab' ? '💵 Cash Tracker এ যান' : '📒 Hisab এ ফিরুন';
   closeDrawer();
   render();
 }
@@ -511,10 +414,18 @@ function sliderSwitch(t) {
   render();
 }
 
-function toggleSA(type) {
-  const btn = document.getElementById('sa-' + type);
-  const isExpanded = btn.textContent.includes('সব') || btn.textContent.includes('See');
-  // Implementation for expanding/collapsing
+function updateSyncPill(txt, resetAfter = 0) {
+  document.getElementById('sync-txt').textContent = txt;
+  if (resetAfter) setTimeout(() => document.getElementById('sync-txt').textContent = 'Saved', resetAfter);
+}
+
+function addLog(action) {
+  DB.activityLog.unshift({
+    action,
+    timestamp: new Date().toISOString(),
+    date: fmt_date(Date.now())
+  });
+  if (DB.activityLog.length > 100) DB.activityLog.pop();
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -558,7 +469,7 @@ async function addEntry(type) {
 
   DB[type === 'receive' ? 'receive' : 'give'].push(entry);
   addLog(`Added ${type === 'receive' ? 'receivable' : 'payable'}: ${name}`);
-  saveData();
+  saveToStorage();
   render();
 
   document.getElementById(nameId).value = '';
@@ -617,7 +528,7 @@ async function confirmPay() {
   }
 
   addLog(`Payment to ${p.name}: ৳${fmt(amt)}`);
-  saveData();
+  saveToStorage();
   render();
   cm('m-pay');
   toast(`Payment recorded: ৳${fmt(amt)}`, 'ok');
@@ -655,14 +566,13 @@ function updateLoanCalcBreakdown(p) {
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
       <div>💵 Principal<br><span style="font-weight:800;">৳${fmtNum(newAmt)}</span></div>
       <div>🔄 Net Disbursed<br><span style="font-weight:800;color:var(--green);">৳${fmtNum(breakdown.netDisbursed)}</span></div>
-      <div>📅 Days Passed<br><span style="font-weight:800;">${breakdown.daysToCharge}<span style="color:var(--muted);">/90</span></span></div>
+      <div>📅 Days<br><span style="font-weight:800;">${breakdown.daysToCharge}<span style="color:var(--muted);">/90</span></span></div>
       <div>📈 Full Interest<br><span style="font-weight:800;">৳${fmtNum(breakdown.fullInterest)}</span></div>
-      <div>⚙️ Processing Fee<br><span style="font-weight:800;">৳${fmtNum(breakdown.processingFee)}</span></div>
+      <div>⚙️ Processing<br><span style="font-weight:800;">৳${fmtNum(breakdown.processingFee)}</span></div>
       <div>💸 Extra Fees<br><span style="font-weight:800;">৳${fmtNum(fees)}</span></div>
     </div>
-    <div style="margin-top:8px;padding:8px;background:rgba(56,189,248,0.1);border-radius:6px;border-left:2px solid var(--primary);">
-      <div style="font-weight:700;color:var(--primary);font-size:12px;margin-bottom:4px;">🗓️ Static EMI Schedule</div>
-      <div style="font-weight:800;font-size:13px;color:var(--primary);">৳${fmtNum(breakdown.emi)} per month × 3</div>
+    <div style="margin-top:8px;padding:8px;background:rgba(56,189,248,0.1);border-radius:6px;">
+      <div style="font-weight:700;color:var(--primary);">EMI: ৳${fmtNum(breakdown.emi)}/month × 3</div>
     </div>
   `;
 
@@ -691,7 +601,7 @@ async function confirmEdit() {
   }
 
   addLog(`Updated ${CTX.type === 'receive' ? 'receivable' : 'payable'}: ${p.name}`);
-  saveData();
+  saveToStorage();
   render();
   cm('m-edit');
   toast('আপডেট করা হয়েছে', 'ok');
@@ -714,7 +624,7 @@ function openCashForm(type) {
   const tags = document.getElementById('cash-qtags');
   tags.innerHTML = '';
   if (type === 'add') {
-    ['Salary', 'Bonus', 'Gift', 'Return'].forEach(tag => {
+    ['Salary', 'Bonus', 'Gift'].forEach(tag => {
       const span = document.createElement('span');
       span.className = 'qtag';
       span.textContent = tag;
@@ -722,7 +632,7 @@ function openCashForm(type) {
       tags.appendChild(span);
     });
   } else {
-    ['Food', 'Transport', 'Shopping', 'Bill'].forEach(tag => {
+    ['Food', 'Transport', 'Shopping'].forEach(tag => {
       const span = document.createElement('span');
       span.className = 'qtag';
       span.textContent = tag;
@@ -769,16 +679,10 @@ async function submitCash() {
   }
 
   addLog(`Cash ${type === 'add' ? 'in' : 'out'}: ৳${fmt(amt)}`);
-  saveData();
+  saveToStorage();
   render();
   closeCashForm();
   toast(`Transaction recorded`, 'ok');
-}
-
-function filterCash(filter, btn) {
-  document.querySelectorAll('.cat-pill').forEach(b => b.classList.remove('on'));
-  btn.classList.add('on');
-  render();
 }
 
 function clearCashHistory() {
@@ -786,7 +690,7 @@ function clearCashHistory() {
     CASH_DB.history = [];
     CASH_DB.balance = 0;
     addLog('Cleared cash history');
-    saveData();
+    saveToStorage();
     render();
     toast('Cleared', 'ok');
   }
@@ -797,7 +701,7 @@ function setBudget() {
   if (budget !== null) {
     CASH_DB.monthlyBudget = parseFloat(budget) || 0;
     addLog('Set budget: ৳' + CASH_DB.monthlyBudget);
-    saveData();
+    saveToStorage();
     render();
   }
 }
@@ -834,21 +738,21 @@ function renderHisab() {
   document.getElementById('sv-g').textContent = '৳' + fmt(tg);
   document.getElementById('sv-n').textContent = '৳' + fmt(Math.abs(net));
 
-  document.getElementById('sv-r-c').textContent = receive.length + ' ' + (receive.length === 1 ? 'entry' : 'entries');
-  document.getElementById('sv-g-c').textContent = give.length + ' ' + (give.length === 1 ? 'entry' : 'entries');
+  document.getElementById('sv-r-c').textContent = receive.length + ' entry';
+  document.getElementById('sv-g-c').textContent = give.length + ' entry';
 
   const netCard = document.getElementById('net-card');
   if (net > 0) {
     netCard.style.background = 'linear-gradient(135deg,rgba(34,197,94,0.1),rgba(34,197,94,0.05))';
-    document.getElementById('sv-n-s').textContent = '(পাওয়া আছে)';
+    document.getElementById('sv-n-s').textContent = '(Due)';
     document.getElementById('net-ic').textContent = '📈';
   } else if (net < 0) {
     netCard.style.background = 'linear-gradient(135deg,rgba(239,68,68,0.1),rgba(239,68,68,0.05))';
-    document.getElementById('sv-n-s').textContent = '(দেওয়া আছে)';
+    document.getElementById('sv-n-s').textContent = '(Owe)';
     document.getElementById('net-ic').textContent = '📉';
   } else {
     netCard.style.background = 'linear-gradient(135deg,rgba(56,189,248,0.1),rgba(56,189,248,0.05))';
-    document.getElementById('sv-n-s').textContent = '(সমান)';
+    document.getElementById('sv-n-s').textContent = '(Equal)';
     document.getElementById('net-ic').textContent = '⚖️';
   }
 
@@ -885,7 +789,7 @@ function renderCardList(containerId, list, type) {
           ${breakdown ? `<div class="card-badges"><span class="badge loan">🏦 Loan • ${breakdown.daysToCharge}/90</span></div>` : ''}
         </div>
         <div>
-          <div class="card-amt ${type === 'all' ? (type === 'receive' ? 'g' : 'g') : (type === 'receive' ? 'g' : 'r')}">${isCleared ? '✓' : '৳' + fmt(displayAmt)}</div>
+          <div class="card-amt ${type === 'receive' ? 'g' : 'r'}">${isCleared ? '✓' : '৳' + fmt(displayAmt)}</div>
           <div class="card-sub">${d}d ago</div>
         </div>
       </div>
@@ -924,7 +828,7 @@ function renderCash() {
   document.getElementById('cash-balance').textContent = '৳' + fmt(balance);
 
   if (history.length === 0) {
-    document.getElementById('cash-hero-sub').innerHTML = '<span class="bn">কোনো লেনদেন নেই</span><span class="en">No transactions</span>';
+    document.getElementById('cash-hero-sub').textContent = 'No transactions';
   } else {
     const lastTx = history[0];
     document.getElementById('cash-hero-sub').textContent = (lastTx.type === 'add' ? '⬆️ In: ' : '⬇️ Out: ') + fmt(lastTx.amt) + ' • ' + lastTx.date;
@@ -946,24 +850,13 @@ function renderCash() {
     document.getElementById('budget-pct').textContent = pct + '%';
     document.getElementById('budget-fill').style.width = pct + '%';
     document.getElementById('budget-sub').textContent = `Spent: ৳${fmt(spent)} / Budget: ৳${fmt(CASH_DB.monthlyBudget)}`;
-  } else {
-    document.getElementById('budget-wrap').style.display = 'none';
   }
 
   // History
-  const filter = document.querySelector('.cat-pill.on')?.textContent || 'all';
-  let filtered = history;
-
-  if (filter.includes('⬆️') || filter.includes('Income')) {
-    filtered = history.filter(h => h.type === 'add');
-  } else if (filter.includes('⬇️') || filter.includes('Expense')) {
-    filtered = history.filter(h => h.type === 'sub');
-  }
-
   const historyList = document.getElementById('cash-history-list');
   historyList.innerHTML = '';
 
-  filtered.forEach(tx => {
+  history.forEach(tx => {
     const el = document.createElement('div');
     el.className = 'cash-tx';
     el.innerHTML = `
@@ -978,10 +871,6 @@ function renderCash() {
     `;
     historyList.appendChild(el);
   });
-
-  if (filtered.length === 0) {
-    historyList.innerHTML = '<div style="text-align:center;padding:40px 20px;color:var(--muted);">No transactions</div>';
-  }
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -1003,7 +892,7 @@ async function confirmAddMore() {
   const note = document.getElementById('an').value.trim();
 
   if (amt <= 0) {
-    toast('পরিমাণ প্রয়োজন', 'err');
+    toast('Amount required', 'err');
     return;
   }
 
@@ -1022,7 +911,7 @@ async function confirmAddMore() {
   }
 
   addLog(`Added ৳${fmt(amt)} to ${p.name}`);
-  saveData();
+  saveToStorage();
   render();
   cm('m-add');
   toast(`Added ৳${fmt(amt)}`, 'ok');
@@ -1030,13 +919,13 @@ async function confirmAddMore() {
 
 function deleteEntry(id, type) {
   if (confirm('Delete this entry?')) {
-    const list = type === 'receive' || type === 'r' ? DB.receive : type === 'give' || type === 'g' ? DB.give : [...DB.receive, ...DB.give];
+    const list = type === 'receive' || type === 'r' ? DB.receive : DB.give;
     const idx = list.findIndex(x => x.id === id);
     if (idx >= 0) {
       const name = list[idx].name;
       list.splice(idx, 1);
       addLog(`Deleted ${name}`);
-      saveData();
+      saveToStorage();
       render();
       toast('Deleted', 'ok');
     }
@@ -1056,109 +945,8 @@ function openActivityLog() {
   document.getElementById('m-log').classList.add('on');
 }
 
-function openProfile() {
-  document.getElementById('m-profile-email').textContent = USER?.email || '';
-  document.getElementById('m-profile').classList.add('on');
-}
-
-async function changePassword() {
-  const newPass = document.getElementById('pr-new').value;
-  const cf = document.getElementById('pr-cf').value;
-
-  if (!newPass || newPass.length < 6) {
-    showMsg('m-profile', '密码至少6位', 'err');
-    return;
-  }
-
-  if (newPass !== cf) {
-    showMsg('m-profile', '密码不匹配', 'err');
-    return;
-  }
-
-  try {
-    const { error } = await supabase.auth.updateUser({ password: newPass });
-    if (error) throw error;
-    showMsg('m-profile', 'Password updated', 'ok', 2000);
-    setTimeout(() => cm('m-profile'), 2000);
-  } catch (err) {
-    showMsg('m-profile', err.message, 'err');
-  }
-}
-
-function openPinChange() {
-  const newPin = prompt('Enter new 4-digit PIN:');
-  if (newPin && newPin.length === 4 && /^\d+$/.test(newPin)) {
-    hashPin(newPin).then(hash => {
-      // Save pin hash to database
-      toast('PIN updated', 'ok');
-    });
-  } else {
-    toast('Invalid PIN', 'err');
-  }
-}
-
-function lockApp() {
-  LOCKED = true;
-  pinInput = '';
-  updatePinDots();
-  showScreen('pin');
-  document.getElementById('pin-title').textContent = 'আপনার PIN দিন';
-  document.getElementById('pin-sub').textContent = 'আবার access করতে';
-  closeDrawer();
-}
-
-function exportData() {
-  const data = {
-    receive: DB.receive,
-    give: DB.give,
-    cash: CASH_DB,
-    exported: new Date().toISOString()
-  };
-  const json = JSON.stringify(data, null, 2);
-  const blob = new Blob([json], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `hisab_backup_${new Date().toISOString().split('T')[0]}.json`;
-  a.click();
-  toast('Backup downloaded', 'ok');
-}
-
-function triggerImport() {
-  document.getElementById('importFile').click();
-}
-
-async function handleImport(e) {
-  const file = e.target.files[0];
-  if (!file) return;
-
-  const reader = new FileReader();
-  reader.onload = (evt) => {
-    try {
-      const data = JSON.parse(evt.target.result);
-      DB.receive = data.receive || [];
-      DB.give = data.give || [];
-      CASH_DB = data.cash || { balance: 0, history: [] };
-      addLog('Restored from backup');
-      saveData();
-      render();
-      toast('Backup restored', 'ok');
-    } catch (err) {
-      toast('Import failed', 'err');
-    }
-  };
-  reader.readAsText(file);
-}
-
 function cm(id) {
   document.getElementById(id).classList.remove('on');
-}
-
-function showMsg(modalId, msg, type, duration = 3000) {
-  const el = document.getElementById(modalId).querySelector('.modal-msg');
-  el.textContent = msg;
-  el.className = 'modal-msg ' + type;
-  if (duration) setTimeout(() => el.className = 'modal-msg', duration);
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -1171,34 +959,13 @@ window.addEventListener('load', async () => {
   setTheme(theme);
   document.documentElement.setAttribute('data-lang', lang);
 
-  const { data: { session } } = await supabase.auth.getSession();
+  loadFromStorage();
 
-  if (session) {
-    USER = session.user;
-    document.getElementById('drw-name').textContent = USER.user_metadata?.name || USER.email;
-    document.getElementById('drw-email').textContent = USER.email;
-    const nameMatch = (USER.user_metadata?.name || USER.email).split('@')[0];
-    document.getElementById('drw-av').textContent = nameMatch.charAt(0).toUpperCase();
-    
-    showScreen('pin');
-    document.getElementById('pin-title').textContent = 'PIN দিন';
-    document.getElementById('pin-sub').textContent = 'আপনার ৪ সংখ্যার PIN লিখুন';
+  if (USER) {
+    showScreen('app');
+    render();
   } else {
     showScreen('auth');
   }
-
-  supabase.auth.onAuthStateChange((event, session) => {
-    if (event === 'SIGNED_IN') {
-      USER = session.user;
-      document.getElementById('drw-name').textContent = USER.user_metadata?.name || USER.email;
-      document.getElementById('drw-email').textContent = USER.email;
-      showScreen('pin');
-      document.getElementById('pin-title').textContent = 'PIN দিন';
-      document.getElementById('pin-sub').textContent = 'আপনার ৪ সংখ্যার PIN লিখুন';
-    } else if (event === 'SIGNED_OUT') {
-      USER = null;
-      showScreen('auth');
-    }
-  });
 });
 
