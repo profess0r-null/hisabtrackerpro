@@ -356,3 +356,14 @@ input:focus{border-color:var(--primary);}
 .cash-stat{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px 10px;text-align:center;}
 .cash-stat-lbl{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px;}
 .cash-stat-val{font-size:16px;font-weight:900;}
+.dev-link{
+  color: var(--text);
+  text-decoration: none;
+  font-weight: 800;
+  cursor: pointer;
+  transition: .2s;
+}
+
+.dev-link:hover{
+  color: var(--primary);
+}

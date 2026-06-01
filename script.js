@@ -362,6 +362,7 @@ async function signOut(){
   setAuthMsg('','');
 }
 
+let _appInitialized=false;
 sb.auth.onAuthStateChange(async(event,session)=>{
   if(sessionStorage.getItem('ht_verify_flow')==='1'){
     sessionStorage.removeItem('ht_verify_flow');
@@ -377,9 +378,20 @@ sb.auth.onAuthStateChange(async(event,session)=>{
     document.getElementById('auth-screen').style.display='none';
     const email=CUR_USER.email||'';
     document.getElementById('drw-av').textContent=email.charAt(0).toUpperCase();
-    document.getElementById('drw-name').textContent='DEV: profess0r.null';
+    document.getElementById('drw-name').innerHTML =
+  '<a href="https://profess0r-null.xyz" target="_blank" class="dev-link">profess0r.null ↗</a>';
     document.getElementById('drw-email').textContent=email;
-    await checkPin();
+    if(!_appInitialized){
+      _appInitialized=true;
+      await checkPin();
+    }
+  } else {
+    _appInitialized=false;
+    CUR_USER=null;
+    DB={receive:[],give:[],activityLog:[]};
+    document.getElementById('app').style.display='none';
+    document.getElementById('pin-screen').style.display='none';
+    document.getElementById('auth-screen').style.display='flex';
   }
 });
 
@@ -417,7 +429,6 @@ function setTrusted(){localStorage.setItem(tk(),'1');}
 
 async function checkPin(){
   if(isTrusted()){showApp();return;}
-  // PIN screen দেখানোর আগে cloud থেকে pinHash load করি
   try{
     const{data}=await sb.from('hisab_users').select('data').eq('id',CUR_USER.id).maybeSingle();
     if(data&&data.data&&data.data.pinHash){
@@ -425,6 +436,8 @@ async function checkPin(){
       localStorage.setItem(pk(),data.data.pinHash);
     }
   }catch(e){}
+  document.getElementById('auth-screen').style.display='none';
+  document.getElementById('app').style.display='none';
   pinMode='unlock';pinBuf='';updDots('');
   document.getElementById('pin-err').textContent='';
   document.getElementById('pin-title').textContent=LANG==='bn'?'PIN দিন':'Enter PIN';
@@ -445,7 +458,9 @@ function lockApp(){
   logActivity('App লক করা হয়েছে');
   saveData();
   localStorage.removeItem(tk());
+  _appInitialized=false;
   document.getElementById('app').style.display='none';
+  document.getElementById('auth-screen').style.display='none';
   document.body.style.overflow='';
   pinMode='unlock';pinBuf='';updDots('');
   document.getElementById('pin-err').textContent='';
