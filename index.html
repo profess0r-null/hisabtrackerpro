@@ -12,6 +12,48 @@
 <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;600;700&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="icon" type="image/png" href="icon.png">
 <link rel="stylesheet" href="style.css">
+<style>
+/* ── SVG ICON SYSTEM ── */
+.ic{display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;}
+.ic svg{display:block;}
+.eye-btn .ic svg,.drw-icon .ic svg{pointer-events:none;}
+</style>
+<script>
+// Inline SVG icon library (Lucide-compatible, stroke-based)
+const ICONS={
+  wallet:`<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg>`,
+  globe:`<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20A14.5 14.5 0 0 0 12 2"/><path d="M2 12h20"/></svg>`,
+  key:`<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.5" cy="15.5" r="5.5"/><path d="m21 2-9.6 9.6"/><path d="m15.5 7.5 3 3L22 7l-3-3"/></svg>`,
+  hash:`<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" x2="20" y1="9" y2="9"/><line x1="4" x2="20" y1="15" y2="15"/><line x1="10" x2="8" y1="3" y2="21"/><line x1="16" x2="14" y1="3" y2="21"/></svg>`,
+  tag:`<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"/><circle cx="7.5" cy="7.5" r="1.5" fill="currentColor" stroke="none"/></svg>`,
+  cliplist:`<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/></svg>`,
+  lock:`<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>`,
+  save:`<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>`,
+  upload:`<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>`,
+  logout:`<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>`,
+  menu:`<svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="18" y2="18"/></svg>`,
+  x:`<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>`,
+  search:`<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>`,
+  eye:`<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>`,
+  eyeoff:`<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" x2="22" y1="2" y2="22"/></svg>`,
+  arrowdown:`<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg>`,
+  arrowup:`<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></svg>`,
+  listall:`<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="8" x2="21" y1="6" y2="6"/><line x1="8" x2="21" y1="12" y2="12"/><line x1="8" x2="21" y1="18" y2="18"/><line x1="3" x2="3.01" y1="6" y2="6"/><line x1="3" x2="3.01" y1="12" y2="12"/><line x1="3" x2="3.01" y1="18" y2="18"/></svg>`,
+  plus:`<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>`,
+  minus:`<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/></svg>`,
+  trash:`<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>`,
+  edit:`<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg>`,
+  barchart:`<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" x2="12" y1="20" y2="10"/><line x1="18" x2="18" y1="20" y2="4"/><line x1="6" x2="6" y1="20" y2="16"/></svg>`,
+  send:`<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>`,
+  receive:`<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="m5 12 7 7 7-7"/></svg>`,
+  pay:`<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg>`,
+  wallet2:`<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg>`,
+  lockbig:`<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/><circle cx="12" cy="16" r="1" fill="currentColor" stroke="none"/></svg>`,
+  check:`<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>`,
+  inboxempty:`<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>`,
+};
+function ic(name){return`<span class="ic">${ICONS[name]||''}</span>`;}
+</script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
@@ -20,7 +62,7 @@
 <div class="fs" id="auth-screen">
   <div class="auth-wrap">
     <div id="verified-banner" class="verified-banner" style="display:none">
-      <div class="verified-icon">✅</div>
+      <div class="verified-icon" style="color:var(--green)"><svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
       <div class="verified-title">Email Verified!</div>
       <div class="verified-sub">আপনার email verify হয়েছে। এখন login করুন।</div>
     </div>
@@ -43,7 +85,7 @@
       </div>
       <div class="inp-wrap">
         <input class="ai has-eye" id="au-pass" type="password" placeholder="Password" autocomplete="current-password" onkeydown="if(event.key==='Enter')authSubmit()">
-        <button class="eye-btn" onclick="toggleEye('au-pass',this)" tabindex="-1">👁️</button>
+        <button class="eye-btn" onclick="toggleEye('au-pass',this)" tabindex="-1"><span class="ic" id="eye-au-pass"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></span></button>
       </div>
       <div id="au-name-wrap" style="display:none">
         <div class="inp-wrap">
@@ -65,7 +107,7 @@
 <!-- ══ PIN ══ -->
 <div class="fs" id="pin-screen" style="display:none">
   <div class="pin-box">
-    <div class="pin-logo">🔒</div>
+    <div class="pin-logo" style="color:var(--primary)"><svg xmlns="http://www.w3.org/2000/svg" width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/><circle cx="12" cy="16" r="1" fill="currentColor" stroke="none"/></svg></div>
     <div class="pin-title" id="pin-title">PIN দিন</div>
     <div class="pin-sub" id="pin-sub">আপনার ৪ সংখ্যার PIN লিখুন</div>
     <div class="pin-dots">
@@ -132,7 +174,7 @@
         <div class="drw-app-name">হিসাব PRO</div>
         <div class="drw-username" id="drw-name">User</div>
       </div>
-      <button class="drw-close" onclick="closeDrawer()">✕</button>
+      <button class="drw-close" onclick="closeDrawer()"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
     </div>
     <div class="drw-email-row">
       <span class="drw-email-icon">✉️</span>
@@ -143,7 +185,7 @@
     <!-- Switch mode -->
     <div class="drw-sec">অ্যাপ মোড / Switch Mode</div>
     <button class="drw-item switch-mode" id="switch-mode-btn" onclick="switchMode()">
-      <span class="drw-icon" id="switch-mode-icon">💵</span>
+      <span class="drw-icon" id="switch-mode-icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg></span>
       <span id="switch-mode-text">Cash Tracker এ যান</span>
     </button>
 
@@ -155,46 +197,56 @@
     </div>
     <div class="drw-sec">ভাষা / Language</div>
     <button class="drw-item" onclick="toggleLang();closeDrawer()">
-      <span class="drw-icon">🌐</span>
+      <span class="drw-icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20A14.5 14.5 0 0 0 12 2"/><path d="M2 12h20"/></svg></span>
       <span class="bn">English-এ পরিবর্তন</span>
       <span class="en">Switch to বাংলা</span>
     </button>
     <div class="drw-divider"></div>
     <div class="drw-sec">অ্যাকাউন্ট</div>
     <button class="drw-item" onclick="openProfile()">
-      <span class="drw-icon">🔑</span>
+      <span class="drw-icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.5" cy="15.5" r="5.5"/><path d="m21 2-9.6 9.6"/><path d="m15.5 7.5 3 3L22 7l-3-3"/></svg></span>
       <span class="bn">পাসওয়ার্ড পরিবর্তন</span>
       <span class="en">Change Password</span>
     </button>
     <button class="drw-item" onclick="openPinChange()">
-      <span class="drw-icon">🔢</span>
+      <span class="drw-icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" x2="20" y1="9" y2="9"/><line x1="4" x2="20" y1="15" y2="15"/><line x1="10" x2="8" y1="3" y2="21"/><line x1="16" x2="14" y1="3" y2="21"/></svg></span>
       <span class="bn">PIN পরিবর্তন</span>
       <span class="en">Change PIN</span>
     </button>
+    <button class="drw-item" onclick="openAnalytics()">
+      <span class="drw-icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" x2="12" y1="20" y2="10"/><line x1="18" x2="18" y1="20" y2="4"/><line x1="6" x2="6" y1="20" y2="16"/></svg></span>
+      <span class="bn">রিপোর্ট ও বিশ্লেষণ</span>
+      <span class="en">Reports & Analytics</span>
+    </button>
+    <button class="drw-item" onclick="openCategoryManager()">
+      <span class="drw-icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"/><circle cx="7.5" cy="7.5" r="1.5" fill="currentColor" stroke="none"/></svg></span>
+      <span class="bn">Category ম্যানেজ করুন</span>
+      <span class="en">Manage Categories</span>
+    </button>
     <button class="drw-item" onclick="openActivityLog()">
-      <span class="drw-icon">📋</span>
+      <span class="drw-icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/></svg></span>
       <span>Activity Log</span>
     </button>
     <button class="drw-item" onclick="lockApp()">
-      <span class="drw-icon">🔒</span>
+      <span class="drw-icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
       <span class="bn">লক করুন</span>
       <span class="en">Lock App</span>
     </button>
     <div class="drw-divider"></div>
     <div class="drw-sec">ডেটা</div>
     <button class="drw-item" onclick="exportData();closeDrawer()">
-      <span class="drw-icon">💾</span>
+      <span class="drw-icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg></span>
       <span class="bn">ব্যাকআপ ডাউনলোড</span>
       <span class="en">Download Backup</span>
     </button>
     <button class="drw-item" onclick="triggerImport();closeDrawer()">
-      <span class="drw-icon">📂</span>
+      <span class="drw-icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg></span>
       <span class="bn">ব্যাকআপ রিস্টোর</span>
       <span class="en">Restore Backup</span>
     </button>
     <div class="drw-divider"></div>
     <button class="drw-item danger" onclick="signOut()">
-      <span class="drw-icon">🚪</span>Logout
+      <span class="drw-icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg></span>Logout
     </button>
   </div>
 </div>
@@ -222,11 +274,11 @@
       <div class="net-val" id="sv-n">৳০</div>
       <div class="sc-sub" id="sv-n-s"></div>
     </div>
-    <div class="net-icon" id="net-ic">⚖️</div>
+    <div class="net-icon" id="net-ic"><svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="5" x2="19" y1="12" y2="12"/><line x1="12" x2="19" y1="5" y2="12"/><line x1="12" x2="19" y1="19" y2="12"/></svg></div>
   </div>
 
   <div class="search-wrap">
-    <span class="si">🔍</span>
+    <span class="si"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></span>
     <input type="text" id="srch" placeholder="নাম দিয়ে খুঁজুন / Search..." oninput="render()">
   </div>
 
@@ -236,39 +288,52 @@
   <div class="type-slider" id="type-slider">
     <div class="type-slider-track" id="slider-track"></div>
     <button class="type-slider-opt active-r" id="slider-r" onclick="sliderSwitch('r')">
-      📥 <span class="bn">পাওনা</span><span class="en">Receive</span>
+      <span class="tab-ic"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg></span><span class="tab-txt"><span class="bn">পাওনা</span><span class="en">Receive</span></span>
     </button>
     <button class="type-slider-opt inactive" id="slider-g" onclick="sliderSwitch('g')">
-      📤 <span class="bn">দেনা</span><span class="en">Payable</span>
+      <span class="tab-ic"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></svg></span><span class="tab-txt"><span class="bn">দেনা</span><span class="en">Payable</span></span>
     </button>
     <button class="type-slider-opt inactive" id="slider-a" onclick="sliderSwitch('a')">
-      📋 <span class="bn">সব</span><span class="en">All</span>
+      <span class="tab-ic"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="8" x2="21" y1="6" y2="6"/><line x1="8" x2="21" y1="12" y2="12"/><line x1="8" x2="21" y1="18" y2="18"/><line x1="3" x2="3.01" y1="6" y2="6"/><line x1="3" x2="3.01" y1="12" y2="12"/><line x1="3" x2="3.01" y1="18" y2="18"/></svg></span><span class="tab-txt"><span class="bn">সব</span><span class="en">All</span></span>
     </button>
   </div>
 
   <div id="sec-r">
-    <div class="af">
-      <div class="af-head">✚ <span class="bn">নতুন পাওনা</span><span class="en">Add Receivable</span></div>
-      <div class="af-row">
-        <input id="r-n" type="text" placeholder="নাম / Name">
-        <input id="r-a" type="number" inputmode="numeric" placeholder="পরিমাণ / Amount">
-        <input id="r-no" type="text" placeholder="নোট / Note">
+    <div class="hf hf-receive">
+      <div class="hf-header">
+        <div class="hf-icon receive"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg></div>
+        <span class="hf-title"><span class="bn">নতুন পাওনা</span><span class="en">Add Receivable</span></span>
       </div>
+      <div class="hf-body">
+        <div class="hf-row">
+          <div class="cf-field">
+            <input id="r-na" type="text" class="cf-input" placeholder="">
+            <label class="cf-label"><span class="bn">নাম</span><span class="en">Name</span></label>
+          </div>
+          <div class="cf-field">
+            <input id="r-am" type="number" inputmode="numeric" class="cf-input" placeholder="">
+            <label class="cf-label"><span class="bn">পরিমাণ ৳</span><span class="en">Amount ৳</span></label>
+          </div>
+        </div>
+        <div class="cf-field">
+          <input id="r-no" type="text" class="cf-input" placeholder="">
+          <label class="cf-label"><span class="bn">নোট / Note</span><span class="en">Note</span></label>
+        </div>
+        <div class="cf-field">
+          <input id="r-due" type="date" class="cf-input cf-date">
+          <label class="cf-label cf-label-date"><svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:3px"><rect width="18" height="18" x="3" y="4" rx="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg><span class="bn">Due Date (optional)</span><span class="en">Due Date (optional)</span></label>
+        </div>
       <div id="r-loan-fields" style="display:none;margin-top:12px;padding-top:12px;border-top:1px solid var(--border);">
-        <div style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:8px;text-transform:uppercase;">🏦 Loan Details</div>
+        <div style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:8px;text-transform:uppercase;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" x2="12" y1="2" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> Loan Details</div>
         <div class="af-row">
           <input id="r-fee" type="text" placeholder="All Fees (e.g., 5,10,15)">
           <input id="r-loan-date" type="date">
         </div>
         <div style="font-size:11px;color:var(--muted);padding:6px;background:var(--card);border-radius:6px;margin-top:8px;">Interest: bKash-style (daily multiplier) • Processing: 0.575% • Max: 90 days</div>
       </div>
-      <div class="qtags">
-        <span class="qtag" onclick="setQ('Hawlat','r-no')">Hawlat</span>
-        <span class="qtag" onclick="setQ('Recharge','r-no')">Recharge</span>
-        <span class="qtag" onclick="setQ('Send Money','r-no')">Send Money</span>
-        <span class="qtag" onclick="setQ('loan','r-no')">🏦 Loan</span>
+        <div class="qtags" id="r-qtags"></div>
+        <button class="sbtn sbtn-g hf-btn" onclick="addEntry('receive')"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:5px"><path d="M5 12h14"/><path d="M12 5v14"/></svg><span class="bn">পাওনা যোগ করুন</span><span class="en">Add Receivable</span></button>
       </div>
-      <button class="sbtn sbtn-g" onclick="addEntry('receive')"><span class="bn">যোগ করুন →</span><span class="en">Add →</span></button>
     </div>
     <div class="sec-hdr">
       <span class="sec-lbl bn">পাওনা তালিকা</span><span class="sec-lbl en">Receivables</span>
@@ -277,19 +342,34 @@
     <div id="lst-r"></div>
   </div>
 
-  <div id="sec-g" style="display:none">
-    <div class="af">
-      <div class="af-head">✚ <span class="bn">নতুন দেনা</span><span class="en">Add Payable</span></div>
-      <div class="af-row">
-        <input id="g-n" type="text" placeholder="নাম / Name">
-        <input id="g-a" type="number" inputmode="numeric" placeholder="পরিমাণ / Amount">
-        <input id="g-no" type="text" placeholder="নোট / Note">
+  <div id="sec-g" class="hidden">
+    <div class="hf hf-give">
+      <div class="hf-header">
+        <div class="hf-icon give"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></svg></div>
+        <span class="hf-title"><span class="bn">নতুন দেনা</span><span class="en">Add Payable</span></span>
       </div>
-      <div class="qtags">
-        <span class="qtag" onclick="setQ('Borrowed','g-no')">Borrowed</span>
-        <span class="qtag" onclick="setQ('Recharge','g-no')">Recharge</span>
+      <div class="hf-body">
+        <div class="hf-row">
+          <div class="cf-field">
+            <input id="g-na" type="text" class="cf-input" placeholder="">
+            <label class="cf-label"><span class="bn">নাম</span><span class="en">Name</span></label>
+          </div>
+          <div class="cf-field">
+            <input id="g-am" type="number" inputmode="numeric" class="cf-input" placeholder="">
+            <label class="cf-label"><span class="bn">পরিমাণ ৳</span><span class="en">Amount ৳</span></label>
+          </div>
+        </div>
+        <div class="cf-field">
+          <input id="g-no" type="text" class="cf-input" placeholder="">
+          <label class="cf-label"><span class="bn">নোট / Note</span><span class="en">Note</span></label>
+        </div>
+        <div class="cf-field">
+          <input id="g-due" type="date" class="cf-input cf-date">
+          <label class="cf-label cf-label-date"><svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:3px"><rect width="18" height="18" x="3" y="4" rx="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg><span class="bn">Due Date (optional)</span><span class="en">Due Date (optional)</span></label>
+        </div>
+        <div class="qtags" id="g-qtags"></div>
+        <button class="sbtn sbtn-r hf-btn" onclick="addEntry('give')"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:5px"><path d="M5 12h14"/><path d="M12 5v14"/></svg><span class="bn">দেনা যোগ করুন</span><span class="en">Add Payable</span></button>
       </div>
-      <button class="sbtn sbtn-r" onclick="addEntry('give')"><span class="bn">যোগ করুন →</span><span class="en">Add →</span></button>
     </div>
     <div class="sec-hdr">
       <span class="sec-lbl bn">দেনা তালিকা</span><span class="sec-lbl en">Payables</span>
@@ -298,7 +378,12 @@
     <div id="lst-g"></div>
   </div>
 
-  <div id="sec-a" style="display:none"><div id="lst-a"></div></div>
+  <div id="sec-a" class="hidden">
+    <div class="sec-hdr">
+      <span class="sec-lbl bn">সকল হিসাব</span><span class="sec-lbl en">All Records</span>
+    </div>
+    <div id="lst-a"></div>
+  </div>
 </div>
 </div><!-- /#hisab-content -->
 
@@ -308,7 +393,7 @@
 
   <!-- Balance hero -->
   <div class="cash-hero">
-    <div class="cash-hero-lbl"><span class="bn">💵 নগদ ব্যালেন্স</span><span class="en">💵 Cash Balance</span></div>
+    <div class="cash-hero-lbl"><span class="bn"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:5px"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg>নগদ ব্যালেন্স</span><span class="en"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:5px"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg>Cash Balance</span></div>
     <div class="cash-hero-amt" id="cash-balance">৳০</div>
     <div class="cash-hero-sub" id="cash-hero-sub"><span class="bn">সর্বশেষ লেনদেন নেই</span><span class="en">No transactions yet</span></div>
   </div>
@@ -345,47 +430,63 @@
   <!-- Quick action buttons -->
   <div class="cash-actions">
     <button class="cash-btn cash-btn-add" onclick="openCashForm('add')">
-      ➕ <span class="bn">টাকা যোগ</span><span class="en">Add Money</span>
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right:6px;vertical-align:middle"><path d="M5 12h14"/><path d="M12 5v14"/></svg><span class="bn">টাকা যোগ</span><span class="en">Add Money</span>
     </button>
     <button class="cash-btn cash-btn-sub" onclick="openCashForm('sub')">
-      ➖ <span class="bn">খরচ করুন</span><span class="en">Expense</span>
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right:6px;vertical-align:middle"><path d="M5 12h14"/></svg><span class="bn">খরচ করুন</span><span class="en">Expense</span>
     </button>
   </div>
 
   <!-- Set budget button if not set -->
   <div id="budget-cta" style="text-align:center;margin-bottom:16px;">
-    <button onclick="setBudget()" style="font-size:12px;font-weight:700;color:var(--primary);background:none;border:1px solid rgba(56,189,248,.25);border-radius:8px;padding:6px 14px;cursor:pointer;">
-      📊 <span class="bn">মাসিক বাজেট সেট করুন</span><span class="en">Set Monthly Budget</span>
+    <button onclick="setBudget()" style="font-size:12px;font-weight:700;color:var(--primary);background:none;border:1px solid rgba(56,189,248,.25);border-radius:8px;padding:6px 14px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;">
+      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" x2="12" y1="20" y2="10"/><line x1="18" x2="18" y1="20" y2="4"/><line x1="6" x2="6" y1="20" y2="16"/></svg>
+      <span class="bn">মাসিক বাজেট সেট করুন</span><span class="en">Set Monthly Budget</span>
     </button>
   </div>
 
   <!-- Cash form -->
-  <div class="cash-form hidden" id="cash-form">
-    <div class="cash-form-title">
-      <span id="cash-form-icon">➕</span>
-      <span id="cash-form-title"><span class="bn">টাকা যোগ করুন</span><span class="en">Add Money</span></span>
+  <div class="cf hidden" id="cash-form">
+    <div class="cf-header" id="cf-header">
+      <div class="cf-header-left">
+        <div class="cf-icon" id="cash-form-icon"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg></div>
+        <span class="cf-title" id="cash-form-title"><span class="bn">টাকা যোগ</span><span class="en">Add Money</span></span>
+      </div>
+      <button class="cf-close" onclick="closeCashForm()"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
     </div>
-    <div class="af-row">
-      <input id="cash-amt" type="number" inputmode="numeric" placeholder="পরিমাণ / Amount">
-      <input id="cash-note" type="text" placeholder="নোট / Note (optional)">
-    </div>
-    <div class="qtags" id="cash-qtags"></div>
-    <div style="display:flex;gap:10px;margin-top:4px;">
-      <button class="sbtn sbtn-g" id="cash-submit-btn" onclick="submitCash()" style="flex:2"><span class="bn">যোগ করুন ✓</span><span class="en">Add ✓</span></button>
-      <button class="sbtn" onclick="closeCashForm()" style="flex:1;background:var(--card);color:var(--text);border:1px solid var(--border);"><span class="bn">বাতিল</span><span class="en">Cancel</span></button>
+    <div class="cf-body">
+      <div class="cf-row">
+        <div class="cf-field">
+          <input id="cash-amt" type="number" inputmode="numeric" class="cf-input" placeholder="">
+          <label class="cf-label"><span class="bn">পরিমাণ ৳</span><span class="en">Amount ৳</span></label>
+        </div>
+        <div class="cf-field">
+          <input id="cash-note" type="text" class="cf-input" placeholder="">
+          <label class="cf-label"><span class="bn">নোট</span><span class="en">Note</span></label>
+        </div>
+      </div>
+      <div class="cf-field">
+        <input id="cash-date" type="date" class="cf-input cf-date">
+        <label class="cf-label cf-label-date"><svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:3px"><rect width="18" height="18" x="3" y="4" rx="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg><span class="bn">তারিখ</span><span class="en">Date</span></label>
+      </div>
+      <div class="qtags" id="cash-qtags"></div>
+      <div class="cf-btns">
+        <button class="sbtn" onclick="closeCashForm()" style="flex:1;background:transparent;border:1.5px solid var(--border);color:var(--muted);"><span class="bn">বাতিল</span><span class="en">Cancel</span></button>
+        <button class="sbtn sbtn-g" id="cash-submit-btn" onclick="submitCash()" style="flex:2"><span class="bn">যোগ করুন ✓</span><span class="en">Add ✓</span></button>
+      </div>
     </div>
   </div>
 
   <!-- Category filter -->
   <div class="cat-filter" id="cash-cat-filter">
     <span class="cat-pill on" onclick="filterCash('all',this)"><span class="bn">সব</span><span class="en">All</span></span>
-    <span class="cat-pill" onclick="filterCash('add',this)">⬆️ <span class="bn">আয়</span><span class="en">Income</span></span>
-    <span class="cat-pill" onclick="filterCash('sub',this)">⬇️ <span class="bn">খরচ</span><span class="en">Expense</span></span>
+    <span class="cat-pill" onclick="filterCash('add',this)" style="display:inline-flex;align-items:center;gap:4px;"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></svg><span class="bn">আয়</span><span class="en">Income</span></span>
+    <span class="cat-pill" onclick="filterCash('sub',this)" style="display:inline-flex;align-items:center;gap:4px;"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg><span class="bn">খরচ</span><span class="en">Expense</span></span>
   </div>
 
   <!-- History -->
   <div class="cash-history-header">
-    <span class="cash-history-title"><span class="bn">📜 ইতিহাস</span><span class="en">📜 History</span></span>
+    <span class="cash-history-title" style="display:inline-flex;align-items:center;gap:6px;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></svg><span class="bn">ইতিহাস</span><span class="en">History</span></span>
     <button class="cash-clear-btn" onclick="clearCashHistory()"><span class="bn">সব মুছুন</span><span class="en">Clear All</span></button>
   </div>
   <div id="cash-history-list"></div>
@@ -397,10 +498,11 @@
 
 <!-- MODALS -->
 <div class="overlay" id="m-pay"><div class="modal">
-  <div class="modal-title">💸 <span class="bn">পরিশোধ</span><span class="en">Payment</span></div>
+  <div class="modal-title"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:6px"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg><span class="bn">পরিশোধ</span><span class="en">Payment</span></div>
   <div class="modal-sub" id="m-pay-s"></div>
   <div class="inp-wrap"><input id="pa" type="number" inputmode="numeric" placeholder="পরিমাণ / Amount"></div>
   <div class="inp-wrap"><input id="pn" type="text" placeholder="নোট / Note"></div>
+  <div class="qtags" id="pay-qtags"></div>
   <div class="modal-btns">
     <button class="btn-a" style="flex:1" onclick="cm('m-pay')">Cancel</button>
     <button class="sbtn sbtn-g" style="flex:1.5" onclick="confirmPay()">Confirm ✓</button>
@@ -408,10 +510,11 @@
 </div></div>
 
 <div class="overlay" id="m-add"><div class="modal">
-  <div class="modal-title">➕ <span class="bn">আরো যোগ</span><span class="en">Add More</span></div>
+  <div class="modal-title"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:6px"><path d="M5 12h14"/><path d="M12 5v14"/></svg><span class="bn">আরো যোগ</span><span class="en">Add More</span></div>
   <div class="modal-sub" id="m-add-s"></div>
   <div class="inp-wrap"><input id="aa" type="number" inputmode="numeric" placeholder="পরিমাণ / Amount"></div>
   <div class="inp-wrap"><input id="an" type="text" placeholder="নোট / Note"></div>
+  <div class="qtags" id="addmore-qtags"></div>
   <div class="modal-btns">
     <button class="btn-a" style="flex:1" onclick="cm('m-add')">Cancel</button>
     <button class="sbtn sbtn-g" style="flex:1.5" onclick="confirmAddMore()">Add ✓</button>
@@ -419,11 +522,16 @@
 </div></div>
 
 <div class="overlay" id="m-edit"><div class="modal">
-  <div class="modal-title">✏️ <span class="bn">এডিট</span><span class="en">Edit</span></div>
+  <div class="modal-title"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:6px"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg><span class="bn">এডিট</span><span class="en">Edit</span></div>
   <div class="modal-sub" id="m-edit-s"></div>
+  <div class="inp-wrap"><input id="ed-name" type="text" placeholder="নাম / Name"></div>
   <div class="inp-wrap"><input id="ed-amt" type="number" inputmode="numeric" placeholder="পরিমাণ / Amount"></div>
+  <div class="inp-wrap" style="display:flex;align-items:center;gap:8px;">
+    <label style="font-size:12px;color:var(--muted);white-space:nowrap;font-weight:600;">Due Date</label>
+    <input id="ed-due" type="date" style="flex:1;padding:9px 12px;border-radius:10px;border:1px solid var(--border);background:var(--card);color:var(--text);font-size:13px;">
+  </div>
   <div id="ed-loan-wrap" style="display:none;margin-top:12px;padding-top:12px;border-top:1px solid var(--border);">
-    <div style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:8px;text-transform:uppercase;">🏦 Loan Details</div>
+    <div style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:8px;text-transform:uppercase;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" x2="12" y1="2" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> Loan Details</div>
     <div class="inp-wrap"><input id="ed-fee" type="text" placeholder="All Fees (e.g., 5,10,15)"></div>
     <div class="inp-wrap"><input id="ed-loan-date" type="date"></div>
     <div style="font-size:11px;color:var(--muted);margin-top:8px;">
@@ -441,15 +549,15 @@
 </div></div>
 
 <div class="overlay" id="m-profile"><div class="modal">
-  <div class="modal-title">🔑 <span class="bn">পাসওয়ার্ড পরিবর্তন</span><span class="en">Change Password</span></div>
+  <div class="modal-title"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:6px"><circle cx="7.5" cy="15.5" r="5.5"/><path d="m21 2-9.6 9.6"/><path d="m15.5 7.5 3 3L22 7l-3-3"/></svg><span class="bn">পাসওয়ার্ড পরিবর্তন</span><span class="en">Change Password</span></div>
   <div class="modal-sub" id="m-profile-email"></div>
   <div class="inp-wrap">
     <input class="has-eye" id="pr-new" type="password" placeholder="নতুন পাসওয়ার্ড / New password">
-    <button class="eye-btn" onclick="toggleEye('pr-new',this)" tabindex="-1">👁️</button>
+    <button class="eye-btn" onclick="toggleEye('pr-new',this)" tabindex="-1"><span class="ic"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></span></button>
   </div>
   <div class="inp-wrap">
     <input class="has-eye" id="pr-cf" type="password" placeholder="নিশ্চিত করুন / Confirm">
-    <button class="eye-btn" onclick="toggleEye('pr-cf',this)" tabindex="-1">👁️</button>
+    <button class="eye-btn" onclick="toggleEye('pr-cf',this)" tabindex="-1"><span class="ic"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></span></button>
   </div>
   <div class="modal-msg" id="pr-msg"></div>
   <div class="modal-btns">
@@ -459,11 +567,45 @@
 </div></div>
 
 <div class="overlay" id="m-log"><div class="modal">
-  <div class="modal-title">📋 Activity Log</div>
+  <div class="modal-title"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:6px"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="M12 11h4"/><path d="M12 16h4"/><path d="M8 11h.01"/><path d="M8 16h.01"/></svg> Activity Log</div>
   <div class="modal-sub"><span class="bn">সাম্প্রতিক কার্যকলাপ</span><span class="en">Recent activity</span></div>
   <div id="log-list" style="max-height:340px;overflow-y:auto;margin-top:10px;"></div>
   <div class="modal-btns" style="margin-top:12px;">
     <button class="sbtn sbtn-g" onclick="cm('m-log')">Close</button>
+  </div>
+</div></div>
+
+<!-- ANALYTICS MODAL -->
+<div class="overlay" id="m-analytics"><div class="modal" style="max-height:88vh;overflow-y:auto;">
+  <div class="modal-title"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:6px"><line x1="12" x2="12" y1="20" y2="10"/><line x1="18" x2="18" y1="20" y2="4"/><line x1="6" x2="6" y1="20" y2="16"/></svg><span class="bn">রিপোর্ট ও বিশ্লেষণ</span><span class="en">Reports & Analytics</span></div>
+  <div id="analytics-content"></div>
+  <div class="modal-btns" style="margin-top:14px;">
+    <button class="sbtn sbtn-g" onclick="cm('m-analytics')">Close</button>
+  </div>
+</div></div>
+
+<!-- CASH EDIT MODAL -->
+<div class="overlay" id="m-cedit"><div class="modal">
+  <div class="modal-title"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:6px"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg><span class="bn">লেনদেন এডিট</span><span class="en">Edit Transaction</span></div>
+  <input type="hidden" id="cedit-id">
+  <input type="hidden" id="cedit-type">
+  <div class="inp-wrap"><input id="cedit-amt" type="number" inputmode="numeric" placeholder="পরিমাণ / Amount"></div>
+  <div class="inp-wrap"><input id="cedit-note" type="text" placeholder="নোট / Note"></div>
+  <div class="modal-btns">
+    <button class="btn-a" style="flex:1" onclick="cm('m-cedit')">Cancel</button>
+    <button class="sbtn sbtn-g" style="flex:1.5" onclick="confirmCashEdit()">Save ✓</button>
+  </div>
+</div></div>
+
+<!-- CATEGORY MANAGER MODAL -->
+<div class="overlay" id="m-catmgr"><div class="modal" style="max-height:85vh;overflow-y:auto;">
+  <div class="modal-title"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:6px"><path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"/><circle cx="7.5" cy="7.5" r="1.5" fill="currentColor" stroke="none"/></svg><span class="bn">Category ম্যানেজ</span><span class="en">Manage Categories</span></div>
+  <div class="modal-sub"><span class="bn">প্রতিটি সেকশনের preset tag edit করুন</span><span class="en">Edit preset tags for each section</span></div>
+  <div id="catmgr-sections" style="margin-top:12px;"></div>
+  <div class="modal-btns" style="margin-top:14px;">
+    <button class="sbtn sbtn-g" onclick="cm('m-catmgr');renderAllQtags()">
+      <span class="bn">সংরক্ষণ করুন ✓</span><span class="en">Save & Close ✓</span>
+    </button>
   </div>
 </div></div>
 
