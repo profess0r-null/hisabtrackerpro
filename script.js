@@ -17,6 +17,43 @@ const sb=supabase.createClient(SB_URL,SB_KEY);
 
 let DB={receive:[],give:[],activityLog:[]};
 let CASH_DB={balance:0,history:[]};
+
+// ── DEFAULT CATEGORIES ──
+const DEFAULT_CATS={
+  cashAdd:   [{e:'💰',l:'বেতন / Salary'},{e:'👨‍👩‍👧',l:'Family'},{e:'🛍️',l:'বিক্রয় / Sale'},{e:'✅',l:'পাওনা উসুল / Received'}],
+  cashSub:   [{e:'🍔',l:'খাওয়া / Food'},{e:'🚌',l:'যাতায়াত / Transport'},{e:'🛒',l:'কেনাকাটা / Shopping'},{e:'💡',l:'বিল / Bill'},{e:'📱',l:'Recharge'}],
+  hisabReceive:[{e:'',l:'Hawlat'},{e:'',l:'Recharge'},{e:'',l:'Send Money'},{e:'🏦',l:'Loan'}],
+  hisabGive:   [{e:'',l:'Borrowed'},{e:'',l:'Recharge'}],
+  hisabAddMore:[{e:'➕',l:'Extra Amount'},{e:'📈',l:'Interest Added'},{e:'🔄',l:'Adjusted'}],
+  hisabPay:    [{e:'💸',l:'Cash'},{e:'📱',l:'bKash'},{e:'🏦',l:'Bank'},{e:'✅',l:'Full Payment'}]
+};
+function getCats(key){
+  if(DB.categories&&DB.categories[key]&&DB.categories[key].length)return DB.categories[key];
+  return DEFAULT_CATS[key]||[];
+}
+function saveCats(){saveData();}
+
+// ── RENDER QTAGS ──
+function renderQtags(containerId, catKey, targetInputId){
+  const el=document.getElementById(containerId);
+  if(!el)return;
+  const cats=getCats(catKey);
+  const esc=s=>String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/'/g,'&#39;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  el.innerHTML=cats.map(c=>{
+    const label=c.l.split('/')[0].trim();
+    const val=c.e?(c.e+' '+label):label;
+    return `<span class="qtag" data-val="${esc(val)}" data-target="${esc(targetInputId)}">${c.e?c.e+' ':''}<span>${c.l}</span></span>`;
+  }).join('');
+  el.querySelectorAll('.qtag').forEach(t=>{
+    t.addEventListener('click',()=>setQ(t.dataset.val,t.dataset.target));
+  });
+}
+function renderAllQtags(){
+  // Hisab forms (static containers in HTML)
+  renderQtags('r-qtags','hisabReceive','r-no');
+  renderQtags('g-qtags','hisabGive','g-no');
+  // Cash & modal qtags rendered on open
+}
 let LANG=localStorage.getItem('ht_lang')||'bn';
 let THEME=localStorage.getItem('ht_theme')||'dark';
 let TAB='r',CTX={},SA={r:false,g:false},CUR_USER=null;
@@ -38,9 +75,13 @@ function sliderSwitch(type){
   btnR.className='type-slider-opt '+(type==='r'?'active-r':'inactive');
   btnG.className='type-slider-opt '+(type==='g'?'active-g':'inactive');
   btnA.className='type-slider-opt '+(type==='a'?'active-a':'inactive');
-  document.getElementById('sec-r').style.display=type==='r'?'block':'none';
-  document.getElementById('sec-g').style.display=type==='g'?'block':'none';
-  document.getElementById('sec-a').style.display=type==='a'?'block':'none';
+  const secR=document.getElementById('sec-r');
+  const secG=document.getElementById('sec-g');
+  const secA=document.getElementById('sec-a');
+  secR.style.display=''; secG.style.display=''; secA.style.display='';
+  secR.classList.toggle('hidden',type!=='r');
+  secG.classList.toggle('hidden',type!=='g');
+  secA.classList.toggle('hidden',type!=='a');
   if(type==='a')renderAll();
 }
 
@@ -50,7 +91,7 @@ function renderAll(){
   const all=fl([...DB.receive.map(p=>({...p,_type:'receive'})),...DB.give.map(p=>({...p,_type:'give'}))]).sort((a,b)=>b.id-a.id);
   document.getElementById('lst-a').innerHTML=all.length
     ?all.map(p=>renderCard(p,p._type)).filter(Boolean).join('')
-    :emptyS('কোনো রেকর্ড নেই','No records','📂');
+    :emptyS('কোনো রেকর্ড নেই','No records','<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>');
   all.filter(p=>p.remaining>0).forEach(p=>{const el=document.getElementById('card-'+p.id);if(el)initSwipe(el,p._type,p.id);});
 }
 
@@ -201,7 +242,10 @@ function toggleEye(inputId,btn){
   const inp=document.getElementById(inputId);
   const show=inp.type==='password';
   inp.type=show?'text':'password';
-  btn.textContent=show?'🙈':'👁️';
+  const eyeSVG=show
+    ?`<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" x2="22" y1="2" y2="22"/></svg>`
+    :`<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>`;
+  btn.innerHTML=`<span class="ic">${eyeSVG}</span>`;
 }
 
 // ── THEME ──
@@ -245,7 +289,7 @@ function applyMode(){
     badge.textContent='HISAB';
     badge.className='mode-badge hisab';
     switchBtn.className='drw-item switch-mode';
-    switchIcon.textContent='💵';
+    switchIcon.innerHTML=`<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg>`;
     switchText.textContent='Cash Tracker এ যান';
   } else {
     logoText.textContent='Cash Tracker';
@@ -277,11 +321,12 @@ function setSyncState(state,txt){
   const p=document.getElementById('sync-pill');
   const t=document.getElementById('sync-txt');
   if(!p)return;
+  if(state==='synced'){p.classList.remove('show');return;}
   p.className='sync-pill show '+(state||'');
-  t.textContent=txt;
+  if(txt)t.textContent=txt;
   clearTimeout(syncTimer);
-  if(state==='saved'||state==='fail'){
-    syncTimer=setTimeout(()=>{p.classList.remove('show');},2500);
+  if(state==='fail'){
+    syncTimer=setTimeout(()=>{p.classList.remove('show');},3000);
   }
 }
 
@@ -296,8 +341,189 @@ function openActivityLog(){
   const logs=(DB.activityLog||[]).slice(0,30);
   document.getElementById('log-list').innerHTML=logs.length
     ?logs.map(l=>`<div class="alog-item"><div class="alog-action">${l.action}</div>${l.detail?`<div class="alog-meta">${l.detail}</div>`:''}<div class="alog-meta">${fmtD(l.ts)}</div></div>`).join('')
-    :'<div class="empty"><div class="empty-i">📭</div><div class="empty-t">কোনো log নেই</div></div>';
+    :'<div class="empty"><div class="empty-i" style="color:var(--muted)"><svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg></div><div class="empty-t">কোনো log নেই</div></div>';
   document.getElementById('m-log').classList.add('on');
+}
+
+
+// ── ANALYTICS ──
+function openAnalytics(){
+  closeDrawer();
+  const hist=CASH_DB.history||[];
+  const now=new Date();
+  
+  // Monthly data last 6 months
+  const months=[];
+  for(let i=5;i>=0;i--){
+    const d=new Date(now.getFullYear(),now.getMonth()-i,1);
+    months.push({
+      label:d.toLocaleDateString('en-GB',{month:'short',year:'2-digit'}),
+      year:d.getFullYear(),month:d.getMonth(),
+      income:0,expense:0
+    });
+  }
+  hist.forEach(h=>{
+    const d=new Date(h.date);
+    const m=months.find(x=>x.year===d.getFullYear()&&x.month===d.getMonth());
+    if(!m)return;
+    if(h.type==='add')m.income+=h.amt;
+    else m.expense+=h.amt;
+  });
+
+  // Category breakdown this month
+  const thisMonthHist=hist.filter(h=>{
+    const d=new Date(h.date);
+    return d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear();
+  });
+  const catMap={};
+  thisMonthHist.filter(h=>h.type==='sub').forEach(h=>{
+    const key=h.note||'Other';
+    catMap[key]=(catMap[key]||0)+h.amt;
+  });
+  const cats=Object.entries(catMap).sort((a,b)=>b[1]-a[1]).slice(0,6);
+  const catTotal=cats.reduce((s,c)=>s+c[1],0)||1;
+
+  // Hisab summary
+  const totalReceive=DB.receive.reduce((s,p)=>s+p.remaining,0);
+  const totalGive=DB.give.reduce((s,p)=>s+p.remaining,0);
+  const overdueR=DB.receive.filter(p=>p.dueDate&&p.dueDate<Date.now()&&p.remaining>0).length;
+  const overdueG=DB.give.filter(p=>p.dueDate&&p.dueDate<Date.now()&&p.remaining>0).length;
+
+  const maxBar=Math.max(...months.map(m=>Math.max(m.income,m.expense)),1);
+
+  const barHTML=months.map(m=>`
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;">
+      <div style="width:100%;display:flex;flex-direction:column;align-items:center;gap:2px;height:80px;justify-content:flex-end;">
+        <div style="width:45%;background:var(--green);border-radius:3px 3px 0 0;height:${Math.round((m.income/maxBar)*76)}px;min-height:${m.income>0?2:0}px;opacity:.85;"></div>
+        <div style="width:45%;background:var(--red);border-radius:3px 3px 0 0;height:${Math.round((m.expense/maxBar)*76)}px;min-height:${m.expense>0?2:0}px;opacity:.85;margin-top:2px;"></div>
+      </div>
+      <div style="font-size:9px;color:var(--muted);font-weight:600;">${m.label}</div>
+    </div>`).join('');
+
+  const catHTML=cats.length?cats.map(([name,amt])=>`
+    <div style="margin-bottom:10px;">
+      <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+        <span style="font-size:12px;font-weight:600;color:var(--text);">${name}</span>
+        <span style="font-size:12px;font-weight:700;color:var(--red);">৳${fmt(amt)}</span>
+      </div>
+      <div style="height:6px;background:var(--border);border-radius:99px;overflow:hidden;">
+        <div style="height:100%;width:${Math.round((amt/catTotal)*100)}%;background:var(--red);border-radius:99px;opacity:.8;"></div>
+      </div>
+    </div>`).join('')
+    :'<div style="color:var(--muted);font-size:13px;text-align:center;padding:16px;">এই মাসে কোনো খরচ নেই</div>';
+
+  const thisM=months[months.length-1];
+  const savings=thisM.income-thisM.expense;
+
+  document.getElementById('analytics-content').innerHTML=`
+    <!-- This month summary -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">
+      <div style="background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);border-radius:12px;padding:12px;">
+        <div style="font-size:10px;font-weight:700;color:var(--green);text-transform:uppercase;margin-bottom:4px;">এই মাসে আয়</div>
+        <div style="font-size:18px;font-weight:900;color:var(--green);">৳${fmt(thisM.income)}</div>
+      </div>
+      <div style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:12px;padding:12px;">
+        <div style="font-size:10px;font-weight:700;color:var(--red);text-transform:uppercase;margin-bottom:4px;">এই মাসে খরচ</div>
+        <div style="font-size:18px;font-weight:900;color:var(--red);">৳${fmt(thisM.expense)}</div>
+      </div>
+    </div>
+    <div style="background:${savings>=0?'rgba(16,185,129,.08)':'rgba(239,68,68,.08)'};border:1px solid ${savings>=0?'rgba(16,185,129,.3)':'rgba(239,68,68,.3)'};border-radius:12px;padding:12px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;">
+      <div style="font-size:13px;font-weight:700;color:var(--text);">এই মাসে সেভিংস</div>
+      <div style="font-size:20px;font-weight:900;color:${savings>=0?'var(--green)':'var(--red)'};">${savings>=0?'+':'-'}৳${fmt(Math.abs(savings))}</div>
+    </div>
+
+    <!-- Bar chart -->
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:16px;">
+      <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:10px;">গত ৬ মাস</div>
+      <div style="display:flex;gap:4px;align-items:flex-end;">${barHTML}</div>
+      <div style="display:flex;gap:12px;margin-top:8px;justify-content:center;">
+        <span style="font-size:10px;color:var(--green);font-weight:700;display:flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;background:var(--green);border-radius:2px;display:inline-block;"></span>আয়</span>
+        <span style="font-size:10px;color:var(--red);font-weight:700;display:flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;background:var(--red);border-radius:2px;display:inline-block;"></span>খরচ</span>
+      </div>
+    </div>
+
+    <!-- Category breakdown -->
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:16px;">
+      <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:12px;">এই মাসের খরচ — Category অনুযায়ী</div>
+      ${catHTML}
+    </div>
+
+    <!-- Hisab summary -->
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px;">
+      <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:12px;">হিসাব সারসংক্ষেপ</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div style="background:rgba(16,185,129,.08);border-radius:10px;padding:10px;">
+          <div style="font-size:10px;color:var(--green);font-weight:700;text-transform:uppercase;margin-bottom:3px;">মোট পাওনা</div>
+          <div style="font-size:16px;font-weight:900;color:var(--green);">৳${fmt(totalReceive)}</div>
+          ${overdueR>0?`<div style="font-size:10px;color:var(--red);margin-top:3px;">⚠️ ${overdueR}টি overdue</div>`:''}
+        </div>
+        <div style="background:rgba(239,68,68,.08);border-radius:10px;padding:10px;">
+          <div style="font-size:10px;color:var(--red);font-weight:700;text-transform:uppercase;margin-bottom:3px;">মোট দেনা</div>
+          <div style="font-size:16px;font-weight:900;color:var(--red);">৳${fmt(totalGive)}</div>
+          ${overdueG>0?`<div style="font-size:10px;color:var(--red);margin-top:3px;">⚠️ ${overdueG}টি overdue</div>`:''}
+        </div>
+      </div>
+    </div>
+  `;
+  document.getElementById('m-analytics').classList.add('on');
+}
+// ── CATEGORY MANAGER ──
+const CAT_SECTION_META={
+  cashAdd:      {label:'💰 Cash — টাকা যোগ (Add Money)'},
+  cashSub:      {label:'💸 Cash — খরচ (Expense)'},
+  hisabReceive: {label:'📥 Hisab — পাওনা Note'},
+  hisabGive:    {label:'📤 Hisab — দেনা Note'},
+  hisabAddMore: {label:'➕ Hisab — Add More Note'},
+  hisabPay:     {label:'💸 Hisab — Payment Note'},
+};
+function openCategoryManager(){
+  closeDrawer();
+  if(!DB.categories)DB.categories={};
+  // init from defaults if empty
+  Object.keys(DEFAULT_CATS).forEach(k=>{
+    if(!DB.categories[k]||!DB.categories[k].length)DB.categories[k]=JSON.parse(JSON.stringify(DEFAULT_CATS[k]));
+  });
+  renderCatMgrSections();
+  document.getElementById('m-catmgr').classList.add('on');
+}
+function renderCatMgrSections(){
+  const cont=document.getElementById('catmgr-sections');
+  let html='';
+  Object.keys(CAT_SECTION_META).forEach(key=>{
+    const meta=CAT_SECTION_META[key];
+    const cats=DB.categories[key]||[];
+    html+=`<div class="catmgr-section">
+      <div class="catmgr-sec-lbl">${meta.label}</div>
+      <div class="catmgr-tags" id="catmgr-tags-${key}">
+        ${cats.map((c,i)=>`
+          <div class="catmgr-tag-row" id="catrow-${key}-${i}">
+            <input class="catmgr-emoji" type="text" maxlength="4" value="${c.e||''}" placeholder="🏷" oninput="updateCat('${key}',${i},'e',this.value)">
+            <input class="catmgr-label" type="text" value="${c.l||''}" placeholder="Label" oninput="updateCat('${key}',${i},'l',this.value)">
+            <button class="catmgr-del" onclick="deleteCat('${key}',${i})">✕</button>
+          </div>`).join('')}
+      </div>
+      <button class="catmgr-add-btn" onclick="addCat('${key}')">+ Add Tag</button>
+    </div>`;
+  });
+  cont.innerHTML=html;
+}
+function updateCat(key,idx,field,val){
+  if(!DB.categories[key])return;
+  DB.categories[key][idx][field]=val;
+  saveCats();
+}
+function addCat(key){
+  if(!DB.categories[key])DB.categories[key]=[];
+  DB.categories[key].push({e:'',l:'New Tag'});
+  saveCats();
+  renderCatMgrSections();
+}
+function deleteCat(key,idx){
+  if(!DB.categories[key])return;
+  DB.categories[key].splice(idx,1);
+  saveCats();
+  renderCatMgrSections();
+  toast('🗑️ Tag মুছে গেছে');
 }
 
 // ── AUTH ──
@@ -522,17 +748,32 @@ function handlePin(){
 }
 
 // ── DATA ──
+function showSkeleton(){
+  const app=document.getElementById('app');
+  app.innerHTML=`<div class="skel-wrap">
+    ${[1,2,3].map(()=>`<div class="skel-card"><div class="skel-line wide"></div><div class="skel-line med"></div><div class="skel-line short"></div></div>`).join('')}
+  </div>`;
+}
 async function showApp(){
   document.getElementById('app').style.display='block';
   setSyncState('saving','Loading...');
-  // Track logged-in visit
   (async()=>{try{await sb.from('visits').insert({user_agent:navigator.userAgent,logged_in:true});}catch(e){}})();
   await loadData();
   await loadCashDataCloud();
   logActivity('Login সফল',CUR_USER.email);
-  await saveData();
+  await saveData(true); // true = login toast
   applyMode();
   render();
+  renderAllQtags();
+  // set today default for hisab due dates
+  const today=new Date().toISOString().split('T')[0];
+  ['r-due','g-due'].forEach(id=>{const el=document.getElementById(id);if(el){el.value=today;el.classList.add('has-val');}});
+  // floating label: track has-val on all cf-inputs
+  document.querySelectorAll('.cf-input').forEach(inp=>{
+    inp.addEventListener('input',()=>inp.classList.toggle('has-val',inp.value.length>0));
+    inp.addEventListener('change',()=>inp.classList.toggle('has-val',inp.value.length>0));
+    if(inp.value.length>0) inp.classList.add('has-val');
+  });
 }
 async function loadData(){
   const{data,error}=await sb.from('hisab_users').select('data').eq('id',CUR_USER.id).maybeSingle();
@@ -541,18 +782,22 @@ async function loadData(){
     if(!DB.receive)DB.receive=[];
     if(!DB.give)DB.give=[];
     if(!DB.activityLog)DB.activityLog=[];
+    if(!DB.categories)DB.categories={};
     // PIN cloud থেকে localStorage এ sync
     if(DB.pinHash) localStorage.setItem(pk(),DB.pinHash);
   }else if(!error){
     await sb.from('hisab_users').insert({id:CUR_USER.id,data:DB});
   }
 }
-async function saveData(){
+async function saveData(showLoginToast=false){
   setSyncState('saving','Saving...');
   localStorage.setItem('ht_'+CUR_USER.id,JSON.stringify(DB));
   try{
     await sb.from('hisab_users').upsert({id:CUR_USER.id,data:DB,updated_at:new Date().toISOString()});
-    setSyncState('saved','Saved ✓');
+    if(showLoginToast){
+      toast(LANG==='bn'?'👋 স্বাগতম!':'👋 Welcome!');
+    }
+    setSyncState('synced');
   }catch(e){
     setSyncState('fail','Sync failed ✕');
   }
@@ -592,8 +837,8 @@ function saveCashData(){
   // cloud sync async
   if(CUR_USER){
     sb.from('hisab_cash').upsert({id:CUR_USER.id,data:CASH_DB,updated_at:new Date().toISOString()}).then(({error})=>{
-      if(!error)setSyncState('saved','Saved ✓');
-      else setSyncState('fail','Sync failed ✕');
+      if(error)setSyncState('fail','Sync failed ✕');
+      else setSyncState('synced');
     });
   }
 }
@@ -604,32 +849,29 @@ function openCashForm(mode){
   const form=document.getElementById('cash-form');
   const icon=document.getElementById('cash-form-icon');
   const submitBtn=document.getElementById('cash-submit-btn');
-  const qtags=document.getElementById('cash-qtags');
   if(mode==='add'){
-    icon.textContent='➕';
+    icon.innerHTML=`<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>`;
+    icon.style.background='rgba(16,185,129,.15)';icon.style.color='var(--green)';
+    document.getElementById('cash-form-title').style.color='var(--green)';
     submitBtn.className='sbtn sbtn-g';
     submitBtn.innerHTML='<span class="bn">যোগ করুন ✓</span><span class="en">Add ✓</span>';
-    document.documentElement.setAttribute('data-lang',LANG);
-    qtags.innerHTML=`
-      <span class="qtag" onclick="setQ('বেতন / Salary','cash-note')">💰 <span class="bn">বেতন</span><span class="en">Salary</span></span>
-      <span class="qtag" onclick="setQ('Family','cash-note')">👨‍👩‍👧 Family</span>
-      <span class="qtag" onclick="setQ('বিক্রয় / Sale','cash-note')">🛍️ <span class="bn">বিক্রয়</span><span class="en">Sale</span></span>
-      <span class="qtag" onclick="setQ('পাওনা উসুল / Received','cash-note')">✅ <span class="bn">পাওনা</span><span class="en">Received</span></span>
-    `;
+    renderQtags('cash-qtags','cashAdd','cash-note');
   } else {
-    icon.textContent='➖';
+    icon.innerHTML=`<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/></svg>`;
+    icon.style.background='rgba(239,68,68,.12)';icon.style.color='var(--red)';
+    document.getElementById('cash-form-title').style.color='var(--red)';
     submitBtn.className='sbtn sbtn-r';
     submitBtn.innerHTML='<span class="bn">বিয়োগ করুন ✓</span><span class="en">Deduct ✓</span>';
-    qtags.innerHTML=`
-      <span class="qtag" onclick="setQ('খাওয়া / Food','cash-note')">🍔 <span class="bn">খাওয়া</span><span class="en">Food</span></span>
-      <span class="qtag" onclick="setQ('যাতায়াত / Transport','cash-note')">🚌 <span class="bn">যাতায়াত</span><span class="en">Transport</span></span>
-      <span class="qtag" onclick="setQ('কেনাকাটা / Shopping','cash-note')">🛒 <span class="bn">কেনাকাটা</span><span class="en">Shopping</span></span>
-      <span class="qtag" onclick="setQ('বিল / Bill','cash-note')">💡 <span class="bn">বিল</span><span class="en">Bill</span></span>
-      <span class="qtag" onclick="setQ('Recharge','cash-note')">📱 Recharge</span>
-    `;
+    renderQtags('cash-qtags','cashSub','cash-note');
   }
   document.getElementById('cash-amt').value='';
   document.getElementById('cash-note').value='';
+  const todayStr=new Date().toISOString().split('T')[0];
+  const dateEl=document.getElementById('cash-date');
+  dateEl.value=todayStr;
+  dateEl.classList.add('has-val');
+  document.getElementById('cash-amt').classList.remove('has-val');
+  document.getElementById('cash-note').classList.remove('has-val');
   form.classList.remove('hidden');
   document.getElementById('cash-amt').focus();
 }
@@ -641,14 +883,16 @@ function submitCash(){
   const note=document.getElementById('cash-note').value.trim()||( cashFormMode==='add'?'টাকা যোগ':'খরচ');
   if(isNaN(amt)||amt<=0){toast('❌ সঠিক পরিমাণ দিন!');return;}
   const ts=Date.now();
+  const dateVal=document.getElementById('cash-date').value;
+  const entryDate=dateVal?new Date(dateVal).getTime():ts;
   if(cashFormMode==='add'){
     CASH_DB.balance+=amt;
-    CASH_DB.history.unshift({id:ts,type:'add',amt,note,date:ts});
+    CASH_DB.history.unshift({id:ts,type:'add',amt,note,date:entryDate});
     toast('✅ ৳'+fmt(amt)+' যোগ হয়েছে!');
   } else {
     if(amt>CASH_DB.balance){toast('❌ পর্যাপ্ত ব্যালেন্স নেই!');return;}
     CASH_DB.balance-=amt;
-    CASH_DB.history.unshift({id:ts,type:'sub',amt,note,date:ts});
+    CASH_DB.history.unshift({id:ts,type:'sub',amt,note,date:entryDate});
     toast('💸 ৳'+fmt(amt)+' খরচ হয়েছে!');
   }
   saveCashData();
@@ -658,15 +902,19 @@ function submitCash(){
 function deleteCashEntry(id){
   const entry=CASH_DB.history.find(h=>h.id===id);
   if(!entry)return;
-  if(!confirm('এই লেনদেন মুছবেন?'))return;
-  // reverse balance
+  const idx=CASH_DB.history.findIndex(h=>h.id===id);
+  const snap=JSON.parse(JSON.stringify(entry));
+  const balBefore=CASH_DB.balance;
   if(entry.type==='add') CASH_DB.balance-=entry.amt;
   else CASH_DB.balance+=entry.amt;
   CASH_DB.balance=Math.max(0,CASH_DB.balance);
   CASH_DB.history=CASH_DB.history.filter(h=>h.id!==id);
-  saveCashData();
-  renderCash();
-  toast('🗑️ মুছে গেছে');
+  saveCashData();renderCash();
+  toast(LANG==='bn'?`🗑️ "${snap.note}" মুছে গেছে`:`🗑️ "${snap.note}" deleted`,()=>{
+    CASH_DB.history.splice(Math.min(idx,CASH_DB.history.length),0,snap);
+    CASH_DB.balance=balBefore;
+    saveCashData();renderCash();toast(LANG==='bn'?'↩️ ফিরিয়ে আনা হয়েছে':'↩️ Restored');
+  });
 }
 function clearCashHistory(){
   if(!confirm('সব ইতিহাস মুছবেন? ব্যালেন্স ০ হয়ে যাবে।'))return;
@@ -674,6 +922,33 @@ function clearCashHistory(){
   saveCashData();
   renderCash();
   toast('🗑️ সব মুছে গেছে');
+}
+function openCashEdit(id){
+  const h=CASH_DB.history.find(x=>x.id===id);
+  if(!h)return;
+  document.getElementById('cedit-id').value=id;
+  document.getElementById('cedit-amt').value=h.amt;
+  document.getElementById('cedit-note').value=h.note||'';
+  document.getElementById('cedit-type').value=h.type;
+  document.getElementById('m-cedit').classList.add('on');
+}
+function confirmCashEdit(){
+  const id=Number(document.getElementById('cedit-id').value);
+  const amt=parseFloat(document.getElementById('cedit-amt').value);
+  const note=document.getElementById('cedit-note').value.trim();
+  if(!amt||amt<=0){toast('❌ সঠিক পরিমাণ দিন');return;}
+  const h=CASH_DB.history.find(x=>x.id===id);
+  if(!h)return;
+  // adjust balance
+  if(h.type==='add') CASH_DB.balance-=h.amt;
+  else CASH_DB.balance+=h.amt;
+  h.amt=amt;
+  h.note=note||h.note;
+  if(h.type==='add') CASH_DB.balance+=amt;
+  else CASH_DB.balance-=amt;
+  CASH_DB.balance=Math.max(0,CASH_DB.balance);
+  saveCashData();renderCash();cm('m-cedit');
+  toast(LANG==='bn'?'✏️ আপডেট হয়েছে':'✏️ Updated');
 }
 function renderCash(){
   const bal=CASH_DB.balance||0;
@@ -722,7 +997,7 @@ function renderCash(){
   // history list
   const list=document.getElementById('cash-history-list');
   if(filtered.length===0){
-    list.innerHTML=`<div class="empty"><div class="empty-i">💵</div><div class="empty-t"><span class="bn">${CASH_FILTER==='all'?'কোনো লেনদেন নেই':'কোনো রেকর্ড নেই'}</span><span class="en">${CASH_FILTER==='all'?'No transactions yet':'No records found'}</span></div><div class="empty-s"><span class="bn">উপরের বাটন দিয়ে শুরু করুন</span><span class="en">Use the buttons above to get started</span></div></div>`;
+    list.innerHTML=`<div class="empty"><div class="empty-i" style="color:var(--muted)"><svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg></div><div class="empty-t"><span class="bn">${CASH_FILTER==='all'?'কোনো লেনদেন নেই':'কোনো রেকর্ড নেই'}</span><span class="en">${CASH_FILTER==='all'?'No transactions yet':'No records found'}</span></div><div class="empty-s"><span class="bn">উপরের বাটন দিয়ে শুরু করুন</span><span class="en">Use the buttons above to get started</span></div></div>`;
     return;
   }
   list.innerHTML=filtered.map(h=>`
@@ -733,7 +1008,8 @@ function renderCash(){
         <div class="cash-entry-date">${fmtD(h.date)}</div>
       </div>
       <div class="cash-entry-amt ${h.type==='add'?'plus':'minus'}">${h.type==='add'?'+':'-'}৳${fmt(h.amt)}</div>
-      <button class="cash-del-btn" onclick="deleteCashEntry(${h.id})">🗑</button>
+      <button class="cash-edit-btn" onclick="openCashEdit(${h.id})"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg></button>
+      <button class="cash-del-btn" onclick="deleteCashEntry(${h.id})"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg></button>
     </div>
   `).join('');
 }
@@ -771,16 +1047,65 @@ function countUp(el,target,pre=''){
 }
 
 // ── UI ──
-function toast(msg){
+let _toastTimer=null;
+function toast(msg,undoFn=null){
   const t=document.getElementById('toast');
-  const p=document.getElementById('sync-pill');
-  t.textContent=msg;
+  if(_toastTimer)clearTimeout(_toastTimer);
+  t.innerHTML='';
+
+  // Icon detection from message
+  const iconMap={'🗑️':'trash','↩️':'undo','✅':'check','❌':'error','✏️':'edit','💸':'money','👋':'wave'};
+  let iconSVG='';
+  if(msg.startsWith('🗑️')||msg.startsWith('🗑')){
+    iconSVG=`<span class="t-icon t-icon-del"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg></span>`;
+    msg=msg.replace(/^🗑️?\s*/,'');
+  } else if(msg.startsWith('↩️')){
+    iconSVG=`<span class="t-icon t-icon-undo"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></svg></span>`;
+    msg=msg.replace(/^↩️\s*/,'');
+  } else if(msg.startsWith('✅')||msg.startsWith('✓')){
+    iconSVG=`<span class="t-icon t-icon-ok"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>`;
+    msg=msg.replace(/^✅\s*/,'');
+  } else if(msg.startsWith('❌')){
+    iconSVG=`<span class="t-icon t-icon-err"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg></span>`;
+    msg=msg.replace(/^❌\s*/,'');
+  } else if(msg.startsWith('✏️')){
+    iconSVG=`<span class="t-icon t-icon-ok"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg></span>`;
+    msg=msg.replace(/^✏️\s*/,'');
+  } else if(msg.startsWith('💸')){
+    iconSVG=`<span class="t-icon t-icon-ok"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg></span>`;
+    msg=msg.replace(/^💸\s*/,'');
+  } else if(msg.startsWith('👋')){
+    iconSVG=`<span class="t-icon t-icon-ok"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>`;
+    msg=msg.replace(/^👋\s*/,'');
+  }
+
+  if(iconSVG) t.insertAdjacentHTML('beforeend',iconSVG);
+  const msgSpan=document.createElement('span');
+  msgSpan.className='t-msg';
+  msgSpan.textContent=msg;
+  t.appendChild(msgSpan);
+
+  if(undoFn){
+    const sep=document.createElement('span');sep.className='t-sep';t.appendChild(sep);
+    const btn=document.createElement('button');
+    btn.className='toast-undo-btn';
+    btn.textContent='Undo';
+    btn.addEventListener('click',()=>{
+      undoFn();
+      t.classList.remove('on');
+      clearTimeout(_toastTimer);
+      window._pendingUndo=null;
+    });
+    t.appendChild(btn);
+    window._pendingUndo=undoFn;
+  } else {
+    window._pendingUndo=null;
+  }
   t.classList.add('on');
-  if(p.classList.contains('show')){p.style.opacity='0';p.style.transform='translateY(12px)';}
-  setTimeout(()=>{
+  _toastTimer=setTimeout(()=>{
     t.classList.remove('on');
-    if(p.classList.contains('show')){p.style.opacity='1';p.style.transform='translateY(0)';}
-  },3000);
+    window._pendingUndo=null;
+  },undoFn?6000:3000);
 }
 function cm(id){document.getElementById(id).classList.remove('on');}
 function toggleLang(){LANG=LANG==='bn'?'en':'bn';localStorage.setItem('ht_lang',LANG);document.documentElement.setAttribute('data-lang',LANG);render();}
@@ -791,7 +1116,20 @@ function switchTab(t,ev){
   ['r','g','a'].forEach(s=>document.getElementById('sec-'+s).style.display=s===t?'block':'none');
   render();
 }
-function setQ(v,id){document.getElementById(id).value=v;}
+function setQ(v,id){
+  const inp=document.getElementById(id);
+  if(!inp) return;
+  inp.value=v;
+  inp.classList.add('has-val');
+  // highlight all qtags with this value
+  document.querySelectorAll('.qtag').forEach(tag=>{
+    if(tag.textContent.includes(v.split(' ')[v.split(' ').length-1]) || tag.textContent.includes(v.split(' ')[0])){
+      tag.classList.add('qtag-active');
+    } else {
+      tag.classList.remove('qtag-active');
+    }
+  });
+}
 function toggleSA(k){SA[k]=!SA[k];render();}
 
 function parseFeeString(str){
@@ -934,9 +1272,10 @@ function updateLoanNoteFields(){
 // ── ENTRIES ──
 function addEntry(type){
   const p=type==='receive'?'r':'g';
-  const name=document.getElementById(p+'-n').value.trim();
-  const amt=parseFloat(document.getElementById(p+'-a').value);
+  const name=document.getElementById(p+'-na').value.trim();
+  const amt=parseFloat(document.getElementById(p+'-am').value);
   const note=document.getElementById(p+'-no').value.trim()||'Entry';
+  const dueVal=document.getElementById(p+'-due').value;
   if(!name||isNaN(amt)||amt<=0)return alert(LANG==='bn'?'সঠিক তথ্য দিন!':'Enter valid data!');
   
   let loanData=null;
@@ -960,11 +1299,12 @@ function addEntry(type){
       if(loanData)person.loanData=loanData;
     }
   } else {
-    DB[type].push({id:ts,name,original:amt,remaining:amt,history:[hist],loanData});
+    DB[type].push({id:ts,name,original:amt,remaining:amt,history:[hist],loanData,dueDate:dueVal?new Date(dueVal).getTime():null});
   }
-  document.getElementById(p+'-n').value='';
-  document.getElementById(p+'-a').value='';
+  document.getElementById(p+'-na').value='';
+  document.getElementById(p+'-am').value='';
   document.getElementById(p+'-no').value='';
+  document.getElementById(p+'-due').value='';
   if(type==='receive'){
     document.getElementById('r-fee').value='';
     document.getElementById('r-loan-date').value='';
@@ -977,6 +1317,7 @@ function openPay(type,id){
   const p=DB[type].find(x=>x.id===id);CTX={type,id};
   document.getElementById('m-pay-s').textContent=`${p.name} — Due: ৳${fmt(p.remaining)}`;
   document.getElementById('pa').value='';document.getElementById('pn').value='';
+  renderQtags('pay-qtags','hisabPay','pn');
   document.getElementById('m-pay').classList.add('on');
 }
 function confirmPay(){
@@ -1003,6 +1344,7 @@ function openAddMore(type,id){
   const p=DB[type].find(x=>x.id===id);CTX={type,id};
   document.getElementById('m-add-s').textContent=`${p.name} — Current: ৳${fmt(p.remaining)}`;
   document.getElementById('aa').value='';document.getElementById('an').value='';
+  renderQtags('addmore-qtags', type==='receive'?'hisabReceive':'hisabGive', 'an');
   document.getElementById('m-add').classList.add('on');
 }
 function confirmAddMore(){
@@ -1030,7 +1372,9 @@ function openEdit(type,id){
   const p=DB[type].find(x=>x.id===id);CTX={type,id};
   const isLoan=p.loanData||p.history.some(h=>h.note.toLowerCase().includes('loan'));
   document.getElementById('ed-amt').value=p.original;
-  document.getElementById('m-edit-s').textContent=LANG==='bn'?'তথ্য পরিবর্তন করুন':'Edit entry';
+  document.getElementById('ed-name').value=p.name||'';
+  document.getElementById('ed-due').value=p.dueDate?new Date(p.dueDate).toISOString().split('T')[0]:'';
+  document.getElementById('m-edit-s').textContent=p.name;
   
   const loanWrap=document.getElementById('ed-loan-wrap');
   if(type==='receive'&&isLoan){
@@ -1087,8 +1431,12 @@ function confirmEdit(){
   if(isNaN(amt)||amt<=0)return alert(LANG==='bn'?'সঠিক তথ্য দিন!':'Enter valid data!');
   const p=DB[CTX.type].find(x=>x.id===CTX.id);
   const oldAmt=p.original;
+  const newName=document.getElementById('ed-name').value.trim();
+  const dueVal=document.getElementById('ed-due').value;
+  if(newName)p.name=newName;
   p.original=amt;
   p.remaining=p.remaining+(amt-oldAmt);
+  p.dueDate=dueVal?new Date(dueVal).getTime():null;
   
   if(CTX.type==='receive'&&(p.loanData||p.history.some(h=>h.note.toLowerCase().includes('loan')))){
     const fees=parseFeeString(document.getElementById('ed-fee').value);
@@ -1102,12 +1450,17 @@ function confirmEdit(){
   cm('m-edit');saveData();render();toast(LANG==='bn'?'✏️ সংশোধন হয়েছে!':'✏️ Updated!');
 }
 function deleteEntry(type,id){
-  if(confirm(LANG==='bn'?'ডিলিট করবেন?':'Confirm Delete?')){
-    const p=DB[type].find(x=>x.id===id);
-    logActivity('এন্ট্রি ডিলিট',p?p.name:'');
-    DB[type]=DB[type].filter(x=>x.id!==id);
-    saveData();render();toast(LANG==='bn'?'🗑️ ডিলিট হয়েছে':'🗑️ Deleted');
-  }
+  const p=DB[type].find(x=>x.id===id);
+  if(!p)return;
+  const idx=DB[type].findIndex(x=>x.id===id);
+  const snapshot=JSON.parse(JSON.stringify(p));
+  logActivity('এন্ট্রি ডিলিট',p.name);
+  DB[type]=DB[type].filter(x=>x.id!==id);
+  saveData();render();
+  toast(LANG==='bn'?`🗑️ "${p.name}" ডিলিট হয়েছে`:`🗑️ "${p.name}" deleted`,()=>{
+    DB[type].splice(Math.min(idx,DB[type].length),0,snapshot);
+    saveData();render();toast(LANG==='bn'?'↩️ ফিরিয়ে আনা হয়েছে':'↩️ Restored');
+  });
 }
 
 // ── WHATSAPP ──
@@ -1241,11 +1594,11 @@ function renderCard(p,type){
       </div>
       ${loanBreakdownHtml}
       <div class="arow">
-        <button class="btn-a" onclick="openPay('${type}',${p.id})">💸 <span class="bn">শোধ</span><span class="en">Pay</span></button>
-        <button class="btn-a" onclick="openAddMore('${type}',${p.id})">➕ <span class="bn">যোগ</span><span class="en">Add</span></button>
-        <button class="btn-a" onclick="openEdit('${type}',${p.id})">✏️ <span class="bn">এডিট</span><span class="en">Edit</span></button>
-        <button class="btn-a" onclick="copyWA('${type}',${p.id})">📋</button>
-        <button class="btn-a" style="color:var(--red);border-color:var(--red);flex:0.5" onclick="deleteEntry('${type}',${p.id})">🗑️</button>
+        <button class="btn-a btn-pay" onclick="openPay('${type}',${p.id})"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg><span class="bn">শোধ</span><span class="en">Pay</span></button>
+        <button class="btn-a btn-add-more" onclick="openAddMore('${type}',${p.id})"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg><span class="bn">যোগ</span><span class="en">Add</span></button>
+        <button class="btn-a" onclick="openEdit('${type}',${p.id})"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg><span class="bn">এডিট</span><span class="en">Edit</span></button>
+        <button class="btn-a btn-copy" onclick="copyWA('${type}',${p.id})"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg></button>
+        <button class="btn-a btn-del-bold" onclick="deleteEntry('${type}',${p.id})"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg></button>
       </div>
       <div class="hh" style="margin-top:14px;">HISTORY</div>
       ${p.history.slice(0,5).map(h=>`<div class="hi ${h.t==='add'?'ar':'pr'}"><span>${fmtD(h.date)} — ${h.note}</span><b style="color:var(--${h.t==='add'?'green':'red'})">${h.t==='add'?'+':'-'} ৳${fmt(h.amt)}</b></div>`).join('')}
@@ -1254,7 +1607,7 @@ function renderCard(p,type){
     </div>
   </div>`;
 }
-function emptyS(bn,en,ic){return`<div class="empty"><div class="empty-i">${ic}</div><div class="empty-t"><span class="bn">${bn}</span><span class="en">${en}</span></div></div>`;}
+function emptyS(bn,en,ic){return`<div class="empty"><div class="empty-i" style="color:var(--muted)">${ic}</div><div class="empty-t"><span class="bn">${bn}</span><span class="en">${en}</span></div></div>`;}
 
 // ── TOP LISTS ──
 function renderTop(){
@@ -1297,14 +1650,14 @@ function render(){
   const nc=document.getElementById('net-card');
   nc.className='sc-net '+(net>0?'pos':net<0?'neg':'zero');
   const ns=document.getElementById('sv-n-s'),ni=document.getElementById('net-ic');
-  if(net>0){ns.textContent=LANG==='bn'?'▲ আপনি পাবেন':'▲ In your favor';ni.textContent='📈';}
-  else if(net<0){ns.textContent=LANG==='bn'?'▼ আপনি দেবেন':'▼ You owe more';ni.textContent='📉';}
-  else{ns.textContent=LANG==='bn'?'= সমান':'= Balanced';ni.textContent='⚖️';}
+  if(net>0){ns.textContent=LANG==='bn'?'▲ আপনি পাবেন':'▲ In your favor';ni.innerHTML=`<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>`;}
+  else if(net<0){ns.textContent=LANG==='bn'?'▼ আপনি দেবেন':'▼ You owe more';ni.innerHTML=`<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></svg>`;}
+  else{ns.textContent=LANG==='bn'?'= সমান':'= Balanced';ni.innerHTML=`<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 9h14M5 15h14"/></svg>`;}
   renderTop();
   const fl=list=>q?list.filter(p=>p.name.toLowerCase().includes(q)):list;
   const sR=fl([...DB.receive].filter(p=>p.remaining>0)).sort((a,b)=>b.remaining-a.remaining);
   const shR=SA.r?sR:sR.slice(0,3);
-  document.getElementById('lst-r').innerHTML=shR.map(p=>renderCard(p,'receive')).filter(Boolean).join('')||emptyS('কোনো পাওনা নেই','No receivables','📭');
+  document.getElementById('lst-r').innerHTML=shR.map(p=>renderCard(p,'receive')).filter(Boolean).join('')||emptyS('কোনো পাওনা নেই','No receivables','<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>');
   shR.forEach(p=>{const el=document.getElementById('card-'+p.id);if(el)initSwipe(el,'receive',p.id);});
   const bR=document.getElementById('sa-r');
   bR.style.display=sR.length>3?'inline-flex':'none';
@@ -1312,7 +1665,7 @@ function render(){
   bR.querySelector('.en').textContent=SA.r?'Show Less':`See All (${sR.length})`;
   const sG=fl([...DB.give].filter(p=>p.remaining>0)).sort((a,b)=>b.remaining-a.remaining);
   const shG=SA.g?sG:sG.slice(0,3);
-  document.getElementById('lst-g').innerHTML=shG.map(p=>renderCard(p,'give')).filter(Boolean).join('')||emptyS('কোনো দেনা নেই','No payables','🎉');
+  document.getElementById('lst-g').innerHTML=shG.map(p=>renderCard(p,'give')).filter(Boolean).join('')||emptyS('কোনো দেনা নেই','No payables','<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>');
   shG.forEach(p=>{const el=document.getElementById('card-'+p.id);if(el)initSwipe(el,'give',p.id);});
   const bG=document.getElementById('sa-g');
   bG.style.display=sG.length>3?'inline-flex':'none';
