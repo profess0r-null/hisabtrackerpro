@@ -754,6 +754,7 @@ function showSkeleton(){
     ${[1,2,3].map(()=>`<div class="skel-card"><div class="skel-line wide"></div><div class="skel-line med"></div><div class="skel-line short"></div></div>`).join('')}
   </div>`;
 }
+let _dataLoaded = false;
 async function showApp(){
   document.getElementById('app').style.display='block';
   setSyncState('saving','Loading...');
@@ -761,7 +762,14 @@ async function showApp(){
   await loadData();
   await loadCashDataCloud();
   logActivity('Login সফল',CUR_USER.email);
-  await saveData(true); // true = login toast
+  
+  if (_dataLoaded) {
+    await saveData(true); // true = login toast
+  } else {
+    toast('⚠️ Offline / Error: Using local data');
+    setSyncState('fail', 'Offline');
+  }
+  
   applyMode();
   render();
   renderAllQtags();
@@ -776,17 +784,30 @@ async function showApp(){
   });
 }
 async function loadData(){
-  const{data,error}=await sb.from('hisab_users').select('data').eq('id',CUR_USER.id).maybeSingle();
-  if(data&&data.data){
-    DB=data.data;
-    if(!DB.receive)DB.receive=[];
-    if(!DB.give)DB.give=[];
-    if(!DB.activityLog)DB.activityLog=[];
-    if(!DB.categories)DB.categories={};
-    // PIN cloud থেকে localStorage এ sync
-    if(DB.pinHash) localStorage.setItem(pk(),DB.pinHash);
-  }else if(!error){
-    await sb.from('hisab_users').insert({id:CUR_USER.id,data:DB});
+  try {
+    const{data,error}=await sb.from('hisab_users').select('data').eq('id',CUR_USER.id).maybeSingle();
+    if(data&&data.data){
+      DB=data.data;
+      if(!DB.receive)DB.receive=[];
+      if(!DB.give)DB.give=[];
+      if(!DB.activityLog)DB.activityLog=[];
+      if(!DB.categories)DB.categories={};
+      // PIN cloud থেকে localStorage এ sync
+      if(DB.pinHash) localStorage.setItem(pk(),DB.pinHash);
+      _dataLoaded = true;
+    }else if(!error){
+      await sb.from('hisab_users').insert({id:CUR_USER.id,data:DB});
+      _dataLoaded = true;
+    } else {
+      throw error;
+    }
+  } catch(e) {
+    // fallback to local storage
+    const raw = localStorage.getItem('ht_'+CUR_USER.id);
+    if(raw) {
+      try { DB = JSON.parse(raw); } catch(e2) {}
+    }
+    _dataLoaded = false;
   }
 }
 async function saveData(showLoginToast=false){
