@@ -386,8 +386,8 @@ function openAnalytics(){
   // Hisab summary
   const totalReceive=DB.receive.reduce((s,p)=>s+p.remaining,0);
   const totalGive=DB.give.reduce((s,p)=>s+p.remaining,0);
-  const overdueR=DB.receive.filter(p=>p.dueDate&&p.dueDate<Date.now()&&p.remaining>0).length;
-  const overdueG=DB.give.filter(p=>p.dueDate&&p.dueDate<Date.now()&&p.remaining>0).length;
+  const overdueR=0;
+  const overdueG=0;
 
   const maxBar=Math.max(...months.map(m=>Math.max(m.income,m.expense)),1);
 
@@ -455,12 +455,10 @@ function openAnalytics(){
         <div style="background:rgba(16,185,129,.08);border-radius:10px;padding:10px;">
           <div style="font-size:10px;color:var(--green);font-weight:700;text-transform:uppercase;margin-bottom:3px;">মোট পাওনা</div>
           <div style="font-size:16px;font-weight:900;color:var(--green);">৳${fmt(totalReceive)}</div>
-          ${overdueR>0?`<div style="font-size:10px;color:var(--red);margin-top:3px;">⚠️ ${overdueR}টি overdue</div>`:''}
         </div>
         <div style="background:rgba(239,68,68,.08);border-radius:10px;padding:10px;">
           <div style="font-size:10px;color:var(--red);font-weight:700;text-transform:uppercase;margin-bottom:3px;">মোট দেনা</div>
           <div style="font-size:16px;font-weight:900;color:var(--red);">৳${fmt(totalGive)}</div>
-          ${overdueG>0?`<div style="font-size:10px;color:var(--red);margin-top:3px;">⚠️ ${overdueG}টি overdue</div>`:''}
         </div>
       </div>
     </div>
@@ -774,7 +772,7 @@ async function showApp(){
   render();
   renderAllQtags();
   // set today default for hisab due dates
-  const today=new Date().toISOString().split('T')[0];
+  const today=localDateStr();
   ['r-due','g-due'].forEach(id=>{const el=document.getElementById(id);if(el){el.value=today;el.classList.add('has-val');}});
   // floating label: track has-val on all cf-inputs
   document.querySelectorAll('.cf-input').forEach(inp=>{
@@ -810,17 +808,21 @@ async function loadData(){
     _dataLoaded = false;
   }
 }
+let _retrySyncTimeout=null;
 async function saveData(showLoginToast=false){
+  if(_retrySyncTimeout) { clearTimeout(_retrySyncTimeout); _retrySyncTimeout=null; }
   setSyncState('saving','Saving...');
   localStorage.setItem('ht_'+CUR_USER.id,JSON.stringify(DB));
   try{
-    await sb.from('hisab_users').upsert({id:CUR_USER.id,data:DB,updated_at:new Date().toISOString()});
+    const { error } = await sb.from('hisab_users').upsert({id:CUR_USER.id,data:DB,updated_at:new Date().toISOString()});
+    if(error) throw error;
     if(showLoginToast){
       toast(LANG==='bn'?'👋 স্বাগতম!':'👋 Welcome!');
     }
     setSyncState('synced');
   }catch(e){
     setSyncState('fail','Sync failed ✕');
+    _retrySyncTimeout = setTimeout(()=>saveData(), 5000);
   }
 }
 
@@ -854,12 +856,18 @@ async function loadCashDataCloud(){
   }
 }
 function saveCashData(){
+  if(window._retryCashSync) { clearTimeout(window._retryCashSync); window._retryCashSync=null; }
   localStorage.setItem(cashKey(),JSON.stringify(CASH_DB));
   // cloud sync async
   if(CUR_USER){
+    setSyncState('saving','Saving...');
     sb.from('hisab_cash').upsert({id:CUR_USER.id,data:CASH_DB,updated_at:new Date().toISOString()}).then(({error})=>{
-      if(error)setSyncState('fail','Sync failed ✕');
-      else setSyncState('synced');
+      if(error){
+        setSyncState('fail','Sync failed ✕');
+        window._retryCashSync = setTimeout(()=>saveCashData(), 5000);
+      } else {
+        setSyncState('synced');
+      }
     });
   }
 }
@@ -887,7 +895,7 @@ function openCashForm(mode){
   }
   document.getElementById('cash-amt').value='';
   document.getElementById('cash-note').value='';
-  const todayStr=new Date().toISOString().split('T')[0];
+  const todayStr=localDateStr();
   const dateEl=document.getElementById('cash-date');
   dateEl.value=todayStr;
   dateEl.classList.add('has-val');
@@ -1036,6 +1044,7 @@ function renderCash(){
 }
 
 // ── FORMAT ──
+function localDateStr(d=new Date()){return new Date(d.getTime()-(d.getTimezoneOffset()*60000)).toISOString().split('T')[0];}
 function fmt(n){return Math.round(Number(n)).toLocaleString('en-IN');}
 function fmtD(v){
   let d=typeof v==='number'||(typeof v==='string'&&/^\d{10,}$/.test(v))?new Date(Number(v)):new Date(v);
@@ -1048,7 +1057,7 @@ function firstTs(p){
   if(p.loanData && p.loanData.loanDate) return new Date(p.loanData.loanDate).getTime();
   if(p.clearedAt) return p.clearedAt;
   const a=p.history.filter(h=>h.t==='add');
-  return a.length?Math.min(...a.map(h=>Number(h.id)||Number(p.id))):p.id;
+  return a.length?Math.min(...a.map(h=>Number(h.date)||Number(h.id)||Number(p.id))):p.id;
 }
 function ageDays(p){
   if(p.loanData && p.loanData.loanDate){
@@ -1068,11 +1077,27 @@ function countUp(el,target,pre=''){
 }
 
 // ── UI ──
+let _toastQueue=[];
 let _toastTimer=null;
+let _toastActive=false;
+
 function toast(msg,undoFn=null){
+  _toastQueue.push({msg,undoFn});
+  if(!_toastActive) processToastQueue();
+}
+
+function processToastQueue(){
+  if(_toastQueue.length===0){
+    _toastActive=false;
+    return;
+  }
+  _toastActive=true;
+  let {msg, undoFn} = _toastQueue.shift();
+  
   const t=document.getElementById('toast');
   if(_toastTimer)clearTimeout(_toastTimer);
   t.innerHTML='';
+  t.classList.remove('on');
 
   // Icon detection from message
   const iconMap={'🗑️':'trash','↩️':'undo','✅':'check','❌':'error','✏️':'edit','💸':'money','👋':'wave'};
@@ -1112,10 +1137,11 @@ function toast(msg,undoFn=null){
     btn.className='toast-undo-btn';
     btn.textContent='Undo';
     btn.addEventListener('click',()=>{
-      undoFn();
+      if(undoFn) undoFn();
       t.classList.remove('on');
       clearTimeout(_toastTimer);
       window._pendingUndo=null;
+      setTimeout(processToastQueue, 300);
     });
     t.appendChild(btn);
     window._pendingUndo=undoFn;
@@ -1126,6 +1152,7 @@ function toast(msg,undoFn=null){
   _toastTimer=setTimeout(()=>{
     t.classList.remove('on');
     window._pendingUndo=null;
+    setTimeout(processToastQueue, 300);
   },undoFn?6000:3000);
 }
 function cm(id){document.getElementById(id).classList.remove('on');}
@@ -1226,7 +1253,7 @@ function getLoanBreakdown(p){
   if(!isLoan)return null;
   const loanDate=p.loanData?.loanDate?new Date(p.loanData.loanDate):new Date(firstTs(p));
   const fees=p.loanData?.fees||0;
-  const loanDateStr=loanDate.toISOString().split('T')[0];
+  const loanDateStr=localDateStr(loanDate);
   const calc=calculateLoanTotal(p.original,fees,loanDateStr);
 
   const paidAmount=p.history.filter(h=>h.t==='pay').reduce((s,h)=>s+h.amt,0);
@@ -1285,7 +1312,7 @@ function updateLoanNoteFields(){
   const hasLoan=note.includes('loan');
   document.getElementById('r-loan-fields').style.display=hasLoan?'block':'none';
   if(hasLoan){
-    const today=new Date().toISOString().split('T')[0];
+    const today=localDateStr();
     if(!document.getElementById('r-loan-date').value)document.getElementById('r-loan-date').value=today;
   }
 }
@@ -1296,7 +1323,7 @@ function addEntry(type){
   const name=document.getElementById(p+'-na').value.trim();
   const amt=parseFloat(document.getElementById(p+'-am').value);
   const note=document.getElementById(p+'-no').value.trim()||'Entry';
-  const dueVal=document.getElementById(p+'-due').value;
+  const dateVal=document.getElementById(p+'-date').value;
   if(!name||isNaN(amt)||amt<=0)return alert(LANG==='bn'?'সঠিক তথ্য দিন!':'Enter valid data!');
   
   let loanData=null;
@@ -1306,13 +1333,16 @@ function addEntry(type){
     loanData={fees,loanDate};
   }
   
-  const ts=Date.now(),hist={id:ts,date:ts,amt,note,t:'add'};
+  const tsId=Date.now();
+  const histDate=dateVal?new Date(dateVal+'T12:00:00').getTime():tsId;
+  const hist={id:tsId,date:histDate,amt,note,t:'add'};
+  
   let person=DB[type].find(x=>x.name.toLowerCase()===name.toLowerCase());
   if(person){
     const wasSettled=person.remaining===0;
     if(wasSettled){
       person.original=amt;person.remaining=amt;
-      person.clearedAt=ts;
+      person.clearedAt=histDate;
       person.history.unshift(hist);
       if(loanData)person.loanData=loanData;
     } else {
@@ -1320,12 +1350,12 @@ function addEntry(type){
       if(loanData)person.loanData=loanData;
     }
   } else {
-    DB[type].push({id:ts,name,original:amt,remaining:amt,history:[hist],loanData,dueDate:dueVal?new Date(dueVal).getTime():null});
+    DB[type].push({id:tsId,name,original:amt,remaining:amt,history:[hist],loanData});
   }
   document.getElementById(p+'-na').value='';
   document.getElementById(p+'-am').value='';
   document.getElementById(p+'-no').value='';
-  document.getElementById(p+'-due').value='';
+  document.getElementById(p+'-date').value='';
   if(type==='receive'){
     document.getElementById('r-fee').value='';
     document.getElementById('r-loan-date').value='';
@@ -1394,14 +1424,14 @@ function openEdit(type,id){
   const isLoan=p.loanData||p.history.some(h=>h.note.toLowerCase().includes('loan'));
   document.getElementById('ed-amt').value=p.original;
   document.getElementById('ed-name').value=p.name||'';
-  document.getElementById('ed-due').value=p.dueDate?new Date(p.dueDate).toISOString().split('T')[0]:'';
+  document.getElementById('ed-date').value=localDateStr(new Date(firstTs(p)));
   document.getElementById('m-edit-s').textContent=p.name;
   
   const loanWrap=document.getElementById('ed-loan-wrap');
   if(type==='receive'&&isLoan){
     loanWrap.style.display='block';
     document.getElementById('ed-fee').value=p.loanData?.fees||'';
-    const loanDate=p.loanData?.loanDate?new Date(p.loanData.loanDate).toISOString().split('T')[0]:new Date(firstTs(p)).toISOString().split('T')[0];
+    const loanDate=p.loanData?.loanDate?localDateStr(new Date(p.loanData.loanDate)):localDateStr(new Date(firstTs(p)));
     document.getElementById('ed-loan-date').value=loanDate;
     updateLoanCalcBreakdown(p);
   } else {
@@ -1453,11 +1483,16 @@ function confirmEdit(){
   const p=DB[CTX.type].find(x=>x.id===CTX.id);
   const oldAmt=p.original;
   const newName=document.getElementById('ed-name').value.trim();
-  const dueVal=document.getElementById('ed-due').value;
+  const dateVal=document.getElementById('ed-date').value;
   if(newName)p.name=newName;
   p.original=amt;
   p.remaining=p.remaining+(amt-oldAmt);
-  p.dueDate=dueVal?new Date(dueVal).getTime():null;
+  if(dateVal){
+    const newTs=new Date(dateVal+'T12:00:00').getTime();
+    const addHist=p.history.filter(h=>h.t==='add');
+    if(addHist.length) addHist[addHist.length-1].date=newTs;
+    if(p.clearedAt) p.clearedAt=newTs;
+  }
   
   if(CTX.type==='receive'&&(p.loanData||p.history.some(h=>h.note.toLowerCase().includes('loan')))){
     const fees=parseFeeString(document.getElementById('ed-fee').value);
@@ -1514,7 +1549,7 @@ function copyWA(type,id){
 function renderCard(p,type){
   const settled=p.remaining<=0;
   if(settled&&TAB!=='a')return'';
-  const d=ageDays(p),b=ageBadge(d);
+  const d=ageDays(p),b=ageBadge(Math.abs(d));
   const ageLbl=settled?(LANG==='bn'?'✅ শোধ হয়েছে':'✅ Settled'):(LANG==='bn'?`বকেয়া ${b.l}`:`Pending ${b.l}`);
   const col=type==='receive'?'var(--green)':'var(--red)';
   

@@ -320,8 +320,8 @@ function ic(name){return`<span class="ic">${ICONS[name]||''}</span>`;}
           <label class="cf-label"><span class="bn">নোট / Note</span><span class="en">Note</span></label>
         </div>
         <div class="cf-field">
-          <input id="r-due" type="date" class="cf-input cf-date">
-          <label class="cf-label cf-label-date"><svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:3px"><rect width="18" height="18" x="3" y="4" rx="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg><span class="bn">Due Date (optional)</span><span class="en">Due Date (optional)</span></label>
+          <input id="r-date" type="date" class="cf-input cf-date">
+          <label class="cf-label cf-label-date"><svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:3px"><rect width="18" height="18" x="3" y="4" rx="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg><span class="bn">তারিখ (অপশনাল)</span><span class="en">Txn Date (optional)</span></label>
         </div>
       <div id="r-loan-fields" style="display:none;margin-top:12px;padding-top:12px;border-top:1px solid var(--border);">
         <div style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:8px;text-transform:uppercase;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" x2="12" y1="2" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> Loan Details</div>
@@ -364,8 +364,8 @@ function ic(name){return`<span class="ic">${ICONS[name]||''}</span>`;}
           <label class="cf-label"><span class="bn">নোট / Note</span><span class="en">Note</span></label>
         </div>
         <div class="cf-field">
-          <input id="g-due" type="date" class="cf-input cf-date">
-          <label class="cf-label cf-label-date"><svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:3px"><rect width="18" height="18" x="3" y="4" rx="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg><span class="bn">Due Date (optional)</span><span class="en">Due Date (optional)</span></label>
+          <input id="g-date" type="date" class="cf-input cf-date">
+          <label class="cf-label cf-label-date"><svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:3px"><rect width="18" height="18" x="3" y="4" rx="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg><span class="bn">তারিখ (অপশনাল)</span><span class="en">Txn Date (optional)</span></label>
         </div>
         <div class="qtags" id="g-qtags"></div>
         <button class="sbtn sbtn-r hf-btn" onclick="addEntry('give')"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:5px"><path d="M5 12h14"/><path d="M12 5v14"/></svg><span class="bn">দেনা যোগ করুন</span><span class="en">Add Payable</span></button>
@@ -527,9 +527,10 @@ function ic(name){return`<span class="ic">${ICONS[name]||''}</span>`;}
   <div class="inp-wrap"><input id="ed-name" type="text" placeholder="নাম / Name"></div>
   <div class="inp-wrap"><input id="ed-amt" type="number" inputmode="numeric" placeholder="পরিমাণ / Amount"></div>
   <div class="inp-wrap" style="display:flex;align-items:center;gap:8px;">
-    <label style="font-size:12px;color:var(--muted);white-space:nowrap;font-weight:600;">Due Date</label>
-    <input id="ed-due" type="date" style="flex:1;padding:9px 12px;border-radius:10px;border:1px solid var(--border);background:var(--card);color:var(--text);font-size:13px;">
+    <label style="font-size:12px;color:var(--muted);white-space:nowrap;font-weight:600;">Txn Date</label>
+    <input id="ed-date" type="date" style="flex:1;padding:9px 12px;border-radius:10px;border:1px solid var(--border);background:var(--card);color:var(--text);font-size:13px;">
   </div>
+
   <div id="ed-loan-wrap" style="display:none;margin-top:12px;padding-top:12px;border-top:1px solid var(--border);">
     <div style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:8px;text-transform:uppercase;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" x2="12" y1="2" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> Loan Details</div>
     <div class="inp-wrap"><input id="ed-fee" type="text" placeholder="All Fees (e.g., 5,10,15)"></div>
