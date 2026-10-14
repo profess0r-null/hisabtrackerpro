@@ -1390,6 +1390,8 @@ function fillFullPayment(){
   document.getElementById('pn').value=LANG==='bn'?'সম্পূর্ণ পরিশোধ':'Full Payment';
 }
 
+let PENDING_ALL_CLEAR = null;
+
 function oneClickAllClear(type, id, ev){
   if(ev) ev.stopPropagation();
   const p=DB[type]?.find(x=>x.id===id);
@@ -1402,10 +1404,24 @@ function oneClickAllClear(type, id, ev){
     return;
   }
   
-  const confirmMsg = LANG==='bn'
-    ? `"${p.name}"-এর সম্পূর্ণ বকেয়া ৳${fmt(due)} কি পরিশোধ হিসেবে রেকর্ড করতে চান?`
-    : `Mark full balance of ৳${fmt(due)} as paid for "${p.name}"?`;
-  if(!confirm(confirmMsg)) return;
+  PENDING_ALL_CLEAR = { type, id, due };
+  
+  const nameEl=document.getElementById('ac-party-name');
+  const amtEl=document.getElementById('ac-party-amt');
+  if(nameEl) nameEl.textContent=p.name;
+  if(amtEl) amtEl.textContent='৳'+fmt(due);
+  
+  document.getElementById('m-allclear').classList.add('on');
+}
+
+function confirmAllClearExecution(){
+  if(!PENDING_ALL_CLEAR) return;
+  const { type, id, due } = PENDING_ALL_CLEAR;
+  PENDING_ALL_CLEAR = null;
+  cm('m-allclear');
+  
+  const p=DB[type]?.find(x=>x.id===id);
+  if(!p) return;
   
   const ts=Date.now();
   const hist={
@@ -2225,13 +2241,17 @@ function renderCard(p,type){
         <div class="ps-i"><div class="ps-l bn">লেনদেন</div><div class="ps-l en">Txns</div><div class="ps-v">${p.history.length}</div></div>
       </div>
       ${loanBreakdownHtml}
-      <div class="arow">
-        <button class="btn-a btn-pay" onclick="openPay('${type}',${p.id})"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg><span class="bn">শোধ</span><span class="en">Pay</span></button>
-        ${!settled ? `<button class="btn-a btn-all-clear" onclick="oneClickAllClear('${type}',${p.id},event)" title="${LANG==='bn'?'১-ক্লিকে সম্পূর্ণ পরিশোধ':'One-Click Full Paid'}"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:2px;"><path d="M18 6 7 17l-5-5"/><path d="m22 10-7.5 7.5L13 16"/></svg><span class="bn">সব শোধ</span><span class="en">All Clear</span></button>` : ''}
-        <button class="btn-a btn-add-more" onclick="openAddMore('${type}',${p.id})"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg><span class="bn">যোগ</span><span class="en">Add</span></button>
-        <button class="btn-a" onclick="openEdit('${type}',${p.id})"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg><span class="bn">এডিট</span><span class="en">Edit</span></button>
-        <button class="btn-a btn-receipt" onclick="openReceipt('${type}',${p.id})" title="WhatsApp Share / রসিদ স্লিপ"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="#25D366" style="vertical-align:middle;flex-shrink:0;"><path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0 0 12.04 2m.01 1.67c2.2 0 4.26.86 5.82 2.42a8.225 8.225 0 0 1 2.41 5.83c0 4.54-3.7 8.24-8.24 8.24-1.48 0-2.93-.4-4.2-1.15l-.3-.18-3.12.82.83-3.04-.2-.31a8.196 8.196 0 0 1-1.26-4.38c0-4.54 3.7-8.24 8.24-8.24m4.52 11.66c-.25-.13-1.47-.72-1.7-.81-.23-.08-.39-.13-.56.13-.17.25-.64.81-.79.97-.14.17-.29.19-.54.06-.25-.13-1.06-.39-2.02-1.25-.75-.67-1.26-1.5-1.4-1.76-.15-.25-.02-.39.11-.51.11-.11.25-.29.37-.44.13-.15.17-.25.25-.42.08-.17.04-.31-.02-.44-.06-.13-.56-1.35-.77-1.85-.2-.49-.41-.42-.56-.43h-.48c-.17 0-.44.06-.67.31-.23.25-.88.86-.88 2.1 0 1.24.9 2.44 1.03 2.61.13.17 1.78 2.71 4.3 3.8 2.53 1.08 2.53.72 2.99.68.45-.05 1.47-.6 1.68-1.18.21-.58.21-1.07.15-1.18-.07-.11-.23-.17-.48-.3"/></svg><span class="bn">রসিদ</span><span class="en">Share</span></button>
-        <button class="btn-a btn-del-bold" onclick="deleteEntry('${type}',${p.id})"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg></button>
+      <div class="card-action-grid">
+        <div class="cag-row cag-primary">
+          <button class="btn-a btn-pay" onclick="openPay('${type}',${p.id})"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg><span class="bn">পরিশোধ</span><span class="en">Pay</span></button>
+          ${!settled ? `<button class="btn-a btn-all-clear" onclick="oneClickAllClear('${type}',${p.id},event)" title="${LANG==='bn'?'১-ক্লিকে সম্পূর্ণ পরিশোধ':'One-Click Full Paid'}"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:2px;"><path d="M18 6 7 17l-5-5"/><path d="m22 10-7.5 7.5L13 16"/></svg><span class="bn">সব শোধ</span><span class="en">All Clear</span></button>` : ''}
+          <button class="btn-a btn-add-more" onclick="openAddMore('${type}',${p.id})"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg><span class="bn">আরো যোগ</span><span class="en">Add More</span></button>
+        </div>
+        <div class="cag-row cag-secondary">
+          <button class="btn-a btn-receipt" onclick="openReceipt('${type}',${p.id})" title="WhatsApp Share / রসিদ স্লিপ"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="#25D366" style="flex-shrink:0;"><path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0 0 12.04 2m.01 1.67c2.2 0 4.26.86 5.82 2.42a8.225 8.225 0 0 1 2.41 5.83c0 4.54-3.7 8.24-8.24 8.24-1.48 0-2.93-.4-4.2-1.15l-.3-.18-3.12.82.83-3.04-.2-.31a8.196 8.196 0 0 1-1.26-4.38c0-4.54 3.7-8.24 8.24-8.24m4.52 11.66c-.25-.13-1.47-.72-1.7-.81-.23-.08-.39-.13-.56.13-.17.25-.64.81-.79.97-.14.17-.29.19-.54.06-.25-.13-1.06-.39-2.02-1.25-.75-.67-1.26-1.5-1.4-1.76-.15-.25-.02-.39.11-.51.11-.11.25-.29.37-.44.13-.15.17-.25.25-.42.08-.17.04-.31-.02-.44-.06-.13-.56-1.35-.77-1.85-.2-.49-.41-.42-.56-.43h-.48c-.17 0-.44.06-.67.31-.23.25-.88.86-.88 2.1 0 1.24.9 2.44 1.03 2.61.13.17 1.78 2.71 4.3 3.8 2.53 1.08 2.53.72 2.99.68.45-.05 1.47-.6 1.68-1.18.21-.58.21-1.07.15-1.18-.07-.11-.23-.17-.48-.3"/></svg><span class="bn">WhatsApp স্লিপ</span><span class="en">Receipt Slip</span></button>
+          <button class="btn-a btn-edit-entry" onclick="openEdit('${type}',${p.id})"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg><span class="bn">এডিট</span><span class="en">Edit</span></button>
+          <button class="btn-a btn-del-bold" onclick="deleteEntry('${type}',${p.id})" title="${LANG==='bn'?'ডিলিট':'Delete'}"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg></button>
+        </div>
       </div>
       <div class="hh" style="margin-top:14px;">HISTORY</div>
       <div id="hist-wrap-${p.id}" class="hist-wrap">
