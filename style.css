@@ -249,6 +249,13 @@ input:focus{border-color:var(--primary);}
 .hi span{color:var(--text2);flex:1;min-width:0;font-size:12px;}
 .hi b{flex-shrink:0;}
 .hh{font-weight:800;font-size:10px;color:var(--muted);margin-bottom:7px;text-transform:uppercase;letter-spacing:.05em;}
+/* Card History Expand/Toggle */
+.hist-wrap{position:relative;}
+.hist-toggle-wrap{text-align:center;margin-top:8px;padding-top:4px;}
+.btn-hist-toggle{background:var(--surface);border:1px solid var(--border);color:var(--primary);font-size:11.5px;font-weight:700;padding:6px 14px;border-radius:99px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:5px;transition:all .2s cubic-bezier(.25,.46,.45,.94);box-shadow:0 1px 4px rgba(0,0,0,.06);-webkit-tap-highlight-color:transparent;}
+.btn-hist-toggle:hover{background:var(--card);border-color:var(--primary);color:#38bdf8;transform:translateY(-1px);box-shadow:0 3px 10px rgba(56,189,248,.15);}
+.btn-hist-toggle:active{transform:scale(.96);opacity:.85;}
+.hist-more-notice{font-size:10.5px;color:var(--muted);margin-top:5px;font-weight:500;}
 .arow{display:flex;gap:7px;margin-top:12px;flex-wrap:wrap;}
 .btn-a{flex:1;height:40px;border-radius:9px;border:1px solid var(--border);background:var(--card);color:var(--text);font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;font-size:13px;min-width:36px;-webkit-tap-highlight-color:transparent;transition:all .15s;}
 .btn-a:active{opacity:.75;transform:scale(.97);}

@@ -1545,6 +1545,68 @@ function copyWA(type,id){
   navigator.clipboard?navigator.clipboard.writeText(t).then(()=>toast('📋 Copied!')).catch(cp):cp();
 }
 
+// ── CARD HISTORY TOGGLE (5 -> MAX 20) ──
+const _expandedHistoryCards = new Set();
+
+function renderCardHistoryItems(p, isExp) {
+  if (!p || !p.history || !p.history.length) return '';
+  const maxShown = isExp ? 20 : 5;
+  const list = p.history.slice(0, maxShown);
+  const items = list.map(h => `<div class="hi ${h.t==='add'?'ar':'pr'}"><span>${fmtD(h.date)} — ${h.note}</span><b style="color:var(--${h.t==='add'?'green':'red'})">${h.t==='add'?'+':'-'} ৳${fmt(h.amt)}</b></div>`).join('');
+  
+  if (p.history.length <= 5) {
+    return items;
+  }
+  
+  const total = p.history.length;
+  const countToDisplay = Math.min(20, total);
+  const btnLabel = isExp 
+    ? (LANG === 'bn' ? 'কম দেখুন' : 'Show less')
+    : (LANG === 'bn' ? `সব ইতিহাস দেখুন (${countToDisplay}টি)` : `View all history (${countToDisplay})`);
+  
+  const notice = (isExp && total > 20)
+    ? `<div class="hist-more-notice">${LANG === 'bn' ? `(সর্বোচ্চ ২০টি প্রদর্শিত, মোট ${total}টি)` : `(Showing max 20 of ${total} total)`}</div>`
+    : '';
+    
+  const cardType = p._type || (DB.receive.some(x=>x.id===p.id)?'receive':'give');
+  return `
+    ${items}
+    <div class="hist-toggle-wrap">
+      <button type="button" class="btn-hist-toggle" onclick="toggleCardHistory('${cardType}', ${p.id}, event)">
+        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:2px;">
+          ${isExp ? '<path d="m18 15-6-6-6 6"/>' : '<path d="m6 9 6 6 6-6"/>'}
+        </svg>
+        <span>${btnLabel}</span>
+      </button>
+      ${notice}
+    </div>
+  `;
+}
+
+function toggleCardHistory(type, id, ev){
+  if (ev) {
+    ev.stopPropagation();
+    ev.preventDefault();
+  }
+  let p = DB[type]?.find(x => x.id === id);
+  if (!p) {
+    p = DB.receive.find(x => x.id === id) || DB.give.find(x => x.id === id);
+    if (!p) return;
+  }
+  
+  if (_expandedHistoryCards.has(id)) {
+    _expandedHistoryCards.delete(id);
+  } else {
+    _expandedHistoryCards.add(id);
+  }
+  
+  const wrap = document.getElementById('hist-wrap-' + id);
+  if (!wrap) return;
+  
+  const isExp = _expandedHistoryCards.has(id);
+  wrap.innerHTML = renderCardHistoryItems(p, isExp);
+}
+
 // ── RENDER CARD ──
 function renderCard(p,type){
   const settled=p.remaining<=0;
@@ -1657,8 +1719,9 @@ function renderCard(p,type){
         <button class="btn-a btn-del-bold" onclick="deleteEntry('${type}',${p.id})"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg></button>
       </div>
       <div class="hh" style="margin-top:14px;">HISTORY</div>
-      ${p.history.slice(0,5).map(h=>`<div class="hi ${h.t==='add'?'ar':'pr'}"><span>${fmtD(h.date)} — ${h.note}</span><b style="color:var(--${h.t==='add'?'green':'red'})">${h.t==='add'?'+':'-'} ৳${fmt(h.amt)}</b></div>`).join('')}
-      ${p.history.length>5?`<div style="font-size:11px;color:var(--muted);text-align:center;margin-top:6px;">+${p.history.length-5} more</div>`:''}
+      <div id="hist-wrap-${p.id}" class="hist-wrap">
+        ${renderCardHistoryItems(p, _expandedHistoryCards.has(p.id))}
+      </div>
     </div>
     </div>
   </div>`;
