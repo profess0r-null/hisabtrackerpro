@@ -11,7 +11,7 @@
 <title>হিসাব ট্র্যাকার PRO</title>
 <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;600;700&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="icon" type="image/png" href="icon.png">
-<link rel="stylesheet" href="style.css?v=2.6">
+<link rel="stylesheet" href="style.css?v=2.7">
 <style>
 /* ── SVG ICON SYSTEM ── */
 .ic{display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;}
@@ -500,6 +500,9 @@ function ic(name){return`<span class="ic">${ICONS[name]||''}</span>`;}
 <div class="overlay" id="m-pay"><div class="modal">
   <div class="modal-title"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:6px"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg><span class="bn">পরিশোধ</span><span class="en">Payment</span></div>
   <div class="modal-sub" id="m-pay-s"></div>
+  <div style="margin-bottom:10px;">
+    <button type="button" id="btn-pay-full-fill" class="pay-full-chip" style="display:none;" onclick="fillFullPayment()"></button>
+  </div>
   <div class="inp-wrap"><input id="pa" type="number" inputmode="numeric" placeholder="পরিমাণ / Amount"></div>
   <div class="inp-wrap"><input id="pn" type="text" placeholder="নোট / Note"></div>
   <div class="qtags" id="pay-qtags"></div>
@@ -643,6 +646,6 @@ function ic(name){return`<span class="ic">${ICONS[name]||''}</span>`;}
 
 <div class="toast" id="toast"></div>
 
-<script src="script.js?v=2.6"></script>
+<script src="script.js?v=2.7"></script>
 </body>
 </html>
