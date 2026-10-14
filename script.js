@@ -1519,30 +1519,476 @@ function deleteEntry(type,id){
   });
 }
 
-// ── WHATSAPP ──
-function copyWA(type,id){
-  const p=DB[type].find(x=>x.id===id);
-  const d=ageDays(p);
-  const recent=p.history.slice(0,5);
-  const breakdown=getLoanBreakdown(p);
-  let remAmt=p.remaining;
-  if(type==='receive'&&breakdown){
-    remAmt=breakdown.totalRepayment-breakdown.paidAmount;
+// ── MONEY RECEIPT SLIP & WHATSAPP ──
+let CURRENT_RECEIPT_DATA = null;
+
+function getReceiptWhatsAppText(p, type) {
+  const d = ageDays(p);
+  const breakdown = getLoanBreakdown(p);
+  let remAmt = p.remaining;
+  let paidAmt = p.original - p.remaining;
+  if(type === 'receive' && breakdown) {
+    remAmt = breakdown.totalRepayment - breakdown.paidAmount;
+    paidAmt = breakdown.paidAmount;
   }
-  let t=`🧾 হিসাব | ${p.name}\n\n`;
-  t+=`💵 পাওয়া: ৳${fmt(remAmt)}\n`;
-  t+=`📅 বকেয়া: ${d} দিন\n`;
-  if(recent.length){
-    t+=`\nHistory:\n`;
-    recent.forEach(h=>{
-      const sign=h.t==='add'?'+':'-';
-      t+=`${fmtD(h.date)} — ${h.note}: ${sign}৳${fmt(h.amt)}\n`;
+  if(remAmt < 0) remAmt = 0;
+  const isSettled = remAmt <= 0;
+  const isRec = type === 'receive';
+  const typeLbl = isRec ? (LANG==='bn'?'পাওনা হিসাব (Receivable)':'Receivable') : (LANG==='bn'?'দেনা হিসাব (Payable)':'Payable');
+  
+  let t = `🧾 *হিসাব ট্র্যাকার PRO — মানি রিসিট স্লিপ*\n`;
+  t += `━━━━━━━━━━━━━━━━━━━━\n`;
+  t += `👤 *গ্রাহক/নাম:* ${p.name}\n`;
+  t += `📅 *তারিখ:* ${new Date().toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' })}\n`;
+  t += `🆔 *ভাউচার নং:* #REC-${String(p.id).slice(-6)}\n`;
+  t += `📌 *ধরন:* ${typeLbl}\n`;
+  t += `📊 *স্ট্যাটাস:* ${isSettled ? (LANG==='bn'?'✅ সম্পূর্ণ শোধ (Full Paid)':'✅ Full Paid') : (LANG==='bn'?`⏳ বকেয়া (${d} দিন ধরে)`:`⏳ Pending (${d} days)`)}\n\n`;
+
+  t += `💵 *${isSettled ? (LANG==='bn'?'পরিশোধিত ব্যালেন্স':'Settled Balance') : (isRec ? (LANG==='bn'?'বকেয়া পাওনা':'Balance Due') : (LANG==='bn'?'বকেয়া দেনা':'Balance Due'))}:* ৳${fmt(remAmt)}\n`;
+  t += `💰 *মূল পরিমাণ:* ৳${fmt(p.original)}\n`;
+  t += `✅ *মোট পরিশোধ:* ৳${fmt(paidAmt)}\n`;
+  
+  if (breakdown) {
+    t += `🏦 *লোন ফী:* ৳${fmt(breakdown.fees)} | *মোট প্রদেয়:* ৳${fmt(breakdown.totalRepayment)}\n`;
+  }
+
+  const recent = p.history.slice(0, 5);
+  if (recent.length) {
+    t += `\n📝 *সাম্প্রতিক লেনদেনসমূহ:*\n`;
+    recent.forEach(h => {
+      const sign = h.t === 'add' ? '+' : '-';
+      t += `• ${fmtD(h.date)} — ${h.note}: ${sign}৳${fmt(h.amt)}\n`;
     });
+    if (p.history.length > 5) {
+      t += `• ...এবং আরো ${p.history.length - 5}টি লেনদেন\n`;
+    }
   }
-  if(p.history.length>5) t+=`আরো ${p.history.length-5}টি\n`;
-  t+=`\n— Hisab Tracker PRO`;
-  const cp=()=>{const ta=document.createElement('textarea');ta.value=t;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);toast('📋 Copied!');};
-  navigator.clipboard?navigator.clipboard.writeText(t).then(()=>toast('📋 Copied!')).catch(cp):cp();
+
+  t += `━━━━━━━━━━━━━━━━━━━━\n`;
+  t += `✨ _Generated via Hisab Tracker PRO_\n`;
+  t += `🌐 https://hisabtracker.profess0r-null.xyz`;
+  return t;
+}
+
+function openReceipt(type, id) {
+  let p = DB[type]?.find(x => x.id === id);
+  if(!p) {
+    p = DB.receive.find(x => x.id === id) || DB.give.find(x => x.id === id);
+    if(!p) return;
+  }
+  
+  CURRENT_RECEIPT_DATA = { p, type };
+  const d = ageDays(p);
+  const breakdown = getLoanBreakdown(p);
+  let remAmt = p.remaining;
+  let paidAmt = p.original - p.remaining;
+  if(type === 'receive' && breakdown) {
+    remAmt = breakdown.totalRepayment - breakdown.paidAmount;
+    paidAmt = breakdown.paidAmount;
+  }
+  if(remAmt < 0) remAmt = 0;
+  const isSettled = remAmt <= 0;
+  const isRec = type === 'receive';
+  
+  const formattedDate = new Date().toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' }) + ', ' + new Date().toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
+  
+  const recentTxns = p.history.slice(0, 5);
+  let historyRowsHtml = '';
+  if(recentTxns.length > 0) {
+    historyRowsHtml = `
+      <div class="rc-history-wrap">
+        <div class="rc-hist-title">${LANG==='bn'?'সাম্প্রতিক লেনদেন':'Recent Transactions'} (${Math.min(5, p.history.length)}/${p.history.length})</div>
+        ${recentTxns.map(h => `
+          <div class="rc-hist-row">
+            <span>${fmtD(h.date)} — ${h.note}</span>
+            <b style="color:var(--${h.t==='add'?'red':'green'})">${h.t==='add'?'+':'-'}৳${fmt(h.amt)}</b>
+          </div>
+        `).join('')}
+      </div>
+    `;
+  }
+  
+  let loanNoticeHtml = '';
+  if(breakdown) {
+    loanNoticeHtml = `<div class="rc-due-note">${LANG==='bn'?'মূল: ৳':'Orig: ৳'}${fmt(p.original)} + ${LANG==='bn'?'ফী: ৳':'Fee: ৳'}${fmt(breakdown.fees)} = ${LANG==='bn'?'মোট প্রদেয় ৳':'Total ৳'}${fmt(breakdown.totalRepayment)}</div>`;
+  }
+
+  const slipHtml = `
+    <div class="rc-slip" id="rc-visual-card">
+      <div class="rc-header">
+        <div class="rc-brand">
+          <span class="rc-logo">📒</span>
+          <div>
+            <div class="rc-title">HISAB TRACKER PRO</div>
+            <div class="rc-subtitle">${LANG==='bn'?'ডিজিটাল মানি রিসিট ভাউচার':'DIGITAL MONEY RECEIPT'}</div>
+          </div>
+        </div>
+        <div class="rc-rec-badge">#REC-${String(p.id).slice(-6)}</div>
+      </div>
+      
+      <div class="rc-divider"></div>
+      
+      <div class="rc-meta-grid">
+        <div class="rc-meta-item">
+          <span class="rc-meta-lbl">${LANG==='bn'?'গ্রাহক / নাম':'Party / Name'}</span>
+          <span class="rc-meta-val rc-client-name">${p.name}</span>
+        </div>
+        <div class="rc-meta-item">
+          <span class="rc-meta-lbl">${LANG==='bn'?'তারিখ ও সময়':'Date & Time'}</span>
+          <span class="rc-meta-val">${formattedDate}</span>
+        </div>
+        <div class="rc-meta-item">
+          <span class="rc-meta-lbl">${LANG==='bn'?'হিসাবের ধরন':'Account Type'}</span>
+          <span class="rc-meta-val ${isRec?'val-g':'val-r'}">${isRec?(LANG==='bn'?'📥 পাওনা (Receivable)':'📥 Receivable'):(LANG==='bn'?'📤 দেনা (Payable)':'📤 Payable')}</span>
+        </div>
+        <div class="rc-meta-item">
+          <span class="rc-meta-lbl">${LANG==='bn'?'স্ট্যাটাস':'Status'}</span>
+          <span class="rc-meta-val">${isSettled?(LANG==='bn'?'✅ পরিশোধিত':'✅ Full Paid'):(LANG==='bn'?`⏳ বকেয়া (${d} দিন)`:`⏳ Pending (${d}d)`)}</span>
+        </div>
+      </div>
+      
+      <div class="rc-due-box ${isRec?'due-g':'due-r'}">
+        <div class="rc-due-lbl">${isSettled?(LANG==='bn'?'পরিশোধিত ব্যালেন্স':'SETTLED BALANCE'):(LANG==='bn'?'বর্তমান বকেয়া পরিমাণ':'NET BALANCE DUE')}</div>
+        <div class="rc-due-amt">৳${fmt(remAmt)}</div>
+        ${loanNoticeHtml}
+      </div>
+      
+      <div class="rc-stat-row">
+        <div class="rc-stat-col">
+          <div class="rc-stat-lbl">${LANG==='bn'?'মূল হিসাব':'Original'}</div>
+          <div class="rc-stat-val">৳${fmt(p.original)}</div>
+        </div>
+        <div class="rc-stat-col">
+          <div class="rc-stat-lbl">${LANG==='bn'?'মোট পরিশোধ':'Total Paid'}</div>
+          <div class="rc-stat-val val-g">৳${fmt(paidAmt)}</div>
+        </div>
+        <div class="rc-stat-col">
+          <div class="rc-stat-lbl">${LANG==='bn'?'মোট এন্ট্রি':'Entries'}</div>
+          <div class="rc-stat-val">${p.history.length}</div>
+        </div>
+      </div>
+      
+      ${historyRowsHtml}
+      
+      <div class="rc-footer">
+        <div class="rc-barcode">
+          <div class="rc-barcode-lines"></div>
+          <div class="rc-barcode-txt">OFFICIAL VOUCHER • VERIFIED RECORD</div>
+        </div>
+        <div class="rc-verified-stamp">VERIFIED ✓</div>
+      </div>
+    </div>
+  `;
+  
+  const box = document.getElementById('receipt-slip-box');
+  if(box) box.innerHTML = slipHtml;
+  document.getElementById('m-receipt').classList.add('on');
+}
+
+function shareReceiptWhatsApp() {
+  if(!CURRENT_RECEIPT_DATA) return;
+  const text = getReceiptWhatsAppText(CURRENT_RECEIPT_DATA.p, CURRENT_RECEIPT_DATA.type);
+  const waUrl = 'https://api.whatsapp.com/send?text=' + encodeURIComponent(text);
+  window.open(waUrl, '_blank');
+}
+
+function copyReceiptText() {
+  if(!CURRENT_RECEIPT_DATA) return;
+  const text = getReceiptWhatsAppText(CURRENT_RECEIPT_DATA.p, CURRENT_RECEIPT_DATA.type);
+  const cp = () => {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    toast(LANG==='bn'?'📋 স্লিপ টেক্সট কপি হয়েছে!':'📋 Slip text copied!');
+  };
+  navigator.clipboard ? navigator.clipboard.writeText(text).then(() => toast(LANG==='bn'?'📋 স্লিপ টেক্সট কপি হয়েছে!':'📋 Slip text copied!')).catch(cp) : cp();
+}
+
+function copyWA(type, id) {
+  openReceipt(type, id);
+}
+
+function generateReceiptBlob(p, type) {
+  return new Promise((resolve, reject) => {
+    try {
+      const d = ageDays(p);
+      const breakdown = getLoanBreakdown(p);
+      let remAmt = p.remaining;
+      let paidAmt = p.original - p.remaining;
+      if(type==='receive' && breakdown){
+        remAmt = breakdown.totalRepayment - breakdown.paidAmount;
+        paidAmt = breakdown.paidAmount;
+      }
+      if(remAmt < 0) remAmt = 0;
+      const settled = remAmt <= 0;
+      const recentTxns = p.history.slice(0, 6);
+      
+      const W = 620;
+      const itemH = 34;
+      const H = 540 + (recentTxns.length * itemH);
+      const scale = 2; // High-resolution retina render
+      
+      const canvas = document.createElement('canvas');
+      canvas.width = W * scale;
+      canvas.height = H * scale;
+      const ctx = canvas.getContext('2d');
+      ctx.scale(scale, scale);
+      
+      // Background card
+      ctx.fillStyle = '#0f172a';
+      ctx.beginPath();
+      _rcDrawRound(ctx, 0, 0, W, H, 20);
+      ctx.fill();
+      
+      // Outer border
+      ctx.strokeStyle = '#334155';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+      
+      // Top colored accent bar
+      ctx.fillStyle = type === 'receive' ? '#10b981' : '#ef4444';
+      ctx.fillRect(0, 0, W, 7);
+      
+      // Header brand
+      ctx.fillStyle = '#f8fafc';
+      ctx.font = 'bold 22px Inter, sans-serif';
+      ctx.fillText('📒 HISAB TRACKER PRO', 30, 46);
+      
+      ctx.fillStyle = '#94a3b8';
+      ctx.font = '600 11.5px Inter, sans-serif';
+      ctx.fillText('DIGITAL MONEY RECEIPT SLIP • মানি রিসিট ভাউচার', 30, 68);
+      
+      // Voucher badge (right)
+      ctx.fillStyle = '#1e293b';
+      ctx.beginPath();
+      _rcDrawRound(ctx, W - 165, 30, 135, 30, 8);
+      ctx.fill();
+      ctx.strokeStyle = '#475569';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      ctx.fillStyle = '#38bdf8';
+      ctx.font = 'bold 12px monospace';
+      ctx.fillText('#REC-' + String(p.id).slice(-6), W - 153, 50);
+      
+      // Divider
+      ctx.strokeStyle = '#334155';
+      ctx.setLineDash([5, 4]);
+      ctx.beginPath();
+      ctx.moveTo(30, 88);
+      ctx.lineTo(W - 30, 88);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      
+      // Client info
+      ctx.fillStyle = '#94a3b8';
+      ctx.font = '11.5px Inter, sans-serif';
+      ctx.fillText('PARTY / গ্রাহক:', 30, 114);
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 16px Inter, "Hind Siliguri", sans-serif';
+      ctx.fillText(p.name, 30, 136);
+      
+      // Date info
+      ctx.fillStyle = '#94a3b8';
+      ctx.font = '11.5px Inter, sans-serif';
+      ctx.fillText('DATE / তারিখ:', 250, 114);
+      ctx.fillStyle = '#e2e8f0';
+      ctx.font = '600 13px Inter, sans-serif';
+      const dateStr = new Date().toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' });
+      ctx.fillText(dateStr, 250, 136);
+      
+      // Status info
+      ctx.fillStyle = '#94a3b8';
+      ctx.font = '11.5px Inter, sans-serif';
+      ctx.fillText('STATUS / অবস্থা:', 440, 114);
+      ctx.fillStyle = settled ? '#10b981' : (type==='receive'?'#38bdf8':'#f87171');
+      ctx.font = 'bold 13px Inter, sans-serif';
+      ctx.fillText(settled ? '✓ FULL PAID' : (type==='receive'?'RECEIVABLE':'PAYABLE'), 440, 136);
+      
+      // Big Due Box
+      const isRec = type === 'receive';
+      ctx.fillStyle = isRec ? 'rgba(16, 185, 129, 0.12)' : 'rgba(239, 68, 68, 0.12)';
+      ctx.beginPath();
+      _rcDrawRound(ctx, 30, 160, W - 60, 88, 14);
+      ctx.fill();
+      ctx.strokeStyle = isRec ? 'rgba(16, 185, 129, 0.4)' : 'rgba(239, 68, 68, 0.4)';
+      ctx.stroke();
+      
+      ctx.fillStyle = isRec ? '#34d399' : '#f87171';
+      ctx.font = 'bold 12px Inter, sans-serif';
+      ctx.fillText(settled ? 'SETTLED BALANCE / পরিশোধিত' : (isRec ? 'TOTAL RECEIVABLE / বকেয়া পাওনা' : 'TOTAL PAYABLE / বকেয়া দেনা'), 48, 186);
+      
+      ctx.fillStyle = isRec ? '#10b981' : '#ef4444';
+      ctx.font = '900 36px Inter, sans-serif';
+      ctx.fillText('৳ ' + fmt(remAmt), 48, 228);
+      
+      if(!settled && d > 0) {
+        ctx.fillStyle = '#94a3b8';
+        ctx.font = '600 12px Inter, sans-serif';
+        ctx.fillText(`(Pending ${d} days / ${d} দিন)`, W - 200, 222);
+      }
+      
+      // 3 Summary Cols
+      const statY = 268;
+      ctx.fillStyle = '#1e293b';
+      ctx.beginPath();
+      _rcDrawRound(ctx, 30, statY, W - 60, 56, 10);
+      ctx.fill();
+      
+      const colW = (W - 60) / 3;
+      ctx.fillStyle = '#94a3b8';
+      ctx.font = '10.5px Inter, sans-serif';
+      ctx.fillText('ORIGINAL / মূল', 45, statY + 20);
+      ctx.fillStyle = '#f8fafc';
+      ctx.font = 'bold 14.5px Inter, sans-serif';
+      ctx.fillText('৳ ' + fmt(p.original), 45, statY + 42);
+      
+      ctx.fillStyle = '#94a3b8';
+      ctx.font = '10.5px Inter, sans-serif';
+      ctx.fillText('TOTAL PAID / পরিশোধ', 45 + colW, statY + 20);
+      ctx.fillStyle = '#34d399';
+      ctx.font = 'bold 14.5px Inter, sans-serif';
+      ctx.fillText('৳ ' + fmt(paidAmt), 45 + colW, statY + 42);
+      
+      ctx.fillStyle = '#94a3b8';
+      ctx.font = '10.5px Inter, sans-serif';
+      ctx.fillText('TXNS / মোট এন্ট্রি', 45 + colW * 2, statY + 20);
+      ctx.fillStyle = '#38bdf8';
+      ctx.font = 'bold 14.5px Inter, sans-serif';
+      ctx.fillText(p.history.length + ' entries', 45 + colW * 2, statY + 42);
+      
+      // Recent History
+      const histY = statY + 76;
+      ctx.fillStyle = '#94a3b8';
+      ctx.font = 'bold 11.5px Inter, sans-serif';
+      ctx.fillText('RECENT TRANSACTIONS / সাম্প্রতিক লেনদেন:', 30, histY);
+      
+      let curY = histY + 12;
+      if (recentTxns.length === 0) {
+        ctx.fillStyle = '#64748b';
+        ctx.font = 'italic 12px Inter, sans-serif';
+        ctx.fillText('No transaction history recorded', 30, curY + 20);
+        curY += 35;
+      } else {
+        recentTxns.forEach((h, idx) => {
+          curY += 26;
+          ctx.fillStyle = idx % 2 === 0 ? 'rgba(30, 41, 59, 0.4)' : 'transparent';
+          ctx.fillRect(30, curY - 16, W - 60, 24);
+          
+          ctx.fillStyle = '#94a3b8';
+          ctx.font = '11.5px Inter, sans-serif';
+          ctx.fillText(fmtD(h.date), 40, curY);
+          
+          ctx.fillStyle = '#e2e8f0';
+          ctx.font = '500 12px Inter, "Hind Siliguri", sans-serif';
+          const n = h.note.length > 28 ? h.note.slice(0, 26) + '..' : h.note;
+          ctx.fillText(n, 135, curY);
+          
+          const isAdd = h.t === 'add';
+          ctx.fillStyle = isAdd ? '#f87171' : '#34d399';
+          ctx.font = 'bold 12.5px Inter, sans-serif';
+          const a = (isAdd ? '+' : '-') + ' ৳' + fmt(h.amt);
+          ctx.fillText(a, W - 140, curY);
+        });
+        curY += 14;
+      }
+      
+      // Divider
+      ctx.strokeStyle = '#334155';
+      ctx.setLineDash([4, 4]);
+      ctx.beginPath();
+      ctx.moveTo(30, curY + 8);
+      ctx.lineTo(W - 30, curY + 8);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      
+      // Footer Barcode
+      const footY = curY + 24;
+      _rcDrawBarcode(ctx, 30, footY, 180, 22);
+      ctx.fillStyle = '#64748b';
+      ctx.font = '9.5px Inter, monospace';
+      ctx.fillText('HISAB TRACKER PRO • hisabtracker.profess0r-null.xyz', 30, footY + 34);
+      
+      // Stamp
+      ctx.save();
+      ctx.translate(W - 110, footY + 12);
+      ctx.rotate(-8 * Math.PI / 180);
+      ctx.strokeStyle = '#10b981';
+      ctx.lineWidth = 1.8;
+      ctx.strokeRect(-55, -14, 110, 28);
+      ctx.fillStyle = '#10b981';
+      ctx.font = 'bold 10.5px Inter, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('VERIFIED SLIP ✓', 0, 4);
+      ctx.restore();
+      
+      canvas.toBlob(blob => {
+        if(blob) resolve(blob);
+        else reject(new Error('Canvas blob failed'));
+      }, 'image/png');
+    } catch(err) {
+      reject(err);
+    }
+  });
+}
+
+function _rcDrawRound(ctx, x, y, w, h, r) {
+  if (w < 2 * r) r = w / 2;
+  if (h < 2 * r) r = h / 2;
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+
+function _rcDrawBarcode(ctx, x, y, w, h) {
+  ctx.fillStyle = '#64748b';
+  let cx = x;
+  const bars = [2, 1, 3, 1, 2, 4, 1, 2, 3, 1, 1, 3, 2, 1, 4, 2, 1, 3, 2, 1, 2, 3, 1, 4, 2, 1, 3, 2, 1];
+  for (let b of bars) {
+    if (cx + b > x + w) break;
+    ctx.fillRect(cx, y, b, h);
+    cx += b + 2;
+  }
+}
+
+async function downloadReceiptImage() {
+  if (!CURRENT_RECEIPT_DATA) return;
+  const { p, type } = CURRENT_RECEIPT_DATA;
+  toast(LANG==='bn'?'🎨 স্লিপ তৈরি হচ্ছে...':'🎨 Generating slip...');
+  try {
+    const blob = await generateReceiptBlob(p, type);
+    const fileName = `Receipt_${p.name.replace(/[^a-zA-Z0-9_\u0980-\u09FF]/g,'_')}_${new Date().toISOString().split('T')[0]}.png`;
+    const file = new File([blob], fileName, { type: 'image/png' });
+    
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      await navigator.share({
+        files: [file],
+        title: `Money Receipt - ${p.name}`,
+        text: getReceiptWhatsAppText(p, type)
+      });
+      toast(LANG==='bn'?'✅ শেয়ার সম্পন্ন হয়েছে!':'✅ Shared successfully!');
+      return;
+    }
+    
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    toast(LANG==='bn'?'📸 স্লিপ ইমেজ ডাউনলোড হয়েছে!':'📸 Receipt image downloaded!');
+  } catch(e) {
+    console.error(e);
+    toast(LANG==='bn'?'❌ ইমেজ তৈরিতে সমস্যা হয়েছে':'❌ Failed to generate image');
+  }
 }
 
 // ── CARD HISTORY TOGGLE (5 -> MAX 20) ──
@@ -1715,7 +2161,7 @@ function renderCard(p,type){
         <button class="btn-a btn-pay" onclick="openPay('${type}',${p.id})"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg><span class="bn">শোধ</span><span class="en">Pay</span></button>
         <button class="btn-a btn-add-more" onclick="openAddMore('${type}',${p.id})"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg><span class="bn">যোগ</span><span class="en">Add</span></button>
         <button class="btn-a" onclick="openEdit('${type}',${p.id})"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg><span class="bn">এডিট</span><span class="en">Edit</span></button>
-        <button class="btn-a btn-copy" onclick="copyWA('${type}',${p.id})"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg></button>
+        <button class="btn-a btn-receipt" onclick="openReceipt('${type}',${p.id})" title="${LANG==='bn'?'মানি রিসিট স্লিপ':'Receipt Slip'}"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"/><path d="M16 8h-8"/><path d="M16 12h-8"/><path d="M12 16h-4"/></svg><span class="bn">রসিদ</span><span class="en">Slip</span></button>
         <button class="btn-a btn-del-bold" onclick="deleteEntry('${type}',${p.id})"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg></button>
       </div>
       <div class="hh" style="margin-top:14px;">HISTORY</div>
