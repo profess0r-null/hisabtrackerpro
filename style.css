@@ -180,8 +180,7 @@ body{background:var(--bg);color:var(--text);font-family:'Inter','Hind Siliguri',
 .alog-action{font-weight:700;color:var(--text);}
 .alog-meta{font-size:11px;color:var(--muted);margin-top:2px;}
 
-/* ─── MAIN ─── */
-.wrap{max-width:900px;margin:0 auto;padding:20px;padding-bottom:40px;}
+.wrap{max-width:900px;margin:0 auto;padding:20px;padding-bottom:calc(115px + env(safe-area-inset-bottom, 0px));}
 
 /* summary cards */
 .summary{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;}
@@ -661,12 +660,12 @@ input:focus{border-color:var(--primary);}
   bottom: 0;
   left: 0;
   right: 0;
-  height: 64px;
+  height: calc(64px + env(safe-area-inset-bottom, 0px));
+  padding: 0 8px env(safe-area-inset-bottom, 0px);
   background: transparent;
   display: flex;
   align-items: center;
   justify-content: space-around;
-  padding: 0 8px;
   z-index: 600;
   pointer-events: none;
 }
