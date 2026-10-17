@@ -836,6 +836,39 @@ input:focus{border-color:var(--primary);}
 .wallet-transfer-btn:hover {
   background: rgba(59, 130, 246, 0.18);
 }
+.wallets-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.wallet-hdr-btn {
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: 8px;
+  padding: 5px 10px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: all .15s;
+}
+.wallet-hdr-add {
+  color: var(--green);
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.28);
+}
+.wallet-hdr-add:hover {
+  background: rgba(16, 185, 129, 0.22);
+}
+.wallet-hdr-tf {
+  color: var(--primary);
+  background: rgba(59, 130, 246, 0.1);
+  border: 1px solid rgba(59, 130, 246, 0.25);
+}
+.wallet-hdr-tf:hover {
+  background: rgba(59, 130, 246, 0.18);
+}
+
 .wallets-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -850,7 +883,7 @@ input:focus{border-color:var(--primary);}
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 14px;
-  padding: 12px 14px;
+  padding: 12px 12px 10px 12px;
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -871,7 +904,14 @@ input:focus{border-color:var(--primary);}
 .wcard-top {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 6px;
+}
+.wcard-top-left {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
 }
 .wcard-icon {
   font-size: 16px;
@@ -880,13 +920,132 @@ input:focus{border-color:var(--primary);}
   font-size: 11.5px;
   font-weight: 700;
   color: var(--text2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.wcard-filter-tag {
+  font-size: 9px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  cursor: pointer;
+  transition: all .15s;
+  line-height: 1;
+}
+.wcard-filter-tag:hover, .wcard-filter-tag.on {
+  background: rgba(59, 130, 246, 0.15);
+  border-color: var(--primary);
+  color: var(--primary);
 }
 .wcard-amt {
   font-size: 16px;
   font-weight: 900;
   color: var(--text);
   font-variant-numeric: tabular-nums;
+  margin-top: 2px;
 }
+.wcard-actions {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 4px;
+  padding-top: 6px;
+  border-top: 1px dashed var(--border);
+}
+.wcard-btn {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 4px 6px;
+  border-radius: 7px;
+  font-size: 10px;
+  font-weight: 800;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all .15s;
+  white-space: nowrap;
+}
+.wcard-btn.add {
+  background: rgba(16, 185, 129, 0.12);
+  color: var(--green);
+  border-color: rgba(16, 185, 129, 0.25);
+}
+.wcard-btn.add:hover {
+  background: rgba(16, 185, 129, 0.24);
+}
+.wcard-btn.edit {
+  background: var(--card);
+  color: var(--text2);
+  border-color: var(--border);
+}
+.wcard-btn.edit:hover {
+  background: var(--surface2);
+  color: var(--text);
+}
+
+/* ── WALLET MANAGE MODAL STYLES ── */
+.wm-bal-badge {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px 14px;
+  margin-bottom: 14px;
+}
+.wm-bal-lbl {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text2);
+}
+.wm-bal-val {
+  font-size: 17px;
+  font-weight: 900;
+  color: var(--primary);
+  font-variant-numeric: tabular-nums;
+}
+.wm-tabs {
+  display: flex;
+  gap: 6px;
+  background: var(--card);
+  padding: 4px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  margin-bottom: 14px;
+}
+.wm-tab {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 8px 10px;
+  border-radius: 9px;
+  font-size: 11.5px;
+  font-weight: 800;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  transition: all .15s;
+}
+.wm-tab:hover {
+  color: var(--text);
+}
+.wm-tab.on {
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+  border: 1px solid var(--border);
+}
+
 .wallet-badge {
   display: inline-flex;
   align-items: center;

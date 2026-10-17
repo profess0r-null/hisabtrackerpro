@@ -433,10 +433,16 @@ function ic(name){return`<span class="ic">${ICONS[name]||''}</span>`;}
         <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px;color:var(--primary);"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg>
         <span class="bn">আমার ওয়ালেট ও অ্যাকাউন্ট</span><span class="en">Wallets & Accounts</span>
       </span>
-      <button class="wallet-transfer-btn" onclick="openTransferModal()">
-        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m7 16-4-4m0 0 4-4m-4 4h18"/><path d="m17 8 4 4m0 0-4 4m4-4H3"/></svg>
-        <span class="bn">ট্রান্সফার</span><span class="en">Transfer</span>
-      </button>
+      <div class="wallets-header-actions">
+        <button class="wallet-hdr-btn wallet-hdr-add" onclick="openWalletManage('bkash', 'add')" title="ওয়ালেটে টাকা যোগ">
+          <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+          <span class="bn">+ টাকা যোগ</span><span class="en">+ Add Money</span>
+        </button>
+        <button class="wallet-hdr-btn wallet-hdr-tf" onclick="openTransferModal()" title="ওয়ালেট ট্রান্সফার">
+          <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m7 16-4-4m0 0 4-4m-4 4h18"/><path d="m17 8 4 4m0 0-4 4m4-4H3"/></svg>
+          <span class="bn">ট্রান্সফার</span><span class="en">Transfer</span>
+        </button>
+      </div>
     </div>
     <div class="wallets-grid" id="wallets-grid">
       <!-- Injected via renderWallets() -->
@@ -935,8 +941,92 @@ function ic(name){return`<span class="ic">${ICONS[name]||''}</span>`;}
   </div>
 </div>
 
+<!-- DEDICATED WALLET MANAGE MODAL (Add Money to bKash/Bank/Nagad & Set Balance) -->
+<div class="overlay" id="m-wallet-manage" onclick="if(event.target===this)cm('m-wallet-manage')">
+  <div class="modal">
+    <div class="modal-title" id="wm-title" style="display:flex;align-items:center;">
+      <span id="wm-icon" style="font-size:22px;margin-right:8px;">📱</span>
+      <span id="wm-name-text">বিকাশ (bKash) ওয়ালেট</span>
+    </div>
+
+    <!-- Current balance info badge -->
+    <div class="wm-bal-badge">
+      <span class="wm-bal-lbl"><span class="bn">বর্তমান ব্যালেন্স:</span><span class="en">Current Balance:</span></span>
+      <span class="wm-bal-val" id="wm-curr-bal">৳০</span>
+    </div>
+
+    <!-- Tab Switcher -->
+    <div class="wm-tabs">
+      <button type="button" class="wm-tab on" id="wm-tab-add" onclick="switchWMTab('add')">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+        <span class="bn">টাকা যোগ (Deposit)</span><span class="en">Add Money</span>
+      </button>
+      <button type="button" class="wm-tab" id="wm-tab-set" onclick="switchWMTab('set')">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
+        <span class="bn">সরাসরি ব্যালেন্স সেট</span><span class="en">Set Balance</span>
+      </button>
+    </div>
+
+    <!-- Section 1: Add Money -->
+    <div id="wm-sec-add">
+      <div class="quick-amt-row">
+        <span class="qamt-lbl"><span class="bn">চিপস:</span><span class="en">Quick:</span></span>
+        <button type="button" class="qamt-chip" onclick="addQuickAmount(100,'wm-amt')">+১০০</button>
+        <button type="button" class="qamt-chip" onclick="addQuickAmount(500,'wm-amt')">+৫০০</button>
+        <button type="button" class="qamt-chip" onclick="addQuickAmount(1000,'wm-amt')">+১০০০</button>
+        <button type="button" class="qamt-chip" onclick="addQuickAmount(2000,'wm-amt')">+২০০০</button>
+        <button type="button" class="qamt-chip" onclick="addQuickAmount(5000,'wm-amt')">+৫০০০</button>
+        <button type="button" class="qamt-chip clear" onclick="addQuickAmount('clear','wm-amt')">C</button>
+      </div>
+
+      <div class="inp-wrap">
+        <input id="wm-amt" type="number" inputmode="numeric" placeholder="টাকার পরিমাণ ৳ / Amount" class="ai" style="font-size:18px;font-weight:700;">
+      </div>
+
+      <div class="form-sec-lbl"><span class="bn">উৎস / ক্যাটাগরি (Source)</span><span class="en">Source Category</span></div>
+      <div class="cat-grid" id="wm-cat-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:12px;">
+        <!-- Injected via renderWMCategories() -->
+      </div>
+
+      <div class="inp-wrap">
+        <input id="wm-note" type="text" placeholder="নোট (যেমন: ক্যাশ ইন, ব্যাংক ট্রান্সফার, বেতন)" class="ai">
+      </div>
+
+      <div class="modal-btns">
+        <button type="button" class="btn-a" style="flex:1" onclick="cm('m-wallet-manage')">
+          <span class="bn">বাতিল</span><span class="en">Cancel</span>
+        </button>
+        <button type="button" class="sbtn sbtn-g" style="flex:1.5" id="wm-submit-add-btn" onclick="confirmWMAdd()">
+          <span class="bn">টাকা যোগ করুন ✓</span><span class="en">Add Money ✓</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Section 2: Set Balance Directly -->
+    <div id="wm-sec-set" style="display:none;">
+      <p style="font-size:12px;color:var(--text2);margin-bottom:12px;line-height:1.5;">
+        <span class="bn">💡 আপনার অ্যাকাউন্টে বর্তমানে ঠিক যত টাকা আছে, তা সরাসরি এখানে লিখে আপডেট করুন। পূর্বের হিসাব মেলাতে এটি সহায়ক।</span>
+        <span class="en">💡 Enter the exact current balance in this account. This directly sets your wallet balance.</span>
+      </p>
+
+      <div class="inp-wrap">
+        <input id="wm-set-amt" type="number" inputmode="numeric" placeholder="বর্তমান সঠিক মোট ব্যালেন্স ৳ / Exact Balance" class="ai" style="font-size:18px;font-weight:700;">
+      </div>
+
+      <div class="modal-btns">
+        <button type="button" class="btn-a" style="flex:1" onclick="cm('m-wallet-manage')">
+          <span class="bn">বাতিল</span><span class="en">Cancel</span>
+        </button>
+        <button type="button" class="sbtn sbtn-b" style="flex:1.5" onclick="confirmWMSet()">
+          <span class="bn">ব্যালেন্স আপডেট করুন ✓</span><span class="en">Update Balance ✓</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
-<script src="script.js?v=3.0"></script>
+<script src="script.js?v=3.1"></script>
 </body>
 </html>

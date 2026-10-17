@@ -943,7 +943,10 @@ function ensureWallets(){
   }
 }
 
-// ── 2.1 MULTI-WALLET RENDERING & TRANSFERS ──
+// ── 2.1 MULTI-WALLET RENDERING & ACTIONS ──
+let CURRENT_WM_WALLET = 'bkash';
+let CURRENT_WM_CAT = 'salary';
+
 function renderWallets(){
   ensureWallets();
   const grid = document.getElementById('wallets-grid');
@@ -954,13 +957,29 @@ function renderWallets(){
     const meta = WALLET_META[k];
     const isAct = WALLET_FILTER === k;
     const amt = w[k] || 0;
+    const wName = LANG==='bn'?meta.name:meta.en;
     return `
-      <div class="wallet-card ${isAct ? 'active' : ''}" onclick="toggleWalletFilter('${k}')">
+      <div class="wallet-card ${isAct ? 'active' : ''}" onclick="openWalletManage('${k}')">
         <div class="wcard-top">
-          <span class="wcard-icon">${meta.icon}</span>
-          <span class="wcard-name">${LANG==='bn'?meta.name:meta.en}</span>
+          <div class="wcard-top-left">
+            <span class="wcard-icon">${meta.icon}</span>
+            <span class="wcard-name">${wName}</span>
+          </div>
+          <button type="button" class="wcard-filter-tag ${isAct ? 'on' : ''}" onclick="event.stopPropagation(); toggleWalletFilter('${k}')" title="${LANG==='bn'?'লেনদেন ফিল্টার':'Filter transactions'}">
+            ${isAct ? (LANG==='bn'?'✓ ফিল্টার্ড':'✓ Filtered') : (LANG==='bn'?'ফিল্টার':'Filter')}
+          </button>
         </div>
         <div class="wcard-amt">৳${fmt(amt)}</div>
+        <div class="wcard-actions" onclick="event.stopPropagation()">
+          <button type="button" class="wcard-btn add" onclick="openWalletAddDirect('${k}')" title="${LANG==='bn'?'টাকা যোগ করুন':'Add money'}">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+            <span>${LANG==='bn'?'+ টাকা যোগ':'+ Add'}</span>
+          </button>
+          <button type="button" class="wcard-btn edit" onclick="openWalletSetDirect('${k}')" title="${LANG==='bn'?'সরাসরি ব্যালেন্স সেট করুন':'Set balance'}">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
+            <span>${LANG==='bn'?'ব্যালেন্স':'Balance'}</span>
+          </button>
+        </div>
       </div>
     `;
   }).join('');
@@ -976,6 +995,179 @@ function toggleWalletFilter(k){
     toast(`${meta.icon} ${LANG==='bn'?meta.name:meta.en} ফিল্টার করা হয়েছে`);
   }
   renderCash();
+}
+
+function openWalletManage(wKey, defaultTab = 'add'){
+  ensureWallets();
+  CURRENT_WM_WALLET = wKey || 'bkash';
+  const meta = WALLET_META[CURRENT_WM_WALLET] || { name: 'ওয়ালেট', en: 'Wallet', icon: '📱' };
+  const currBal = CASH_DB.wallets[CURRENT_WM_WALLET] || 0;
+
+  const iconEl = document.getElementById('wm-icon');
+  const nameEl = document.getElementById('wm-name-text');
+  const balEl = document.getElementById('wm-curr-bal');
+  if(iconEl) iconEl.textContent = meta.icon;
+  if(nameEl) nameEl.textContent = (LANG === 'bn' ? meta.name : meta.en) + (LANG === 'bn' ? ' ওয়ালেট' : ' Wallet');
+  if(balEl) balEl.textContent = '৳' + fmt(currBal);
+
+  const amtInput = document.getElementById('wm-amt');
+  const noteInput = document.getElementById('wm-note');
+  const setInput = document.getElementById('wm-set-amt');
+  if(amtInput) { amtInput.value = ''; amtInput.classList.remove('has-val'); }
+  if(noteInput) { noteInput.value = ''; noteInput.classList.remove('has-val'); }
+  if(setInput) { setInput.value = currBal > 0 ? currBal : ''; setInput.classList.toggle('has-val', currBal > 0); }
+
+  renderWMCategories();
+
+  const submitBtn = document.getElementById('wm-submit-add-btn');
+  if(submitBtn){
+    const wName = LANG === 'bn' ? meta.name : meta.en;
+    submitBtn.innerHTML = `<span class="bn">${wName}-এ টাকা যোগ করুন ✓</span><span class="en">Add to ${meta.en} ✓</span>`;
+  }
+
+  switchWMTab(defaultTab);
+  document.getElementById('m-wallet-manage').classList.add('on');
+  setTimeout(() => {
+    const targetInput = defaultTab === 'set' ? document.getElementById('wm-set-amt') : document.getElementById('wm-amt');
+    if(targetInput) targetInput.focus();
+  }, 180);
+}
+
+function openWalletAddDirect(wKey){
+  openWalletManage(wKey, 'add');
+}
+
+function openWalletSetDirect(wKey){
+  openWalletManage(wKey, 'set');
+}
+
+function switchWMTab(tab){
+  const tabAdd = document.getElementById('wm-tab-add');
+  const tabSet = document.getElementById('wm-tab-set');
+  const secAdd = document.getElementById('wm-sec-add');
+  const secSet = document.getElementById('wm-sec-set');
+  if(!tabAdd || !tabSet || !secAdd || !secSet) return;
+
+  if(tab === 'set'){
+    tabAdd.classList.remove('on');
+    tabSet.classList.add('on');
+    secAdd.style.display = 'none';
+    secSet.style.display = 'block';
+    setTimeout(() => {
+      const el = document.getElementById('wm-set-amt');
+      if(el) el.focus();
+    }, 100);
+  } else {
+    tabAdd.classList.add('on');
+    tabSet.classList.remove('on');
+    secAdd.style.display = 'block';
+    secSet.style.display = 'none';
+    setTimeout(() => {
+      const el = document.getElementById('wm-amt');
+      if(el) el.focus();
+    }, 100);
+  }
+}
+
+function renderWMCategories(){
+  const el = document.getElementById('wm-cat-grid');
+  if(!el) return;
+  const cats = INCOME_CATEGORIES;
+  if(!CURRENT_WM_CAT && cats.length) CURRENT_WM_CAT = cats[0].id;
+  el.innerHTML = cats.map(c => `
+    <div class="cat-tile ${c.id === CURRENT_WM_CAT ? 'on' : ''}" onclick="selectWMCat('${c.id}')" style="--cat-color:${c.color}">
+      <span class="cat-tile-icon">${c.e}</span>
+      <span class="cat-tile-lbl">${LANG === 'bn' ? c.bn : c.en}</span>
+    </div>
+  `).join('');
+}
+
+function selectWMCat(catId){
+  CURRENT_WM_CAT = catId;
+  const c = INCOME_CATEGORIES.find(x => x.id === catId);
+  const noteInput = document.getElementById('wm-note');
+  if(noteInput && (!noteInput.value.trim() || INCOME_CATEGORIES.some(x => x.bn === noteInput.value || x.en === noteInput.value))){
+    if(c) noteInput.value = LANG === 'bn' ? c.bn : c.en;
+  }
+  const el = document.getElementById('wm-cat-grid');
+  if(el){
+    el.querySelectorAll('.cat-tile').forEach((t, i) => {
+      t.classList.toggle('on', INCOME_CATEGORIES[i] && INCOME_CATEGORIES[i].id === catId);
+    });
+  }
+}
+
+function confirmWMAdd(){
+  const amt = parseFloat(document.getElementById('wm-amt').value);
+  if(!amt || amt <= 0){
+    toast('❌ সঠিক পরিমাণ দিন!');
+    return;
+  }
+  ensureWallets();
+  const w = CURRENT_WM_WALLET || 'bkash';
+  const meta = WALLET_META[w] || { name: w, en: w };
+  const catObj = INCOME_CATEGORIES.find(c => c.id === CURRENT_WM_CAT) || { id: 'other_in', bn: 'অন্যান্য আয়', en: 'Other Income' };
+  const userNote = document.getElementById('wm-note').value.trim();
+  const note = userNote || (LANG === 'bn' ? `${meta.name}-এ টাকা যোগ (${catObj.bn})` : `Add Money to ${meta.en} (${catObj.en})`);
+  const ts = Date.now();
+
+  CASH_DB.wallets[w] = (CASH_DB.wallets[w] || 0) + amt;
+  CASH_DB.balance += amt;
+  CASH_DB.history.unshift({
+    id: ts,
+    type: 'add',
+    amt: amt,
+    note: note,
+    category: catObj.id,
+    wallet: w,
+    date: ts
+  });
+
+  saveCashData();
+  cm('m-wallet-manage');
+  renderCash();
+  toast(`✅ ৳${fmt(amt)} ${meta.name}-এ সফলভাবে যোগ হয়েছে!`);
+}
+
+function confirmWMSet(){
+  const newAmt = parseFloat(document.getElementById('wm-set-amt').value);
+  if(isNaN(newAmt) || newAmt < 0){
+    toast('❌ সঠিক ব্যালেন্স দিন!');
+    return;
+  }
+  ensureWallets();
+  const w = CURRENT_WM_WALLET || 'bkash';
+  const meta = WALLET_META[w] || { name: w, en: w };
+  const oldAmt = CASH_DB.wallets[w] || 0;
+  const diff = newAmt - oldAmt;
+
+  if(diff === 0){
+    toast('ব্যালেন্স অপরিবর্তিত রয়েছে');
+    cm('m-wallet-manage');
+    return;
+  }
+
+  CASH_DB.wallets[w] = newAmt;
+  const ts = Date.now();
+  const isIncrease = diff > 0;
+  const note = LANG === 'bn' 
+    ? `${meta.name} ব্যালেন্স সরাসরি সেট (৳${fmt(oldAmt)} → ৳${fmt(newAmt)})`
+    : `${meta.en} balance calibrated (৳${fmt(oldAmt)} → ৳${fmt(newAmt)})`;
+
+  CASH_DB.history.unshift({
+    id: ts,
+    type: isIncrease ? 'add' : 'sub',
+    amt: Math.abs(diff),
+    note: note,
+    category: isIncrease ? 'other_in' : 'other',
+    wallet: w,
+    date: ts
+  });
+
+  saveCashData();
+  cm('m-wallet-manage');
+  renderCash();
+  toast(`✅ ${meta.name} ব্যালেন্স ৳${fmt(newAmt)} সেট করা হয়েছে!`);
 }
 
 function openTransferModal(){
@@ -1053,6 +1245,25 @@ function addQuickAmount(val, targetId = 'cash-amt'){
 function selectFormWallet(w, btn){
   SELECTED_FORM_WALLET = w;
   document.querySelectorAll('#form-wallet-row .wsel-btn').forEach(b => b.classList.toggle('on', b.dataset.w === w));
+
+  const submitBtn = document.getElementById('cash-submit-btn');
+  const titleEl = document.getElementById('cash-form-title');
+  const meta = WALLET_META[w] || { name: w, en: w, icon: '' };
+  const wName = LANG === 'bn' ? meta.name : meta.en;
+
+  if(submitBtn){
+    if(cashFormMode === 'add'){
+      submitBtn.innerHTML = `<span class="bn">${wName}-এ আয় যোগ করুন ✓</span><span class="en">Add to ${meta.en} ✓</span>`;
+      if(titleEl){
+        titleEl.innerHTML = `<span class="bn">${meta.icon} ${wName}-এ টাকা যোগ</span><span class="en">${meta.icon} Add to ${meta.en}</span>`;
+      }
+    } else {
+      submitBtn.innerHTML = `<span class="bn">${wName} থেকে খরচ রেকর্ড করুন ✓</span><span class="en">Deduct from ${meta.en} ✓</span>`;
+      if(titleEl){
+        titleEl.innerHTML = `<span class="bn">${meta.icon} ${wName} থেকে খরচ</span><span class="en">${meta.icon} Expense from ${meta.en}</span>`;
+      }
+    }
+  }
 }
 
 function renderFormCategories(mode, containerId = 'form-cat-grid', activeCat = ''){
@@ -1140,19 +1351,27 @@ function setQuickAddType(t){
     catSec.style.display = 'block';
     if(t === 'sub'){
       subBtn.className = 'sbtn sbtn-r';
-      subBtn.innerHTML = '<span class="bn">খরচ রেকর্ড করুন ✓</span><span class="en">Deduct Expense ✓</span>';
       renderFormCategories('sub', 'qa-cat-grid');
     } else {
       subBtn.className = 'sbtn sbtn-g';
-      subBtn.innerHTML = '<span class="bn">আয় যোগ করুন ✓</span><span class="en">Add Income ✓</span>';
       renderFormCategories('add', 'qa-cat-grid');
     }
+    selectQAWallet(SELECTED_QA_WALLET || 'cash');
   }
 }
 
 function selectQAWallet(w, btn){
   SELECTED_QA_WALLET = w;
   document.querySelectorAll('#qa-wallet-row .wsel-btn').forEach(b => b.classList.toggle('on', b.dataset.w === w));
+  const subBtn = document.getElementById('qa-submit-btn');
+  if(!subBtn || QA_MODE === 'hisab') return;
+  const meta = WALLET_META[w] || { name: w, en: w };
+  const wName = LANG === 'bn' ? meta.name : meta.en;
+  if(QA_MODE === 'sub'){
+    subBtn.innerHTML = `<span class="bn">${wName} থেকে খরচ রেকর্ড করুন ✓</span><span class="en">Deduct from ${meta.en} ✓</span>`;
+  } else {
+    subBtn.innerHTML = `<span class="bn">${wName}-এ আয় যোগ করুন ✓</span><span class="en">Add to ${meta.en} ✓</span>`;
+  }
 }
 
 function submitQuickAdd(){
@@ -1402,7 +1621,7 @@ function renderMicroInsights(allHistory){
 }
 
 // ── CASH FORM & CRUD ──
-function openCashForm(mode){
+function openCashForm(mode, targetWallet = 'cash'){
   cashFormMode = mode;
   ensureWallets();
   const form = document.getElementById('cash-form');
@@ -1436,8 +1655,9 @@ function openCashForm(mode){
   document.getElementById('cash-amt').classList.remove('has-val');
   document.getElementById('cash-note').classList.remove('has-val');
 
-  selectFormWallet('cash');
+  selectFormWallet(targetWallet);
   form.classList.remove('hidden');
+  form.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   document.getElementById('cash-amt').focus();
 }
 
