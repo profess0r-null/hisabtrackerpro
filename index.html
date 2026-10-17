@@ -11,7 +11,7 @@
 <title>হিসাব ট্র্যাকার PRO</title>
 <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;600;700&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="icon" type="image/png" href="icon.png">
-<link rel="stylesheet" href="style.css?v=2.9">
+<link rel="stylesheet" href="style.css?v=3.0">
 <style>
 /* ── SVG ICON SYSTEM ── */
 .ic{display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;}
@@ -389,13 +389,58 @@ function ic(name){return`<span class="ic">${ICONS[name]||''}</span>`;}
 
 <!-- ══ CASH TRACKER CONTENT ══ -->
 <div id="cash-content" style="display:none">
-<div class="wrap">
+<div class="wrap" style="padding-bottom:90px;">
+
+  <!-- 4.3 Month Switcher & Filter -->
+  <div class="month-nav-bar">
+    <button class="month-nav-btn" onclick="changeCashMonth(-1)" aria-label="Previous Month" title="পূর্ববর্তী মাস">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+    </button>
+    <div class="month-nav-title" id="cash-month-title">
+      <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:6px;color:var(--primary);"><rect width="18" height="18" x="3" y="4" rx="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
+      <span id="cash-month-label">চলতি মাস</span>
+    </div>
+    <button class="month-nav-btn" onclick="changeCashMonth(1)" aria-label="Next Month" title="পরবর্তী মাস">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+    </button>
+  </div>
+  <div class="month-filter-pills">
+    <button class="mf-pill on" id="mf-curr" onclick="setCashTimeFilter('month')"><span class="bn">এই মাস</span><span class="en">This Month</span></button>
+    <button class="mf-pill" id="mf-prev" onclick="setCashTimeFilter('last_month')"><span class="bn">গত মাস</span><span class="en">Last Month</span></button>
+    <button class="mf-pill" id="mf-all" onclick="setCashTimeFilter('all')"><span class="bn">সব সময়</span><span class="en">All Time</span></button>
+  </div>
 
   <!-- Balance hero -->
   <div class="cash-hero">
-    <div class="cash-hero-lbl"><span class="bn"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:5px"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg>নগদ ব্যালেন্স</span><span class="en"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:5px"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg>Cash Balance</span></div>
+    <div class="cash-hero-lbl">
+      <span class="bn"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:5px"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg>মোট ব্যালেন্স (নগদ ও অ্যাকাউন্ট)</span>
+      <span class="en"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:5px"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg>Total Balance</span>
+    </div>
     <div class="cash-hero-amt" id="cash-balance">৳০</div>
     <div class="cash-hero-sub" id="cash-hero-sub"><span class="bn">সর্বশেষ লেনদেন নেই</span><span class="en">No transactions yet</span></div>
+
+    <!-- 3.4 Micro-Spending Insights Card -->
+    <div class="cash-insight-box" id="cash-insight-box">
+      <div class="cib-icon">💡</div>
+      <div class="cib-text" id="cib-text">হিসাব তৈরি হচ্ছে...</div>
+    </div>
+  </div>
+
+  <!-- 2.1 Multi-Wallet / Pockets Grid -->
+  <div class="wallets-sec">
+    <div class="wallets-header">
+      <span class="wallets-title">
+        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px;color:var(--primary);"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg>
+        <span class="bn">আমার ওয়ালেট ও অ্যাকাউন্ট</span><span class="en">Wallets & Accounts</span>
+      </span>
+      <button class="wallet-transfer-btn" onclick="openTransferModal()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m7 16-4-4m0 0 4-4m-4 4h18"/><path d="m17 8 4 4m0 0-4 4m4-4H3"/></svg>
+        <span class="bn">ট্রান্সফার</span><span class="en">Transfer</span>
+      </button>
+    </div>
+    <div class="wallets-grid" id="wallets-grid">
+      <!-- Injected via renderWallets() -->
+    </div>
   </div>
 
   <!-- Budget bar -->
@@ -422,18 +467,32 @@ function ic(name){return`<span class="ic">${ICONS[name]||''}</span>`;}
       <div class="cash-stat-val" id="cash-total-out" style="color:var(--red)">৳০</div>
     </div>
     <div class="cash-stat">
-      <div class="cash-stat-lbl"><span class="bn">লেনদেন</span><span class="en">Transactions</span></div>
-      <div class="cash-stat-val" id="cash-txn-count" style="color:var(--primary)">০</div>
+      <div class="cash-stat-lbl"><span class="bn">নিট সঞ্চয়</span><span class="en">Savings</span></div>
+      <div class="cash-stat-val" id="cash-net-savings" style="color:var(--primary)">৳০</div>
+    </div>
+  </div>
+
+  <!-- 3.3 Interactive SVG Donut Chart Card -->
+  <div class="donut-chart-card" id="donut-chart-card">
+    <div class="donut-card-hdr">
+      <div class="donut-card-title">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:6px;color:#f59e0b;"><circle cx="12" cy="12" r="10"/><path d="M12 2a10 10 0 0 1 10 10h-10z"/></svg>
+        <span class="bn">ক্যাটাগরি অনুযায়ী খরচের অনুপাত</span><span class="en">Category Breakdown</span>
+      </div>
+      <span class="donut-period-tag" id="donut-period-tag">চলতি মাস</span>
+    </div>
+    <div class="donut-chart-body" id="donut-chart-body">
+      <!-- Injected via renderDonutChart() -->
     </div>
   </div>
 
   <!-- Quick action buttons -->
   <div class="cash-actions">
     <button class="cash-btn cash-btn-add" onclick="openCashForm('add')">
-      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right:6px;vertical-align:middle"><path d="M5 12h14"/><path d="M12 5v14"/></svg><span class="bn">টাকা যোগ</span><span class="en">Add Money</span>
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right:6px;vertical-align:middle"><path d="M5 12h14"/><path d="M12 5v14"/></svg><span class="bn">টাকা যোগ (আয়)</span><span class="en">Add Income</span>
     </button>
     <button class="cash-btn cash-btn-sub" onclick="openCashForm('sub')">
-      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right:6px;vertical-align:middle"><path d="M5 12h14"/></svg><span class="bn">খরচ করুন</span><span class="en">Expense</span>
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right:6px;vertical-align:middle"><path d="M5 12h14"/></svg><span class="bn">খরচ করুন (ব্যয়)</span><span class="en">Add Expense</span>
     </button>
   </div>
 
@@ -445,7 +504,7 @@ function ic(name){return`<span class="ic">${ICONS[name]||''}</span>`;}
     </button>
   </div>
 
-  <!-- Cash form -->
+  <!-- Cash form with Quick Chips (3.2), Wallets (2.1), & Categories (2.2) -->
   <div class="cf hidden" id="cash-form">
     <div class="cf-header" id="cf-header">
       <div class="cf-header-left">
@@ -455,6 +514,25 @@ function ic(name){return`<span class="ic">${ICONS[name]||''}</span>`;}
       <button class="cf-close" onclick="closeCashForm()"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
     </div>
     <div class="cf-body">
+      <!-- 2.1 Wallet Selector -->
+      <div class="form-sec-lbl"><span class="bn">টাকা যে অ্যাকাউন্টে / ওয়ালেটে</span><span class="en">Select Wallet / Account</span></div>
+      <div class="wallet-select-row" id="form-wallet-row">
+        <button type="button" class="wsel-btn on" data-w="cash" onclick="selectFormWallet('cash',this)">💵 নগদ / Cash</button>
+        <button type="button" class="wsel-btn" data-w="bkash" onclick="selectFormWallet('bkash',this)">📱 বিকাশ / bKash</button>
+        <button type="button" class="wsel-btn" data-w="nagad" onclick="selectFormWallet('nagad',this)">📱 নগদ / Nagad</button>
+        <button type="button" class="wsel-btn" data-w="bank" onclick="selectFormWallet('bank',this)">🏦 ব্যাংক / Bank</button>
+      </div>
+
+      <!-- 3.2 Quick Amount Chips -->
+      <div class="quick-amt-row">
+        <span class="qamt-lbl"><span class="bn">চিপস:</span><span class="en">Quick:</span></span>
+        <button type="button" class="qamt-chip" onclick="addQuickAmount(50)">+৫০</button>
+        <button type="button" class="qamt-chip" onclick="addQuickAmount(100)">+১০০</button>
+        <button type="button" class="qamt-chip" onclick="addQuickAmount(500)">+৫০০</button>
+        <button type="button" class="qamt-chip" onclick="addQuickAmount(1000)">+১০০০</button>
+        <button type="button" class="qamt-chip clear" onclick="addQuickAmount('clear')" title="মুছুন">C</button>
+      </div>
+
       <div class="cf-row">
         <div class="cf-field">
           <input id="cash-amt" type="number" inputmode="numeric" class="cf-input" placeholder="">
@@ -462,10 +540,17 @@ function ic(name){return`<span class="ic">${ICONS[name]||''}</span>`;}
         </div>
         <div class="cf-field">
           <input id="cash-note" type="text" class="cf-input" placeholder="">
-          <label class="cf-label"><span class="bn">নোট</span><span class="en">Note</span></label>
+          <label class="cf-label"><span class="bn">নোট / বিবরণ</span><span class="en">Note</span></label>
         </div>
       </div>
-      <div class="cf-field">
+
+      <!-- 2.2 Rich Visual Category Grid -->
+      <div class="form-sec-lbl" style="margin-top:10px;"><span class="bn">ক্যাটাগরি নির্বাচন</span><span class="en">Select Category</span></div>
+      <div class="cat-grid" id="form-cat-grid">
+        <!-- Injected via renderFormCategories() -->
+      </div>
+
+      <div class="cf-field" style="margin-top:12px;">
         <input id="cash-date" type="date" class="cf-input cf-date">
         <label class="cf-label cf-label-date"><svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:3px"><rect width="18" height="18" x="3" y="4" rx="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg><span class="bn">তারিখ</span><span class="en">Date</span></label>
       </div>
@@ -477,22 +562,53 @@ function ic(name){return`<span class="ic">${ICONS[name]||''}</span>`;}
     </div>
   </div>
 
-  <!-- Category filter -->
+  <!-- Category & Type filter -->
   <div class="cat-filter" id="cash-cat-filter">
-    <span class="cat-pill on" onclick="filterCash('all',this)"><span class="bn">সব</span><span class="en">All</span></span>
-    <span class="cat-pill" onclick="filterCash('add',this)" style="display:inline-flex;align-items:center;gap:4px;"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></svg><span class="bn">আয়</span><span class="en">Income</span></span>
+    <span class="cat-pill on" onclick="filterCash('all',this)"><span class="bn">সব লেনদেন</span><span class="en">All</span></span>
     <span class="cat-pill" onclick="filterCash('sub',this)" style="display:inline-flex;align-items:center;gap:4px;"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg><span class="bn">খরচ</span><span class="en">Expense</span></span>
+    <span class="cat-pill" onclick="filterCash('add',this)" style="display:inline-flex;align-items:center;gap:4px;"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></svg><span class="bn">আয়</span><span class="en">Income</span></span>
+    <span class="cat-pill" onclick="filterCash('transfer',this)" style="display:inline-flex;align-items:center;gap:4px;"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m7 16-4-4m0 0 4-4m-4 4h18"/><path d="m17 8 4 4m0 0-4 4m4-4H3"/></svg><span class="bn">ট্রান্সফার</span><span class="en">Transfer</span></span>
   </div>
 
-  <!-- History -->
+  <!-- Search in expenses -->
+  <div class="search-wrap" style="margin-bottom:14px;">
+    <span class="si"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></span>
+    <input type="text" id="cash-srch" placeholder="খরচ বা নোট খুঁজুন... / Search transactions" oninput="renderCash()">
+  </div>
+
+  <!-- 4.2 Date-Grouped History -->
   <div class="cash-history-header">
-    <span class="cash-history-title" style="display:inline-flex;align-items:center;gap:6px;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></svg><span class="bn">ইতিহাস</span><span class="en">History</span></span>
+    <span class="cash-history-title" style="display:inline-flex;align-items:center;gap:6px;"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></svg><span class="bn">লেনদেনের ইতিহাস (তারিখ অনুযায়ী)</span><span class="en">Transaction History</span></span>
     <button class="cash-clear-btn" onclick="clearCashHistory()"><span class="bn">সব মুছুন</span><span class="en">Clear All</span></button>
   </div>
   <div id="cash-history-list"></div>
 
 </div>
 </div><!-- /#cash-content -->
+
+<!-- 4.1 BOTTOM NAVIGATION BAR (Mobile & Desktop) -->
+<nav class="bottom-nav" id="bottom-nav">
+  <button class="bnav-btn on" id="bnav-hisab" onclick="setAppTab('hisab')">
+    <span class="bnav-icon"><svg xmlns="http://www.w3.org/2000/svg" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"/><path d="M6 6h10"/><path d="M6 10h10"/></svg></span>
+    <span class="bnav-label"><span class="bn">দেনা-পাওনা</span><span class="en">Hisab</span></span>
+  </button>
+  <button class="bnav-btn" id="bnav-cash" onclick="setAppTab('cash')">
+    <span class="bnav-icon"><svg xmlns="http://www.w3.org/2000/svg" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg></span>
+    <span class="bnav-label"><span class="bn">আয়-ব্যয়</span><span class="en">Expense</span></span>
+  </button>
+  <!-- 3.1 Floating Quick Add (+ FAB) -->
+  <button class="bnav-fab" onclick="openQuickAddSheet()" aria-label="Quick Add" title="দ্রুত যোগ">
+    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+  </button>
+  <button class="bnav-btn" id="bnav-analytics" onclick="setAppTab('analytics')">
+    <span class="bnav-icon"><svg xmlns="http://www.w3.org/2000/svg" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" x2="12" y1="20" y2="10"/><line x1="18" x2="18" y1="20" y2="4"/><line x1="6" x2="6" y1="20" y2="16"/></svg></span>
+    <span class="bnav-label"><span class="bn">রিপোর্ট</span><span class="en">Analytics</span></span>
+  </button>
+  <button class="bnav-btn" id="bnav-menu" onclick="setAppTab('menu')">
+    <span class="bnav-icon"><svg xmlns="http://www.w3.org/2000/svg" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="18" y2="18"/></svg></span>
+    <span class="bnav-label"><span class="bn">মেনু</span><span class="en">Menu</span></span>
+  </button>
+</nav>
 
 </div><!-- /#app -->
 
@@ -687,8 +803,140 @@ function ic(name){return`<span class="ic">${ICONS[name]||''}</span>`;}
   </div>
 </div></div>
 
+<!-- 3.1 QUICK ADD BOTTOM SHEET MODAL -->
+<div class="overlay bottom-sheet-overlay" id="m-quickadd" onclick="if(event.target===this)cm('m-quickadd')">
+  <div class="modal bottom-sheet-modal">
+    <div class="sheet-handle"></div>
+    <div class="sheet-header">
+      <div class="modal-title">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:6px;color:var(--primary);"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+        <span class="bn">দ্রুত লেনদেন এন্ট্রি</span><span class="en">Quick Add Transaction</span>
+      </div>
+      <button class="sheet-close" onclick="cm('m-quickadd')">✕</button>
+    </div>
+    
+    <!-- Quick Add Type Tabs -->
+    <div class="sheet-type-tabs">
+      <button type="button" class="sheet-tab on red" id="qa-tab-sub" onclick="setQuickAddType('sub')">
+        <span class="bn">💸 খরচ (Expense)</span><span class="en">💸 Expense</span>
+      </button>
+      <button type="button" class="sheet-tab green" id="qa-tab-add" onclick="setQuickAddType('add')">
+        <span class="bn">💰 আয় (Income)</span><span class="en">💰 Income</span>
+      </button>
+      <button type="button" class="sheet-tab blue" id="qa-tab-hisab" onclick="setQuickAddType('hisab')">
+        <span class="bn">📒 দেনা-পাওনা</span><span class="en">📒 Hisab</span>
+      </button>
+    </div>
+
+    <!-- Quick Amount Chips (3.2) -->
+    <div class="quick-amt-row">
+      <span class="qamt-lbl"><span class="bn">চিপস:</span><span class="en">Quick:</span></span>
+      <button type="button" class="qamt-chip" onclick="addQuickAmount(50,'qa-amt')">+৫০</button>
+      <button type="button" class="qamt-chip" onclick="addQuickAmount(100,'qa-amt')">+১০০</button>
+      <button type="button" class="qamt-chip" onclick="addQuickAmount(500,'qa-amt')">+৫০০</button>
+      <button type="button" class="qamt-chip" onclick="addQuickAmount(1000,'qa-amt')">+১০০০</button>
+      <button type="button" class="qamt-chip clear" onclick="addQuickAmount('clear','qa-amt')">C</button>
+    </div>
+
+    <div class="inp-wrap">
+      <input id="qa-amt" type="number" inputmode="numeric" placeholder="পরিমাণ ৳ / Amount" class="ai" style="font-size:18px;font-weight:700;">
+    </div>
+
+    <div class="inp-wrap" id="qa-note-wrap">
+      <input id="qa-note" type="text" placeholder="নোট / বিবরণ / Note" class="ai">
+    </div>
+
+    <div class="inp-wrap" id="qa-name-wrap" style="display:none;">
+      <input id="qa-name" type="text" placeholder="ব্যক্তির নাম / Party Name" class="ai">
+    </div>
+
+    <!-- 2.1 Wallet Selector for Quick Add -->
+    <div id="qa-wallet-sec">
+      <div class="form-sec-lbl"><span class="bn">ওয়ালেট নির্বাচন</span><span class="en">Wallet</span></div>
+      <div class="wallet-select-row" id="qa-wallet-row">
+        <button type="button" class="wsel-btn on" data-w="cash" onclick="selectQAWallet('cash',this)">💵 নগদ</button>
+        <button type="button" class="wsel-btn" data-w="bkash" onclick="selectQAWallet('bkash',this)">📱 বিকাশ</button>
+        <button type="button" class="wsel-btn" data-w="nagad" onclick="selectQAWallet('nagad',this)">📱 নগদ</button>
+        <button type="button" class="wsel-btn" data-w="bank" onclick="selectQAWallet('bank',this)">🏦 ব্যাংক</button>
+      </div>
+    </div>
+
+    <!-- 2.2 Category Grid for Quick Add -->
+    <div id="qa-cat-sec">
+      <div class="form-sec-lbl" style="margin-top:8px;"><span class="bn">ক্যাটাগরি</span><span class="en">Category</span></div>
+      <div class="cat-grid" id="qa-cat-grid"></div>
+    </div>
+
+    <div class="modal-btns" style="margin-top:14px;">
+      <button type="button" class="btn-a" style="flex:1" onclick="cm('m-quickadd')">
+        <span class="bn">বাতিল</span><span class="en">Cancel</span>
+      </button>
+      <button type="button" class="sbtn sbtn-g" id="qa-submit-btn" style="flex:1.6" onclick="submitQuickAdd()">
+        <span class="bn">যোগ করুন ✓</span><span class="en">Confirm ✓</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- 2.1 WALLET TRANSFER MODAL -->
+<div class="overlay" id="m-transfer" onclick="if(event.target===this)cm('m-transfer')">
+  <div class="modal">
+    <div class="modal-title">
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:6px;color:var(--primary);"><path d="m7 16-4-4m0 0 4-4m-4 4h18"/><path d="m17 8 4 4m0 0-4 4m4-4H3"/></svg>
+      <span class="bn">ওয়ালেট ট্রান্সফার</span><span class="en">Wallet Transfer</span>
+    </div>
+    <div class="modal-sub"><span class="bn">এক অ্যাকাউন্ট থেকে অন্য অ্যাকাউন্টে টাকা সরান</span><span class="en">Transfer money between accounts</span></div>
+
+    <div style="margin-bottom:12px;">
+      <div class="form-sec-lbl"><span class="bn">যেখান থেকে পাঠাবেন (From)</span><span class="en">From Account</span></div>
+      <div class="wallet-select-row" id="tf-from-row">
+        <button type="button" class="wsel-btn on" data-w="bank" onclick="selectTransferWallet('from','bank',this)">🏦 ব্যাংক</button>
+        <button type="button" class="wsel-btn" data-w="cash" onclick="selectTransferWallet('from','cash',this)">💵 নগদ</button>
+        <button type="button" class="wsel-btn" data-w="bkash" onclick="selectTransferWallet('from','bkash',this)">📱 বিকাশ</button>
+        <button type="button" class="wsel-btn" data-w="nagad" onclick="selectTransferWallet('from','nagad',this)">📱 নগদ</button>
+      </div>
+    </div>
+
+    <div style="margin-bottom:12px;">
+      <div class="form-sec-lbl"><span class="bn">যেখানে জমা হবে (To)</span><span class="en">To Account</span></div>
+      <div class="wallet-select-row" id="tf-to-row">
+        <button type="button" class="wsel-btn on" data-w="bkash" onclick="selectTransferWallet('to','bkash',this)">📱 বিকাশ</button>
+        <button type="button" class="wsel-btn" data-w="cash" onclick="selectTransferWallet('to','cash',this)">💵 নগদ</button>
+        <button type="button" class="wsel-btn" data-w="bank" onclick="selectTransferWallet('to','bank',this)">🏦 ব্যাংক</button>
+        <button type="button" class="wsel-btn" data-w="nagad" onclick="selectTransferWallet('to','nagad',this)">📱 নগদ</button>
+      </div>
+    </div>
+
+    <!-- Quick Chips for transfer -->
+    <div class="quick-amt-row">
+      <span class="qamt-lbl"><span class="bn">চিপস:</span><span class="en">Quick:</span></span>
+      <button type="button" class="qamt-chip" onclick="addQuickAmount(500,'tf-amt')">+৫০০</button>
+      <button type="button" class="qamt-chip" onclick="addQuickAmount(1000,'tf-amt')">+১০০০</button>
+      <button type="button" class="qamt-chip" onclick="addQuickAmount(2000,'tf-amt')">+২০০০</button>
+      <button type="button" class="qamt-chip" onclick="addQuickAmount(5000,'tf-amt')">+৫০০০</button>
+      <button type="button" class="qamt-chip clear" onclick="addQuickAmount('clear','tf-amt')">C</button>
+    </div>
+
+    <div class="inp-wrap">
+      <input id="tf-amt" type="number" inputmode="numeric" placeholder="ট্রান্সফারের পরিমাণ ৳ / Transfer Amount" class="ai">
+    </div>
+    <div class="inp-wrap">
+      <input id="tf-note" type="text" placeholder="নোট (যেমন: এটিএম ক্যাশ, বিকাশ ইন)" class="ai">
+    </div>
+
+    <div class="modal-btns">
+      <button type="button" class="btn-a" style="flex:1" onclick="cm('m-transfer')">
+        <span class="bn">বাতিল</span><span class="en">Cancel</span>
+      </button>
+      <button type="button" class="sbtn sbtn-g" style="flex:1.5" onclick="confirmTransfer()">
+        <span class="bn">ট্রান্সফার সম্পন্ন করুন ✓</span><span class="en">Confirm Transfer ✓</span>
+      </button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
-<script src="script.js?v=2.9"></script>
+<script src="script.js?v=3.0"></script>
 </body>
 </html>

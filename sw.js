@@ -1,4 +1,4 @@
-const CACHE = 'hisab-v7';
+const CACHE = 'hisab-v8';
 const FILES = ['/', '/index.html'];
 
 self.addEventListener('install', e => {

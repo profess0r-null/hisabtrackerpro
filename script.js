@@ -267,6 +267,19 @@ function syncThemeBtns(){
 }
 
 // ── MODE SWITCH ──
+function setAppTab(tab){
+  if(tab==='menu'){
+    openDrawer();
+    return;
+  }
+  if(tab==='analytics'){
+    openAnalytics();
+    return;
+  }
+  APP_MODE=tab;
+  localStorage.setItem('ht_mode',APP_MODE);
+  applyMode();
+}
 function switchMode(){
   closeDrawer();
   APP_MODE=APP_MODE==='hisab'?'cash':'hisab';
@@ -277,6 +290,11 @@ function applyMode(){
   const isHisab=APP_MODE==='hisab';
   document.getElementById('hisab-content').style.display=isHisab?'block':'none';
   document.getElementById('cash-content').style.display=isHisab?'none':'block';
+  // Bottom nav sync
+  const bHisab=document.getElementById('bnav-hisab');
+  const bCash=document.getElementById('bnav-cash');
+  if(bHisab) bHisab.classList.toggle('on', isHisab);
+  if(bCash) bCash.classList.toggle('on', !isHisab);
   // header
   const logoText=document.getElementById('hdr-logo-text');
   const badge=document.getElementById('mode-badge');
@@ -302,6 +320,7 @@ function applyMode(){
     renderCash();
   }
 }
+
 
 // ── DRAWER ──
 function openDrawer(){
@@ -872,176 +891,866 @@ function saveCashData(){
   }
 }
 
-// ── CASH TRACKER FUNCTIONS ──
-function openCashForm(mode){
-  cashFormMode=mode;
-  const form=document.getElementById('cash-form');
-  const icon=document.getElementById('cash-form-icon');
-  const submitBtn=document.getElementById('cash-submit-btn');
-  if(mode==='add'){
-    icon.innerHTML=`<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>`;
-    icon.style.background='rgba(16,185,129,.15)';icon.style.color='var(--green)';
-    document.getElementById('cash-form-title').style.color='var(--green)';
-    submitBtn.className='sbtn sbtn-g';
-    submitBtn.innerHTML='<span class="bn">যোগ করুন ✓</span><span class="en">Add ✓</span>';
-    renderQtags('cash-qtags','cashAdd','cash-note');
-  } else {
-    icon.innerHTML=`<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/></svg>`;
-    icon.style.background='rgba(239,68,68,.12)';icon.style.color='var(--red)';
-    document.getElementById('cash-form-title').style.color='var(--red)';
-    submitBtn.className='sbtn sbtn-r';
-    submitBtn.innerHTML='<span class="bn">বিয়োগ করুন ✓</span><span class="en">Deduct ✓</span>';
-    renderQtags('cash-qtags','cashSub','cash-note');
+// ── EXPENSE TRACKER PRO METADATA & DATA STRUCTURES ──
+let CASH_SELECTED_MONTH = new Date().toISOString().slice(0, 7);
+let CASH_TIME_FILTER = 'month'; // 'month' | 'last_month' | 'all'
+let WALLET_FILTER = 'all';
+let SELECTED_FORM_WALLET = 'cash';
+let SELECTED_FORM_CAT = '';
+let SELECTED_QA_WALLET = 'cash';
+let SELECTED_QA_CAT = '';
+let QA_MODE = 'sub';
+let TF_FROM_WALLET = 'bank';
+let TF_TO_WALLET = 'bkash';
+
+const WALLET_META = {
+  cash:  { name: 'নগদ', en: 'Cash', icon: '💵', color: '#10b981' },
+  bkash: { name: 'বিকাশ', en: 'bKash', icon: '📱', color: '#e11d48' },
+  nagad: { name: 'নগদ (Nagad)', en: 'Nagad', icon: '📱', color: '#f97316' },
+  bank:  { name: 'ব্যাংক', en: 'Bank', icon: '🏦', color: '#3b82f6' }
+};
+
+const EXPENSE_CATEGORIES = [
+  { id: 'food', e: '🍔', bn: 'খাবার', en: 'Food', color: '#f97316' },
+  { id: 'transport', e: '🚌', bn: 'যাতায়াত', en: 'Transport', color: '#3b82f6' },
+  { id: 'rent', e: '🏠', bn: 'বাসা ভাড়া', en: 'Rent', color: '#a855f7' },
+  { id: 'bills', e: '💡', bn: 'বিল / রিচার্জ', en: 'Bills', color: '#06b6d4' },
+  { id: 'shopping', e: '🛍️', bn: 'কেনাকাটা', en: 'Shopping', color: '#ec4899' },
+  { id: 'health', e: '💊', bn: 'ওষুধ / স্বাস্থ্য', en: 'Health', color: '#ef4444' },
+  { id: 'education', e: '🎓', bn: 'শিক্ষা', en: 'Education', color: '#6366f1' },
+  { id: 'entertainment', e: '🍿', bn: 'বিনোদন', en: 'Entertainment', color: '#10b981' },
+  { id: 'family', e: '👨‍👩‍👧', bn: 'পরিবার', en: 'Family', color: '#eab308' },
+  { id: 'other', e: '📦', bn: 'অন্যান্য', en: 'Other', color: '#64748b' }
+];
+
+const INCOME_CATEGORIES = [
+  { id: 'salary', e: '💼', bn: 'বেতন', en: 'Salary', color: '#10b981' },
+  { id: 'business', e: '📈', bn: 'ব্যবসা', en: 'Business', color: '#06b6d4' },
+  { id: 'bonus', e: '🎁', bn: 'বোনাস', en: 'Bonus', color: '#f59e0b' },
+  { id: 'freelance', e: '💻', bn: 'ফ্রিল্যান্সিং', en: 'Freelance', color: '#8b5cf6' },
+  { id: 'gift', e: '🤝', bn: 'উপহার / সাহায্য', en: 'Gift', color: '#ec4899' },
+  { id: 'other_in', e: '💰', bn: 'অন্যান্য আয়', en: 'Other', color: '#3b82f6' }
+];
+
+function ensureWallets(){
+  if(!CASH_DB.wallets){
+    CASH_DB.wallets = {
+      cash: CASH_DB.balance || 0,
+      bkash: 0,
+      nagad: 0,
+      bank: 0
+    };
   }
-  document.getElementById('cash-amt').value='';
-  document.getElementById('cash-note').value='';
-  const todayStr=localDateStr();
-  const dateEl=document.getElementById('cash-date');
-  dateEl.value=todayStr;
+}
+
+// ── 2.1 MULTI-WALLET RENDERING & TRANSFERS ──
+function renderWallets(){
+  ensureWallets();
+  const grid = document.getElementById('wallets-grid');
+  if(!grid) return;
+  const w = CASH_DB.wallets;
+  const keys = ['cash', 'bkash', 'nagad', 'bank'];
+  grid.innerHTML = keys.map(k => {
+    const meta = WALLET_META[k];
+    const isAct = WALLET_FILTER === k;
+    const amt = w[k] || 0;
+    return `
+      <div class="wallet-card ${isAct ? 'active' : ''}" onclick="toggleWalletFilter('${k}')">
+        <div class="wcard-top">
+          <span class="wcard-icon">${meta.icon}</span>
+          <span class="wcard-name">${LANG==='bn'?meta.name:meta.en}</span>
+        </div>
+        <div class="wcard-amt">৳${fmt(amt)}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+function toggleWalletFilter(k){
+  if(WALLET_FILTER === k){
+    WALLET_FILTER = 'all';
+    toast(LANG==='bn'?'সব ওয়ালেটের লেনদেন প্রদর্শিত হচ্ছে':'Showing all wallets');
+  } else {
+    WALLET_FILTER = k;
+    const meta = WALLET_META[k];
+    toast(`${meta.icon} ${LANG==='bn'?meta.name:meta.en} ফিল্টার করা হয়েছে`);
+  }
+  renderCash();
+}
+
+function openTransferModal(){
+  ensureWallets();
+  document.getElementById('tf-amt').value = '';
+  document.getElementById('tf-note').value = '';
+  selectTransferWallet('from', 'bank');
+  selectTransferWallet('to', 'bkash');
+  document.getElementById('m-transfer').classList.add('on');
+}
+
+function selectTransferWallet(type, w, btn){
+  if(type === 'from'){
+    TF_FROM_WALLET = w;
+    document.querySelectorAll('#tf-from-row .wsel-btn').forEach(b => b.classList.toggle('on', b.dataset.w === w));
+  } else {
+    TF_TO_WALLET = w;
+    document.querySelectorAll('#tf-to-row .wsel-btn').forEach(b => b.classList.toggle('on', b.dataset.w === w));
+  }
+}
+
+function confirmTransfer(){
+  const amt = parseFloat(document.getElementById('tf-amt').value);
+  const note = document.getElementById('tf-note').value.trim() || (LANG==='bn'?'ওয়ালেট ফান্ড ট্রান্সফার':'Wallet Fund Transfer');
+  if(!amt || amt <= 0){
+    toast('❌ সঠিক পরিমাণ দিন!');
+    return;
+  }
+  if(TF_FROM_WALLET === TF_TO_WALLET){
+    toast('❌ প্রেরক ও প্রাপক অ্যাকাউন্ট একই হতে পারে না!');
+    return;
+  }
+  ensureWallets();
+  if((CASH_DB.wallets[TF_FROM_WALLET] || 0) < amt){
+    toast('❌ প্রেরক অ্যাকাউন্টে পর্যাপ্ত ব্যালেন্স নেই!');
+    return;
+  }
+  CASH_DB.wallets[TF_FROM_WALLET] -= amt;
+  CASH_DB.wallets[TF_TO_WALLET] = (CASH_DB.wallets[TF_TO_WALLET] || 0) + amt;
+  const ts = Date.now();
+  const fromMeta = WALLET_META[TF_FROM_WALLET];
+  const toMeta = WALLET_META[TF_TO_WALLET];
+  const transferDesc = `${fromMeta.icon} ${fromMeta.name} → ${toMeta.icon} ${toMeta.name} (${note})`;
+  CASH_DB.history.unshift({
+    id: ts,
+    type: 'transfer',
+    amt: amt,
+    fromWallet: TF_FROM_WALLET,
+    toWallet: TF_TO_WALLET,
+    wallet: TF_FROM_WALLET,
+    note: transferDesc,
+    date: ts
+  });
+  saveCashData();
+  cm('m-transfer');
+  renderCash();
+  toast(`✅ ৳${fmt(amt)} ট্রান্সফার সফল হয়েছে!`);
+}
+
+// ── 3.2 QUICK AMOUNT CHIPS ──
+function addQuickAmount(val, targetId = 'cash-amt'){
+  const input = document.getElementById(targetId);
+  if(!input) return;
+  if(val === 'clear'){
+    input.value = '';
+    input.classList.remove('has-val');
+    return;
+  }
+  const curr = parseFloat(input.value) || 0;
+  input.value = curr + val;
+  input.classList.add('has-val');
+}
+
+// ── 2.2 CATEGORY GRID & SELECTION ──
+function selectFormWallet(w, btn){
+  SELECTED_FORM_WALLET = w;
+  document.querySelectorAll('#form-wallet-row .wsel-btn').forEach(b => b.classList.toggle('on', b.dataset.w === w));
+}
+
+function renderFormCategories(mode, containerId = 'form-cat-grid', activeCat = ''){
+  const el = document.getElementById(containerId);
+  if(!el) return;
+  const cats = mode === 'add' ? INCOME_CATEGORIES : EXPENSE_CATEGORIES;
+  if(!activeCat && cats.length) activeCat = cats[0].id;
+  if(containerId === 'form-cat-grid') SELECTED_FORM_CAT = activeCat;
+  else SELECTED_QA_CAT = activeCat;
+
+  el.innerHTML = cats.map(c => `
+    <div class="cat-tile ${c.id === activeCat ? 'on' : ''}" onclick="selectCategoryTile('${c.id}', '${containerId}')">
+      <span class="cat-tile-icon">${c.e}</span>
+      <span class="cat-tile-name">${LANG === 'bn' ? c.bn : c.en}</span>
+    </div>
+  `).join('');
+}
+
+function selectCategoryTile(catId, containerId){
+  const isForm = containerId === 'form-cat-grid';
+  const isAdd = isForm ? cashFormMode === 'add' : QA_MODE === 'add';
+  const cats = isAdd ? INCOME_CATEGORIES : EXPENSE_CATEGORIES;
+  const c = cats.find(x => x.id === catId);
+  if(isForm){
+    SELECTED_FORM_CAT = catId;
+    const noteInput = document.getElementById('cash-note');
+    if(noteInput && (!noteInput.value.trim() || cats.some(x => x.bn === noteInput.value || x.en === noteInput.value))){
+      noteInput.value = LANG === 'bn' ? c.bn : c.en;
+      noteInput.classList.add('has-val');
+    }
+  } else {
+    SELECTED_QA_CAT = catId;
+    const noteInput = document.getElementById('qa-note');
+    if(noteInput && (!noteInput.value.trim() || cats.some(x => x.bn === noteInput.value || x.en === noteInput.value))){
+      noteInput.value = LANG === 'bn' ? c.bn : c.en;
+    }
+  }
+  const container = document.getElementById(containerId);
+  if(container){
+    container.querySelectorAll('.cat-tile').forEach((t, i) => {
+      t.classList.toggle('on', cats[i] && cats[i].id === catId);
+    });
+  }
+}
+
+// ── 3.1 QUICK ADD BOTTOM SHEET ──
+function openQuickAddSheet(){
+  setQuickAddType('sub');
+  document.getElementById('qa-amt').value = '';
+  document.getElementById('qa-note').value = '';
+  document.getElementById('qa-name').value = '';
+  document.getElementById('m-quickadd').classList.add('on');
+  setTimeout(() => {
+    const el = document.getElementById('qa-amt');
+    if(el) el.focus();
+  }, 180);
+}
+
+function setQuickAddType(t){
+  QA_MODE = t;
+  const tabSub = document.getElementById('qa-tab-sub');
+  const tabAdd = document.getElementById('qa-tab-add');
+  const tabHisab = document.getElementById('qa-tab-hisab');
+  const noteWrap = document.getElementById('qa-note-wrap');
+  const nameWrap = document.getElementById('qa-name-wrap');
+  const walletSec = document.getElementById('qa-wallet-sec');
+  const catSec = document.getElementById('qa-cat-sec');
+  const subBtn = document.getElementById('qa-submit-btn');
+
+  tabSub.classList.toggle('on', t === 'sub');
+  tabAdd.classList.toggle('on', t === 'add');
+  tabHisab.classList.toggle('on', t === 'hisab');
+
+  if(t === 'hisab'){
+    nameWrap.style.display = 'block';
+    noteWrap.style.display = 'block';
+    walletSec.style.display = 'none';
+    catSec.style.display = 'none';
+    subBtn.className = 'sbtn sbtn-g';
+    subBtn.innerHTML = '<span class="bn">পাওনা হিসেবে যোগ ✓</span><span class="en">Add Receivable ✓</span>';
+  } else {
+    nameWrap.style.display = 'none';
+    noteWrap.style.display = 'block';
+    walletSec.style.display = 'block';
+    catSec.style.display = 'block';
+    if(t === 'sub'){
+      subBtn.className = 'sbtn sbtn-r';
+      subBtn.innerHTML = '<span class="bn">খরচ রেকর্ড করুন ✓</span><span class="en">Deduct Expense ✓</span>';
+      renderFormCategories('sub', 'qa-cat-grid');
+    } else {
+      subBtn.className = 'sbtn sbtn-g';
+      subBtn.innerHTML = '<span class="bn">আয় যোগ করুন ✓</span><span class="en">Add Income ✓</span>';
+      renderFormCategories('add', 'qa-cat-grid');
+    }
+  }
+}
+
+function selectQAWallet(w, btn){
+  SELECTED_QA_WALLET = w;
+  document.querySelectorAll('#qa-wallet-row .wsel-btn').forEach(b => b.classList.toggle('on', b.dataset.w === w));
+}
+
+function submitQuickAdd(){
+  const amt = parseFloat(document.getElementById('qa-amt').value);
+  if(!amt || amt <= 0){
+    toast('❌ সঠিক পরিমাণ দিন!');
+    return;
+  }
+  if(QA_MODE === 'hisab'){
+    const name = document.getElementById('qa-name').value.trim();
+    if(!name){
+      toast('❌ ব্যক্তির নাম লিখুন!');
+      return;
+    }
+    const note = document.getElementById('qa-note').value.trim() || (LANG==='bn'?'পাওনা হিসাব':'Receivable');
+    const ts = Date.now();
+    const newEntry = {
+      id: ts,
+      name: name,
+      original: amt,
+      remaining: amt,
+      history: [{ t: 'add', amt: amt, note: note, date: ts }]
+    };
+    DB.receive.unshift(newEntry);
+    saveData();
+    render();
+    cm('m-quickadd');
+    toast(LANG === 'bn' ? `✅ "${name}" এর কাছে ৳${fmt(amt)} পাওনা যোগ হয়েছে!` : `✅ Added ৳${fmt(amt)} receivable!`);
+    return;
+  }
+
+  ensureWallets();
+  const ts = Date.now();
+  const w = SELECTED_QA_WALLET;
+  const cats = QA_MODE === 'add' ? INCOME_CATEGORIES : EXPENSE_CATEGORIES;
+  const catObj = cats.find(x => x.id === (SELECTED_QA_CAT || (cats[0] && cats[0].id)));
+  const note = document.getElementById('qa-note').value.trim() || (catObj ? (LANG === 'bn' ? catObj.bn : catObj.en) : (QA_MODE === 'add' ? 'টাকা যোগ' : 'খরচ'));
+
+  if(QA_MODE === 'add'){
+    CASH_DB.wallets[w] = (CASH_DB.wallets[w] || 0) + amt;
+    CASH_DB.balance += amt;
+    CASH_DB.history.unshift({
+      id: ts,
+      type: 'add',
+      amt: amt,
+      note: note,
+      category: catObj ? catObj.id : 'other_in',
+      wallet: w,
+      date: ts
+    });
+    toast(`✅ ৳${fmt(amt)} আয় যোগ হয়েছে! (${WALLET_META[w]?.name || w})`);
+  } else {
+    CASH_DB.wallets[w] = (CASH_DB.wallets[w] || 0) - amt;
+    CASH_DB.balance -= amt;
+    CASH_DB.history.unshift({
+      id: ts,
+      type: 'sub',
+      amt: amt,
+      note: note,
+      category: catObj ? catObj.id : 'other',
+      wallet: w,
+      date: ts
+    });
+    toast(`💸 ৳${fmt(amt)} খরচ হয়েছে! (${WALLET_META[w]?.name || w})`);
+  }
+
+  saveCashData();
+  cm('m-quickadd');
+  renderCash();
+}
+
+// ── 4.3 MONTH SWITCHER LOGIC ──
+function changeCashMonth(delta){
+  const parts = CASH_SELECTED_MONTH.split('-');
+  let y = parseInt(parts[0], 10);
+  let m = parseInt(parts[1], 10) - 1;
+  m += delta;
+  if(m < 0){ m = 11; y--; }
+  else if(m > 11){ m = 0; y++; }
+  const mm = String(m + 1).padStart(2, '0');
+  CASH_SELECTED_MONTH = `${y}-${mm}`;
+  CASH_TIME_FILTER = 'month';
+  updateMonthFilterUI();
+  renderCash();
+}
+
+function setCashTimeFilter(mode){
+  CASH_TIME_FILTER = mode;
+  const now = new Date();
+  if(mode === 'month'){
+    CASH_SELECTED_MONTH = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  } else if(mode === 'last_month'){
+    const prev = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    CASH_SELECTED_MONTH = `${prev.getFullYear()}-${String(prev.getMonth() + 1).padStart(2, '0')}`;
+  }
+  updateMonthFilterUI();
+  renderCash();
+}
+
+function updateMonthFilterUI(){
+  const btnCurr = document.getElementById('mf-curr');
+  const btnPrev = document.getElementById('mf-prev');
+  const btnAll = document.getElementById('mf-all');
+  if(btnCurr) btnCurr.classList.toggle('on', CASH_TIME_FILTER === 'month');
+  if(btnPrev) btnPrev.classList.toggle('on', CASH_TIME_FILTER === 'last_month');
+  if(btnAll) btnAll.classList.toggle('on', CASH_TIME_FILTER === 'all');
+
+  const lbl = document.getElementById('cash-month-label');
+  if(lbl){
+    if(CASH_TIME_FILTER === 'all'){
+      lbl.textContent = LANG === 'bn' ? 'সব সময়' : 'All Time';
+    } else {
+      const [y, m] = CASH_SELECTED_MONTH.split('-').map(Number);
+      const d = new Date(y, m - 1, 1);
+      lbl.textContent = d.toLocaleDateString(LANG === 'bn' ? 'bn-BD' : 'en-GB', { month: 'long', year: 'numeric' });
+    }
+  }
+  const donutTag = document.getElementById('donut-period-tag');
+  if(donutTag){
+    donutTag.textContent = CASH_TIME_FILTER === 'all' ? (LANG === 'bn' ? 'সব সময়' : 'All Time') : (document.getElementById('cash-month-label')?.textContent || '');
+  }
+}
+
+// ── 3.3 INTERACTIVE SVG DONUT CHART ──
+function renderDonutChart(expenses){
+  const wrap = document.getElementById('donut-chart-body');
+  if(!wrap) return;
+  const total = expenses.reduce((s, h) => s + h.amt, 0);
+  if(!expenses.length || total <= 0){
+    wrap.innerHTML = `<div style="color:var(--muted);font-size:12px;text-align:center;padding:16px;">${LANG==='bn'?'এই সময়ে কোনো খরচ রেকর্ড করা হয়নি':'No expenses recorded for this period'}</div>`;
+    return;
+  }
+
+  const map = {};
+  expenses.forEach(h => {
+    let catId = h.category;
+    if(!catId){
+      const found = EXPENSE_CATEGORIES.find(c => (h.note && (h.note.includes(c.bn) || h.note.includes(c.en))));
+      catId = found ? found.id : 'other';
+    }
+    map[catId] = (map[catId] || 0) + h.amt;
+  });
+
+  const items = Object.entries(map).map(([id, amt]) => {
+    const meta = EXPENSE_CATEGORIES.find(c => c.id === id) || { id, e: '📦', bn: 'অন্যান্য', en: 'Other', color: '#64748b' };
+    return {
+      ...meta,
+      amt,
+      pct: (amt / total) * 100
+    };
+  }).sort((a, b) => b.amt - a.amt);
+
+  const r = 58;
+  const circ = 2 * Math.PI * r;
+  let offset = 0;
+
+  const circles = items.map(it => {
+    const slice = (it.amt / total) * circ;
+    const svgCircle = `
+      <circle cx="80" cy="80" r="${r}" fill="none" stroke="${it.color}" stroke-width="20"
+        stroke-dasharray="${slice.toFixed(2)} ${circ.toFixed(2)}"
+        stroke-dashoffset="${(-offset).toFixed(2)}"
+        style="transition:stroke-dasharray .5s ease, stroke-dashoffset .5s ease;"
+      ></circle>
+    `;
+    offset += slice;
+    return svgCircle;
+  }).join('');
+
+  const legend = items.map(it => `
+    <div class="dleg-item">
+      <span class="dleg-dot" style="background:${it.color}"></span>
+      <div class="dleg-info">
+        <span class="dleg-name">${it.e} ${LANG === 'bn' ? it.bn : it.en}</span>
+        <span class="dleg-val">৳${fmt(it.amt)} (${Math.round(it.pct)}%)</span>
+      </div>
+    </div>
+  `).join('');
+
+  wrap.innerHTML = `
+    <div class="donut-svg-wrap">
+      <svg viewBox="0 0 160 160">
+        <circle cx="80" cy="80" r="${r}" fill="none" stroke="var(--border)" stroke-width="20" opacity="0.3"></circle>
+        ${circles}
+      </svg>
+      <div class="donut-center-info">
+        <div class="dci-lbl">${LANG === 'bn' ? 'মোট খরচ' : 'Expense'}</div>
+        <div class="dci-val" style="color:var(--red);">৳${fmt(total)}</div>
+      </div>
+    </div>
+    <div class="donut-legend-wrap">
+      ${legend}
+    </div>
+  `;
+}
+
+// ── 3.4 MICRO-SPENDING INSIGHTS ──
+function renderMicroInsights(allHistory){
+  const box = document.getElementById('cash-insight-box');
+  const txt = document.getElementById('cib-text');
+  if(!box || !txt) return;
+
+  const now = new Date();
+  const todayStr = localDateStr(now);
+  const yesterday = new Date(now.getTime() - 86400000);
+  const yestStr = localDateStr(yesterday);
+
+  const todayExpenses = allHistory.filter(h => h.type === 'sub' && localDateStr(new Date(h.date)) === todayStr);
+  const yestExpenses = allHistory.filter(h => h.type === 'sub' && localDateStr(new Date(h.date)) === yestStr);
+
+  const todayTot = todayExpenses.reduce((s, h) => s + h.amt, 0);
+  const yestTot = yestExpenses.reduce((s, h) => s + h.amt, 0);
+
+  const thisMonth = allHistory.filter(h => h.type === 'sub' && localDateStr(new Date(h.date)).slice(0, 7) === todayStr.slice(0, 7));
+  const catMap = {};
+  thisMonth.forEach(h => {
+    const c = h.category || 'other';
+    catMap[c] = (catMap[c] || 0) + h.amt;
+  });
+  const topCatPair = Object.entries(catMap).sort((a, b) => b[1] - a[1])[0];
+  let topCatName = '';
+  if(topCatPair){
+    const meta = EXPENSE_CATEGORIES.find(c => c.id === topCatPair[0]);
+    topCatName = meta ? `${meta.e} ${LANG === 'bn' ? meta.bn : meta.en} (৳${fmt(topCatPair[1])})` : `৳${fmt(topCatPair[1])}`;
+  }
+
+  let insightMsg = '';
+  if(todayTot > 0){
+    if(yestTot > 0){
+      const diff = Math.round(((todayTot - yestTot) / yestTot) * 100);
+      const comp = diff <= 0 ? `${Math.abs(diff)}% কম খরচ` : `${diff}% বেশি খরচ`;
+      insightMsg = LANG === 'bn' 
+        ? `আজকের মোট খরচ <b>৳${fmt(todayTot)}</b> (গতকালের চেয়ে ${comp})। ${topCatName ? 'শীর্ষ খাত: <b>' + topCatName + '</b>' : ''}`
+        : `Today's spend <b>৳${fmt(todayTot)}</b> (${comp} vs yesterday). ${topCatName ? 'Top: <b>' + topCatName + '</b>' : ''}`;
+    } else {
+      insightMsg = LANG === 'bn'
+        ? `আজকের মোট খরচ <b>৳${fmt(todayTot)}</b>। ${topCatName ? 'এই মাসের শীর্ষ খাত: <b>' + topCatName + '</b>' : ''}`
+        : `Today's spend <b>৳${fmt(todayTot)}</b>. ${topCatName ? 'Top category: <b>' + topCatName + '</b>' : ''}`;
+    }
+  } else {
+    insightMsg = LANG === 'bn'
+      ? `আজকে এখনো কোনো খরচ রেকর্ড হয়নি! 🎉 ${topCatName ? 'এই মাসের শীর্ষ খাত: <b>' + topCatName + '</b>' : ''}`
+      : `No expenses logged today! 🎉 ${topCatName ? 'Top category this month: <b>' + topCatName + '</b>' : ''}`;
+  }
+
+  txt.innerHTML = insightMsg;
+}
+
+// ── CASH FORM & CRUD ──
+function openCashForm(mode){
+  cashFormMode = mode;
+  ensureWallets();
+  const form = document.getElementById('cash-form');
+  const icon = document.getElementById('cash-form-icon');
+  const submitBtn = document.getElementById('cash-submit-btn');
+
+  if(mode === 'add'){
+    icon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>`;
+    icon.style.background = 'rgba(16,185,129,.15)';
+    icon.style.color = 'var(--green)';
+    document.getElementById('cash-form-title').style.color = 'var(--green)';
+    submitBtn.className = 'sbtn sbtn-g';
+    submitBtn.innerHTML = '<span class="bn">আয় যোগ করুন ✓</span><span class="en">Add Income ✓</span>';
+    renderFormCategories('add');
+  } else {
+    icon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/></svg>`;
+    icon.style.background = 'rgba(239,68,68,.12)';
+    icon.style.color = 'var(--red)';
+    document.getElementById('cash-form-title').style.color = 'var(--red)';
+    submitBtn.className = 'sbtn sbtn-r';
+    submitBtn.innerHTML = '<span class="bn">খরচ রেকর্ড করুন ✓</span><span class="en">Deduct Expense ✓</span>';
+    renderFormCategories('sub');
+  }
+
+  document.getElementById('cash-amt').value = '';
+  document.getElementById('cash-note').value = '';
+  const todayStr = localDateStr();
+  const dateEl = document.getElementById('cash-date');
+  dateEl.value = todayStr;
   dateEl.classList.add('has-val');
   document.getElementById('cash-amt').classList.remove('has-val');
   document.getElementById('cash-note').classList.remove('has-val');
+
+  selectFormWallet('cash');
   form.classList.remove('hidden');
   document.getElementById('cash-amt').focus();
 }
+
 function closeCashForm(){
   document.getElementById('cash-form').classList.add('hidden');
 }
+
 function submitCash(){
-  const amt=parseFloat(document.getElementById('cash-amt').value);
-  const note=document.getElementById('cash-note').value.trim()||( cashFormMode==='add'?'টাকা যোগ':'খরচ');
-  if(isNaN(amt)||amt<=0){toast('❌ সঠিক পরিমাণ দিন!');return;}
-  const ts=Date.now();
-  const dateVal=document.getElementById('cash-date').value;
-  const entryDate=dateVal?new Date(dateVal).getTime():ts;
-  if(cashFormMode==='add'){
-    CASH_DB.balance+=amt;
-    CASH_DB.history.unshift({id:ts,type:'add',amt,note,date:entryDate});
-    toast('✅ ৳'+fmt(amt)+' যোগ হয়েছে!');
+  const amt = parseFloat(document.getElementById('cash-amt').value);
+  const note = document.getElementById('cash-note').value.trim() || (cashFormMode === 'add' ? 'টাকা যোগ' : 'খরচ');
+  if(isNaN(amt) || amt <= 0){
+    toast('❌ সঠিক পরিমাণ দিন!');
+    return;
+  }
+  ensureWallets();
+  const ts = Date.now();
+  const dateVal = document.getElementById('cash-date').value;
+  const entryDate = dateVal ? new Date(dateVal + 'T12:00:00').getTime() : ts;
+  const w = SELECTED_FORM_WALLET || 'cash';
+  const cat = SELECTED_FORM_CAT || (cashFormMode === 'add' ? 'other_in' : 'other');
+
+  if(cashFormMode === 'add'){
+    CASH_DB.wallets[w] = (CASH_DB.wallets[w] || 0) + amt;
+    CASH_DB.balance += amt;
+    CASH_DB.history.unshift({
+      id: ts,
+      type: 'add',
+      amt: amt,
+      note: note,
+      category: cat,
+      wallet: w,
+      date: entryDate
+    });
+    toast(`✅ ৳${fmt(amt)} যোগ হয়েছে! (${WALLET_META[w]?.name || w})`);
   } else {
-    if(amt>CASH_DB.balance){toast('❌ পর্যাপ্ত ব্যালেন্স নেই!');return;}
-    CASH_DB.balance-=amt;
-    CASH_DB.history.unshift({id:ts,type:'sub',amt,note,date:entryDate});
-    toast('💸 ৳'+fmt(amt)+' খরচ হয়েছে!');
+    CASH_DB.wallets[w] = (CASH_DB.wallets[w] || 0) - amt;
+    CASH_DB.balance -= amt;
+    CASH_DB.history.unshift({
+      id: ts,
+      type: 'sub',
+      amt: amt,
+      note: note,
+      category: cat,
+      wallet: w,
+      date: entryDate
+    });
+    toast(`💸 ৳${fmt(amt)} খরচ হয়েছে! (${WALLET_META[w]?.name || w})`);
   }
   saveCashData();
   closeCashForm();
   renderCash();
 }
+
 function deleteCashEntry(id){
-  const entry=CASH_DB.history.find(h=>h.id===id);
-  if(!entry)return;
-  const idx=CASH_DB.history.findIndex(h=>h.id===id);
-  const snap=JSON.parse(JSON.stringify(entry));
-  const balBefore=CASH_DB.balance;
-  if(entry.type==='add') CASH_DB.balance-=entry.amt;
-  else CASH_DB.balance+=entry.amt;
-  CASH_DB.balance=Math.max(0,CASH_DB.balance);
-  CASH_DB.history=CASH_DB.history.filter(h=>h.id!==id);
-  saveCashData();renderCash();
-  toast(LANG==='bn'?`🗑️ "${snap.note}" মুছে গেছে`:`🗑️ "${snap.note}" deleted`,()=>{
-    CASH_DB.history.splice(Math.min(idx,CASH_DB.history.length),0,snap);
-    CASH_DB.balance=balBefore;
-    saveCashData();renderCash();toast(LANG==='bn'?'↩️ ফিরিয়ে আনা হয়েছে':'↩️ Restored');
+  const entry = CASH_DB.history.find(h => h.id === id);
+  if(!entry) return;
+  const idx = CASH_DB.history.findIndex(h => h.id === id);
+  const snap = JSON.parse(JSON.stringify(entry));
+  ensureWallets();
+  const w = entry.wallet || 'cash';
+  const balBefore = CASH_DB.balance;
+  const walletBefore = CASH_DB.wallets[w] || 0;
+
+  if(entry.type === 'add'){
+    CASH_DB.balance -= entry.amt;
+    CASH_DB.wallets[w] = (CASH_DB.wallets[w] || 0) - entry.amt;
+  } else if(entry.type === 'sub'){
+    CASH_DB.balance += entry.amt;
+    CASH_DB.wallets[w] = (CASH_DB.wallets[w] || 0) + entry.amt;
+  } else if(entry.type === 'transfer'){
+    if(entry.fromWallet && entry.toWallet){
+      CASH_DB.wallets[entry.fromWallet] = (CASH_DB.wallets[entry.fromWallet] || 0) + entry.amt;
+      CASH_DB.wallets[entry.toWallet] = (CASH_DB.wallets[entry.toWallet] || 0) - entry.amt;
+    }
+  }
+
+  CASH_DB.history = CASH_DB.history.filter(h => h.id !== id);
+  saveCashData();
+  renderCash();
+  toast(LANG === 'bn' ? `🗑️ "${snap.note}" মুছে গেছে` : `🗑️ "${snap.note}" deleted`, () => {
+    CASH_DB.history.splice(Math.min(idx, CASH_DB.history.length), 0, snap);
+    CASH_DB.balance = balBefore;
+    CASH_DB.wallets[w] = walletBefore;
+    saveCashData();
+    renderCash();
+    toast(LANG === 'bn' ? '↩️ ফিরিয়ে আনা হয়েছে' : '↩️ Restored');
   });
 }
+
 function clearCashHistory(){
-  if(!confirm('সব ইতিহাস মুছবেন? ব্যালেন্স ০ হয়ে যাবে।'))return;
-  CASH_DB={balance:0,history:[]};
+  if(!confirm('সব ইতিহাস মুছবেন? ব্যালেন্স ০ হয়ে যাবে।')) return;
+  CASH_DB = { balance: 0, wallets: { cash: 0, bkash: 0, nagad: 0, bank: 0 }, history: [] };
   saveCashData();
   renderCash();
   toast('🗑️ সব মুছে গেছে');
 }
+
 function openCashEdit(id){
-  const h=CASH_DB.history.find(x=>x.id===id);
-  if(!h)return;
-  document.getElementById('cedit-id').value=id;
-  document.getElementById('cedit-amt').value=h.amt;
-  document.getElementById('cedit-note').value=h.note||'';
-  document.getElementById('cedit-type').value=h.type;
+  const h = CASH_DB.history.find(x => x.id === id);
+  if(!h) return;
+  document.getElementById('cedit-id').value = id;
+  document.getElementById('cedit-amt').value = h.amt;
+  document.getElementById('cedit-note').value = h.note || '';
+  document.getElementById('cedit-type').value = h.type;
   document.getElementById('m-cedit').classList.add('on');
 }
+
 function confirmCashEdit(){
-  const id=Number(document.getElementById('cedit-id').value);
-  const amt=parseFloat(document.getElementById('cedit-amt').value);
-  const note=document.getElementById('cedit-note').value.trim();
-  if(!amt||amt<=0){toast('❌ সঠিক পরিমাণ দিন');return;}
-  const h=CASH_DB.history.find(x=>x.id===id);
-  if(!h)return;
-  // adjust balance
-  if(h.type==='add') CASH_DB.balance-=h.amt;
-  else CASH_DB.balance+=h.amt;
-  h.amt=amt;
-  h.note=note||h.note;
-  if(h.type==='add') CASH_DB.balance+=amt;
-  else CASH_DB.balance-=amt;
-  CASH_DB.balance=Math.max(0,CASH_DB.balance);
-  saveCashData();renderCash();cm('m-cedit');
-  toast(LANG==='bn'?'✏️ আপডেট হয়েছে':'✏️ Updated');
-}
-function renderCash(){
-  const bal=CASH_DB.balance||0;
-  const hist=CASH_DB.history||[];
-  // balance
-  document.getElementById('cash-balance').textContent='৳'+fmt(bal);
-  // stats
-  const totalIn=hist.filter(h=>h.type==='add').reduce((s,h)=>s+h.amt,0);
-  const totalOut=hist.filter(h=>h.type==='sub').reduce((s,h)=>s+h.amt,0);
-  document.getElementById('cash-total-in').textContent='৳'+fmt(totalIn);
-  document.getElementById('cash-total-out').textContent='৳'+fmt(totalOut);
-  document.getElementById('cash-txn-count').textContent=hist.length;
-  // last txn
-  const sub=document.getElementById('cash-hero-sub');
-  if(hist.length>0){
-    const last=hist[0];
-    const prefix=last.type==='add'?'↑ ':'↓ ';
-    const label=last.type==='add'?(LANG==='bn'?'শেষ যোগ: ':'Last in: '):(LANG==='bn'?'শেষ খরচ: ':'Last out: ');
-    sub.textContent=prefix+label+'৳'+fmt(last.amt)+' — '+last.note;
-  } else {
-    sub.innerHTML='<span class="bn">কোনো লেনদেন নেই</span><span class="en" style="display:none">No transactions yet</span>';
-  }
-  // budget bar
-  const budget=CASH_DB.budget||0;
-  const budgetWrap=document.getElementById('budget-wrap');
-  const budgetCta=document.getElementById('budget-cta');
-  if(budget>0){
-    budgetWrap.style.display='block';
-    budgetCta.style.display='none';
-    const pct=Math.min(100,Math.round((totalOut/budget)*100));
-    const fill=document.getElementById('budget-fill');
-    fill.style.width=pct+'%';
-    fill.style.background=pct<60?'var(--green)':pct<85?'var(--yellow)':'var(--red)';
-    document.getElementById('budget-pct').textContent=pct+'%';
-    document.getElementById('budget-pct').style.color=pct<60?'var(--green)':pct<85?'var(--yellow)':'var(--red)';
-    const rem=budget-totalOut;
-    document.getElementById('budget-sub').textContent=LANG==='bn'
-      ?(rem>0?`বাকি ৳${fmt(rem)} থেকে ৳${fmt(budget)}`:`বাজেট ৳${fmt(Math.abs(rem))} ছাড়িয়ে গেছে!`)
-      :(rem>0?`৳${fmt(rem)} left of ৳${fmt(budget)}`:`Over budget by ৳${fmt(Math.abs(rem))}!`);
-  } else {
-    budgetWrap.style.display='none';
-    budgetCta.style.display='block';
-  }
-  // filter history
-  const filtered=CASH_FILTER==='all'?hist:hist.filter(h=>h.type===CASH_FILTER);
-  // history list
-  const list=document.getElementById('cash-history-list');
-  if(filtered.length===0){
-    list.innerHTML=`<div class="empty"><div class="empty-i" style="color:var(--muted)"><svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg></div><div class="empty-t"><span class="bn">${CASH_FILTER==='all'?'কোনো লেনদেন নেই':'কোনো রেকর্ড নেই'}</span><span class="en">${CASH_FILTER==='all'?'No transactions yet':'No records found'}</span></div><div class="empty-s"><span class="bn">উপরের বাটন দিয়ে শুরু করুন</span><span class="en">Use the buttons above to get started</span></div></div>`;
+  const id = Number(document.getElementById('cedit-id').value);
+  const amt = parseFloat(document.getElementById('cedit-amt').value);
+  const note = document.getElementById('cedit-note').value.trim();
+  if(!amt || amt <= 0){
+    toast('❌ সঠিক পরিমাণ দিন');
     return;
   }
-  list.innerHTML=filtered.map(h=>`
-    <div class="cash-entry">
-      <div class="cash-entry-icon ${h.type==='add'?'plus':'minus'}">${h.type==='add'?'⬆️':'⬇️'}</div>
-      <div class="cash-entry-info">
-        <div class="cash-entry-note">${h.note}</div>
-        <div class="cash-entry-date">${fmtD(h.date)}</div>
-      </div>
-      <div class="cash-entry-amt ${h.type==='add'?'plus':'minus'}">${h.type==='add'?'+':'-'}৳${fmt(h.amt)}</div>
-      <button class="cash-edit-btn" onclick="openCashEdit(${h.id})"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg></button>
-      <button class="cash-del-btn" onclick="deleteCashEntry(${h.id})"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg></button>
-    </div>
-  `).join('');
+  const h = CASH_DB.history.find(x => x.id === id);
+  if(!h) return;
+  ensureWallets();
+  const w = h.wallet || 'cash';
+  const oldAmt = h.amt;
+  const diff = amt - oldAmt;
+
+  if(h.type === 'add'){
+    CASH_DB.balance += diff;
+    CASH_DB.wallets[w] = (CASH_DB.wallets[w] || 0) + diff;
+  } else if(h.type === 'sub'){
+    CASH_DB.balance -= diff;
+    CASH_DB.wallets[w] = (CASH_DB.wallets[w] || 0) - diff;
+  }
+  h.amt = amt;
+  if(note) h.note = note;
+  saveCashData();
+  renderCash();
+  cm('m-cedit');
+  toast(LANG === 'bn' ? '✏️ আপডেট হয়েছে' : '✏️ Updated');
 }
+
+// ── 4.2 RENDER CASH WITH DATE GROUPING & MODERN FINTECH CARDS ──
+function renderCash(){
+  ensureWallets();
+  const bal = Object.values(CASH_DB.wallets).reduce((s, v) => s + (Number(v) || 0), 0);
+  CASH_DB.balance = bal;
+  let hist = CASH_DB.history || [];
+
+  // 1. Balance
+  document.getElementById('cash-balance').textContent = '৳' + fmt(bal);
+
+  // 2. Multi-Wallets Grid
+  renderWallets();
+
+  // 3. Search Filter
+  const q = (document.getElementById('cash-srch')?.value || '').toLowerCase().trim();
+  if(q){
+    hist = hist.filter(h => h.note.toLowerCase().includes(q));
+  }
+
+  // 4. Type Filter
+  if(CASH_FILTER !== 'all'){
+    hist = hist.filter(h => h.type === CASH_FILTER);
+  }
+
+  // 5. Wallet Filter
+  if(WALLET_FILTER !== 'all'){
+    hist = hist.filter(h => (h.wallet === WALLET_FILTER || h.fromWallet === WALLET_FILTER || h.toWallet === WALLET_FILTER));
+  }
+
+  // 6. Time Filter (Month / All)
+  if(CASH_TIME_FILTER === 'month' || CASH_TIME_FILTER === 'last_month'){
+    hist = hist.filter(h => {
+      const d = new Date(h.date);
+      const mStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      return mStr === CASH_SELECTED_MONTH;
+    });
+  }
+
+  // Stats for filtered view
+  const totalIn = hist.filter(h => h.type === 'add').reduce((s, h) => s + h.amt, 0);
+  const totalOut = hist.filter(h => h.type === 'sub').reduce((s, h) => s + h.amt, 0);
+  const netSavings = totalIn - totalOut;
+
+  document.getElementById('cash-total-in').textContent = '৳' + fmt(totalIn);
+  document.getElementById('cash-total-out').textContent = '৳' + fmt(totalOut);
+  const savEl = document.getElementById('cash-net-savings');
+  if(savEl){
+    savEl.textContent = (netSavings >= 0 ? '+' : '-') + '৳' + fmt(Math.abs(netSavings));
+    savEl.style.color = netSavings >= 0 ? 'var(--green)' : 'var(--red)';
+  }
+
+  // Last transaction snippet
+  const sub = document.getElementById('cash-hero-sub');
+  const allHist = CASH_DB.history || [];
+  if(allHist.length > 0){
+    const last = allHist[0];
+    const prefix = last.type === 'add' ? '↑ ' : last.type === 'sub' ? '↓ ' : '⇄ ';
+    const label = last.type === 'add' ? (LANG === 'bn' ? 'শেষ যোগ: ' : 'Last in: ') : last.type === 'sub' ? (LANG === 'bn' ? 'শেষ খরচ: ' : 'Last out: ') : (LANG === 'bn' ? 'ট্রান্সফার: ' : 'Transfer: ');
+    sub.textContent = prefix + label + '৳' + fmt(last.amt) + ' — ' + last.note;
+  } else {
+    sub.innerHTML = '<span class="bn">কোনো লেনদেন নেই</span><span class="en" style="display:none">No transactions yet</span>';
+  }
+
+  // Micro-Insights (3.4)
+  renderMicroInsights(allHist);
+
+  // Donut Chart (3.3)
+  renderDonutChart(hist.filter(h => h.type === 'sub'));
+
+  // Budget Bar
+  const budget = CASH_DB.budget || 0;
+  const budgetWrap = document.getElementById('budget-wrap');
+  const budgetCta = document.getElementById('budget-cta');
+  if(budget > 0){
+    budgetWrap.style.display = 'block';
+    budgetCta.style.display = 'none';
+    const pct = Math.min(100, Math.round((totalOut / budget) * 100));
+    const fill = document.getElementById('budget-fill');
+    fill.style.width = pct + '%';
+    fill.style.background = pct < 60 ? 'var(--green)' : pct < 85 ? 'var(--yellow)' : 'var(--red)';
+    document.getElementById('budget-pct').textContent = pct + '%';
+    document.getElementById('budget-pct').style.color = pct < 60 ? 'var(--green)' : pct < 85 ? 'var(--yellow)' : 'var(--red)';
+    const rem = budget - totalOut;
+    document.getElementById('budget-sub').textContent = LANG === 'bn'
+      ? (rem > 0 ? `বাকি ৳${fmt(rem)} থেকে ৳${fmt(budget)}` : `বাজেট ৳${fmt(Math.abs(rem))} ছাড়িয়ে গেছে!`)
+      : (rem > 0 ? `৳${fmt(rem)} left of ৳${fmt(budget)}` : `Over budget by ৳${fmt(Math.abs(rem))}!`);
+  } else {
+    budgetWrap.style.display = 'none';
+    budgetCta.style.display = 'block';
+  }
+
+  // Date-Grouped History List (4.2)
+  const list = document.getElementById('cash-history-list');
+  if(hist.length === 0){
+    list.innerHTML = `<div class="empty"><div class="empty-i" style="color:var(--muted)"><svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg></div><div class="empty-t"><span class="bn">${CASH_FILTER === 'all' ? 'কোনো লেনদেন নেই' : 'কোনো রেকর্ড নেই'}</span><span class="en">${CASH_FILTER === 'all' ? 'No transactions yet' : 'No records found'}</span></div><div class="empty-s"><span class="bn">উপরের বাটন দিয়ে শুরু করুন</span><span class="en">Use the buttons above to get started</span></div></div>`;
+    return;
+  }
+
+  // Sort descending by date
+  hist.sort((a, b) => b.date - a.date);
+
+  // Group by local date string YYYY-MM-DD
+  const groups = {};
+  hist.forEach(h => {
+    const dStr = localDateStr(new Date(h.date));
+    if(!groups[dStr]) groups[dStr] = [];
+    groups[dStr].push(h);
+  });
+
+  const todayStr = localDateStr(new Date());
+  const yesterday = new Date(Date.now() - 86400000);
+  const yestStr = localDateStr(yesterday);
+  const dateKeys = Object.keys(groups).sort((a, b) => b.localeCompare(a));
+
+  list.innerHTML = dateKeys.map(dStr => {
+    const dayTxns = groups[dStr];
+    const dayOut = dayTxns.filter(h => h.type === 'sub').reduce((s, h) => s + h.amt, 0);
+    const dayIn = dayTxns.filter(h => h.type === 'add').reduce((s, h) => s + h.amt, 0);
+
+    let dayTitle = dStr;
+    const dObj = new Date(dStr + 'T12:00:00');
+    if(dStr === todayStr){
+      dayTitle = LANG === 'bn' ? '📅 আজ' : '📅 Today';
+    } else if(dStr === yestStr){
+      dayTitle = LANG === 'bn' ? '📅 গতকাল' : '📅 Yesterday';
+    } else {
+      dayTitle = '📅 ' + dObj.toLocaleDateString(LANG === 'bn' ? 'bn-BD' : 'en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+    }
+
+    const itemsHtml = dayTxns.map(h => {
+      const isAdd = h.type === 'add';
+      const isSub = h.type === 'sub';
+      const isTf = h.type === 'transfer';
+      const wMeta = WALLET_META[h.wallet] || { icon: '💵', name: 'নগদ', en: 'Cash' };
+      let catObj = null;
+      if(isSub) catObj = EXPENSE_CATEGORIES.find(c => c.id === h.category) || (EXPENSE_CATEGORIES.find(c => h.note && h.note.includes(c.bn)) || { e: '💸', color: '#ef4444' });
+      else if(isAdd) catObj = INCOME_CATEGORIES.find(c => c.id === h.category) || (INCOME_CATEGORIES.find(c => h.note && h.note.includes(c.bn)) || { e: '💰', color: '#10b981' });
+      else catObj = { e: '⇄', color: '#3b82f6' };
+
+      const iconChar = catObj.e || (isAdd ? '⬆️' : isSub ? '⬇️' : '⇄');
+      const sign = isAdd ? '+' : isSub ? '-' : '';
+      const amtColor = isAdd ? 'var(--green)' : isSub ? 'var(--red)' : 'var(--primary)';
+      const timeStr = new Date(h.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+      return `
+        <div class="cash-entry">
+          <div class="cash-entry-icon" style="background:${catObj.color}1f;font-size:18px;">${iconChar}</div>
+          <div class="cash-entry-info">
+            <div class="cash-entry-note">${h.note}</div>
+            <div class="cash-entry-date" style="display:flex;align-items:center;gap:6px;">
+              <span class="wallet-badge">${wMeta.icon} ${LANG === 'bn' ? wMeta.name : wMeta.en}</span>
+              <span>${timeStr}</span>
+            </div>
+          </div>
+          <div class="cash-entry-amt" style="color:${amtColor};font-variant-numeric:tabular-nums;">${sign}৳${fmt(h.amt)}</div>
+          ${!isTf ? `<button class="cash-edit-btn" onclick="openCashEdit(${h.id})"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg></button>` : ''}
+          <button class="cash-del-btn" onclick="deleteCashEntry(${h.id})"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg></button>
+        </div>
+      `;
+    }).join('');
+
+    return `
+      <div class="date-group">
+        <div class="date-group-hdr">
+          <div class="dgh-title">${dayTitle}</div>
+          <div class="dgh-total">
+            ${dayOut > 0 ? `<span class="dgh-out">-${LANG === 'bn' ? 'খরচ' : 'Out'}: ৳${fmt(dayOut)}</span>` : ''}
+            ${dayIn > 0 ? `<span class="dgh-in">+${LANG === 'bn' ? 'আয়' : 'In'}: ৳${fmt(dayIn)}</span>` : ''}
+          </div>
+        </div>
+        ${itemsHtml}
+      </div>
+    `;
+  }).join('');
+}
+
 
 // ── FORMAT ──
 function localDateStr(d=new Date()){return new Date(d.getTime()-(d.getTimezoneOffset()*60000)).toISOString().split('T')[0];}
@@ -2345,6 +3054,8 @@ function handleImport(e){
 }
 
 document.addEventListener('DOMContentLoaded',()=>{
+  ensureWallets();
+  updateMonthFilterUI();
   const noteField=document.getElementById('r-no');
   if(noteField){
     noteField.addEventListener('input',updateLoanNoteFields);
