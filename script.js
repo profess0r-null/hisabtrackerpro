@@ -969,11 +969,8 @@ function renderWallets(){
 function toggleWalletFilter(k){
   if(WALLET_FILTER === k){
     WALLET_FILTER = 'all';
-    toast(LANG==='bn'?'সব ওয়ালেটের লেনদেন প্রদর্শিত হচ্ছে':'Showing all wallets');
   } else {
     WALLET_FILTER = k;
-    const meta = WALLET_META[k];
-    toast(`${meta.icon} ${LANG==='bn'?meta.name:meta.en} ফিল্টার করা হয়েছে`);
   }
   renderCash();
 }
