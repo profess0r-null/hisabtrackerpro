@@ -1050,6 +1050,19 @@ function addQuickAmount(val, targetId = 'cash-amt'){
 function selectFormWallet(w, btn){
   SELECTED_FORM_WALLET = w;
   document.querySelectorAll('#form-wallet-row .wsel-btn').forEach(b => b.classList.toggle('on', b.dataset.w === w));
+  
+  const meta = WALLET_META[w] || { name: 'ক্যাশ', en: 'Cash' };
+  const wLabel = LANG === 'bn' ? meta.name : meta.en;
+  const submitBtn = document.getElementById('cash-submit-btn');
+  const titleEl = document.getElementById('cash-form-title');
+
+  if(cashFormMode === 'add'){
+    if(titleEl) titleEl.innerHTML = `<span class="bn">${wLabel}-এ টাকা যোগ</span><span class="en">Add to ${meta.en}</span>`;
+    if(submitBtn) submitBtn.innerHTML = `<span class="bn">${wLabel}-এ যোগ করুন ✓</span><span class="en">Add to ${meta.en} ✓</span>`;
+  } else {
+    if(titleEl) titleEl.innerHTML = `<span class="bn">${wLabel} থেকে খরচ</span><span class="en">Deduct from ${meta.en}</span>`;
+    if(submitBtn) submitBtn.innerHTML = `<span class="bn">${wLabel} থেকে রেকর্ড করুন ✓</span><span class="en">Deduct from ${meta.en} ✓</span>`;
+  }
 }
 
 function renderFormCategories(mode, containerId = 'form-cat-grid', activeCat = ''){
@@ -1101,6 +1114,8 @@ function openQuickAddSheet(){
   document.getElementById('qa-amt').value = '';
   document.getElementById('qa-note').value = '';
   document.getElementById('qa-name').value = '';
+  const activeW = (WALLET_FILTER && WALLET_FILTER !== 'all') ? WALLET_FILTER : 'cash';
+  selectQAWallet(activeW);
   document.getElementById('m-quickadd').classList.add('on');
   setTimeout(() => {
     const el = document.getElementById('qa-amt');
@@ -1135,13 +1150,16 @@ function setQuickAddType(t){
     noteWrap.style.display = 'block';
     walletSec.style.display = 'block';
     catSec.style.display = 'block';
+    const w = SELECTED_QA_WALLET || 'cash';
+    const meta = WALLET_META[w] || { name: 'ক্যাশ', en: 'Cash' };
+    const wLabel = LANG === 'bn' ? meta.name : meta.en;
     if(t === 'sub'){
       subBtn.className = 'sbtn sbtn-r';
-      subBtn.innerHTML = '<span class="bn">খরচ রেকর্ড করুন ✓</span><span class="en">Deduct Expense ✓</span>';
+      subBtn.innerHTML = `<span class="bn">${wLabel} থেকে খরচ রেকর্ড করুন ✓</span><span class="en">Deduct from ${meta.en} ✓</span>`;
       renderFormCategories('sub', 'qa-cat-grid');
     } else {
       subBtn.className = 'sbtn sbtn-g';
-      subBtn.innerHTML = '<span class="bn">আয় যোগ করুন ✓</span><span class="en">Add Income ✓</span>';
+      subBtn.innerHTML = `<span class="bn">${wLabel}-এ আয় যোগ করুন ✓</span><span class="en">Add to ${meta.en} ✓</span>`;
       renderFormCategories('add', 'qa-cat-grid');
     }
   }
@@ -1150,6 +1168,15 @@ function setQuickAddType(t){
 function selectQAWallet(w, btn){
   SELECTED_QA_WALLET = w;
   document.querySelectorAll('#qa-wallet-row .wsel-btn').forEach(b => b.classList.toggle('on', b.dataset.w === w));
+  const subBtn = document.getElementById('qa-submit-btn');
+  if(!subBtn || QA_MODE === 'hisab') return;
+  const meta = WALLET_META[w] || { name: 'ক্যাশ', en: 'Cash' };
+  const wLabel = LANG === 'bn' ? meta.name : meta.en;
+  if(QA_MODE === 'add'){
+    subBtn.innerHTML = `<span class="bn">${wLabel}-এ আয় যোগ করুন ✓</span><span class="en">Add to ${meta.en} ✓</span>`;
+  } else {
+    subBtn.innerHTML = `<span class="bn">${wLabel} থেকে খরচ রেকর্ড করুন ✓</span><span class="en">Deduct from ${meta.en} ✓</span>`;
+  }
 }
 
 function submitQuickAdd(){
@@ -1399,12 +1426,14 @@ function renderMicroInsights(allHistory){
 }
 
 // ── CASH FORM & CRUD ──
-function openCashForm(mode){
+function openCashForm(mode, targetWallet){
   cashFormMode = mode;
   ensureWallets();
   const form = document.getElementById('cash-form');
   const icon = document.getElementById('cash-form-icon');
   const submitBtn = document.getElementById('cash-submit-btn');
+
+  const activeW = targetWallet || (WALLET_FILTER && WALLET_FILTER !== 'all' ? WALLET_FILTER : 'cash');
 
   if(mode === 'add'){
     icon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>`;
@@ -1412,7 +1441,6 @@ function openCashForm(mode){
     icon.style.color = 'var(--green)';
     document.getElementById('cash-form-title').style.color = 'var(--green)';
     submitBtn.className = 'sbtn sbtn-g';
-    submitBtn.innerHTML = '<span class="bn">আয় যোগ করুন ✓</span><span class="en">Add Income ✓</span>';
     renderFormCategories('add');
   } else {
     icon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/></svg>`;
@@ -1420,7 +1448,6 @@ function openCashForm(mode){
     icon.style.color = 'var(--red)';
     document.getElementById('cash-form-title').style.color = 'var(--red)';
     submitBtn.className = 'sbtn sbtn-r';
-    submitBtn.innerHTML = '<span class="bn">খরচ রেকর্ড করুন ✓</span><span class="en">Deduct Expense ✓</span>';
     renderFormCategories('sub');
   }
 
@@ -1433,7 +1460,7 @@ function openCashForm(mode){
   document.getElementById('cash-amt').classList.remove('has-val');
   document.getElementById('cash-note').classList.remove('has-val');
 
-  selectFormWallet('cash');
+  selectFormWallet(activeW);
   form.classList.remove('hidden');
   document.getElementById('cash-amt').focus();
 }
@@ -1633,6 +1660,20 @@ function renderCash(){
     sub.textContent = prefix + label + '৳' + fmt(last.amt) + ' — ' + last.note;
   } else {
     sub.innerHTML = '<span class="bn">কোনো লেনদেন নেই</span><span class="en" style="display:none">No transactions yet</span>';
+  }
+
+  // Dynamic button labels based on active wallet
+  const addBtnLabel = document.getElementById('btn-add-label');
+  const subBtnLabel = document.getElementById('btn-sub-label');
+  if(addBtnLabel && subBtnLabel){
+    if(WALLET_FILTER && WALLET_FILTER !== 'all'){
+      const meta = WALLET_META[WALLET_FILTER] || { name: WALLET_FILTER, en: WALLET_FILTER };
+      addBtnLabel.innerHTML = `<span class="bn">${meta.name}-এ টাকা যোগ</span><span class="en">Add to ${meta.en}</span>`;
+      subBtnLabel.innerHTML = `<span class="bn">${meta.name} থেকে খরচ</span><span class="en">Deduct from ${meta.en}</span>`;
+    } else {
+      addBtnLabel.innerHTML = `<span class="bn">টাকা যোগ (আয়)</span><span class="en">Add Income</span>`;
+      subBtnLabel.innerHTML = `<span class="bn">খরচ করুন (ব্যয়)</span><span class="en">Add Expense</span>`;
+    }
   }
 
   // Micro-Insights (3.4)
