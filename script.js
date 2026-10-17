@@ -185,17 +185,47 @@ function initSwipe(el,type,id){
   });
 }
 
-// ── BUDGET ──
+// ── BUDGET (IN-APP MODAL) ──
 function setBudget(){
-  const cur=CASH_DB.budget||'';
-  const val=prompt(LANG==='bn'?'মাসিক বাজেট দিন (৳):':'Set monthly budget (৳):',cur);
-  if(val===null)return;
-  const num=parseFloat(val);
-  if(isNaN(num)||num<=0){toast('❌ '+(LANG==='bn'?'সঠিক পরিমাণ দিন':'Enter valid amount'));return;}
-  CASH_DB.budget=num;
+  const cur = CASH_DB.budget || 0;
+  const inp = document.getElementById('budget-modal-amt');
+  if(inp){
+    inp.value = cur > 0 ? cur : '';
+    if(cur > 0) inp.classList.add('has-val');
+    else inp.classList.remove('has-val');
+  }
+  const remBtn = document.getElementById('budget-modal-remove-btn');
+  if(remBtn) remBtn.style.display = cur > 0 ? 'block' : 'none';
+  document.getElementById('m-budget').classList.add('on');
+  setTimeout(()=>{ if(inp) inp.focus(); }, 150);
+}
+
+function confirmBudget(){
+  const inp = document.getElementById('budget-modal-amt');
+  if(!inp) return;
+  const val = inp.value.trim();
+  if(!val){
+    toast('⚠️ ' + (LANG === 'bn' ? 'সঠিক পরিমাণ দিন' : 'Enter valid amount'));
+    return;
+  }
+  const num = parseFloat(val);
+  if(isNaN(num) || num <= 0){
+    toast('⚠️ ' + (LANG === 'bn' ? 'সঠিক পরিমাণ দিন' : 'Enter valid amount'));
+    return;
+  }
+  CASH_DB.budget = num;
   saveCashData();
   renderCash();
-  toast('✅ '+(LANG==='bn'?'বাজেট সেট হয়েছে':'Budget set!'));
+  cm('m-budget');
+  toast('🎯 ' + (LANG === 'bn' ? 'বাজেট সেট হয়েছে' : 'Budget set!'));
+}
+
+function removeBudget(){
+  cm('m-budget');
+  CASH_DB.budget = 0;
+  saveCashData();
+  renderCash();
+  toast(LANG === 'bn' ? 'বাজেট সরানো হয়েছে' : 'Budget removed');
 }
 
 // ── CASH FILTER ──
@@ -1563,11 +1593,15 @@ function deleteCashEntry(id){
 }
 
 function clearCashHistory(){
-  if(!confirm('সব ইতিহাস মুছবেন? ব্যালেন্স ০ হয়ে যাবে।')) return;
+  document.getElementById('m-clearcash').classList.add('on');
+}
+
+function confirmClearCashExecution(){
+  cm('m-clearcash');
   CASH_DB = { balance: 0, wallets: { cash: 0, bkash: 0, nagad: 0, bank: 0 }, history: [] };
   saveCashData();
   renderCash();
-  toast('🗑️ সব মুছে গেছে');
+  toast(LANG === 'bn' ? '🗑️ সব ইতিহাস মুছে ফেলা হয়েছে' : '🗑️ All history cleared');
 }
 
 function openCashEdit(id){
@@ -1673,17 +1707,21 @@ function renderCash(){
     sub.innerHTML = '<span class="bn">কোনো লেনদেন নেই</span><span class="en" style="display:none">No transactions yet</span>';
   }
 
-  // Dynamic button labels based on active wallet
+  // Dynamic button labels based on active wallet & conditional display
+  const cashActionsWrap = document.getElementById('cash-actions-wrap');
   const addBtnLabel = document.getElementById('btn-add-label');
   const subBtnLabel = document.getElementById('btn-sub-label');
-  if(addBtnLabel && subBtnLabel){
+  if(cashActionsWrap){
     if(WALLET_FILTER && WALLET_FILTER !== 'all'){
+      cashActionsWrap.style.display = 'grid';
       const meta = WALLET_META[WALLET_FILTER] || { name: WALLET_FILTER, en: WALLET_FILTER };
-      addBtnLabel.innerHTML = `<span class="bn">${meta.name}-এ টাকা যোগ</span><span class="en">Add to ${meta.en}</span>`;
-      subBtnLabel.innerHTML = `<span class="bn">${meta.name} থেকে খরচ</span><span class="en">Deduct from ${meta.en}</span>`;
+      if(addBtnLabel) addBtnLabel.innerHTML = `<span class="bn">${meta.name}-এ টাকা যোগ</span><span class="en">Add to ${meta.en}</span>`;
+      if(subBtnLabel) subBtnLabel.innerHTML = `<span class="bn">${meta.name} থেকে খরচ</span><span class="en">Deduct from ${meta.en}</span>`;
     } else {
-      addBtnLabel.innerHTML = `<span class="bn">টাকা যোগ (আয়)</span><span class="en">Add Income</span>`;
-      subBtnLabel.innerHTML = `<span class="bn">খরচ করুন (ব্যয়)</span><span class="en">Add Expense</span>`;
+      cashActionsWrap.style.display = 'none';
+      closeCashForm();
+      if(addBtnLabel) addBtnLabel.innerHTML = `<span class="bn">টাকা যোগ (আয়)</span><span class="en">Add Income</span>`;
+      if(subBtnLabel) subBtnLabel.innerHTML = `<span class="bn">খরচ করুন (ব্যয়)</span><span class="en">Add Expense</span>`;
     }
   }
 
