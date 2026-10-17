@@ -11,7 +11,7 @@
 <title>হিসাব ট্র্যাকার PRO</title>
 <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;600;700&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="icon" type="image/png" href="icon.png">
-<link rel="stylesheet" href="style.css?v=3.4">
+<link rel="stylesheet" href="style.css?v=3.5">
 <style>
 /* ── SVG ICON SYSTEM ── */
 .ic{display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;}
@@ -592,9 +592,11 @@ function ic(name){return`<span class="ic">${ICONS[name]||''}</span>`;}
     <span class="bnav-label"><span class="bn">আয়-ব্যয়</span><span class="en">Expense</span></span>
   </button>
   <!-- 3.1 Floating Quick Add (+ FAB) -->
-  <button class="bnav-fab" onclick="openQuickAddSheet()" aria-label="Quick Add" title="দ্রুত যোগ">
-    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
-  </button>
+  <div class="bnav-fab-wrap">
+    <button class="bnav-fab" onclick="openQuickAddSheet()" aria-label="Quick Add" title="দ্রুত যোগ">
+      <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+    </button>
+  </div>
   <button class="bnav-btn" id="bnav-analytics" onclick="setAppTab('analytics')">
     <span class="bnav-icon"><svg xmlns="http://www.w3.org/2000/svg" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" x2="12" y1="20" y2="10"/><line x1="18" x2="18" y1="20" y2="4"/><line x1="6" x2="6" y1="20" y2="16"/></svg></span>
     <span class="bnav-label"><span class="bn">রিপোর্ট</span><span class="en">Analytics</span></span>
@@ -932,6 +934,6 @@ function ic(name){return`<span class="ic">${ICONS[name]||''}</span>`;}
 
 <div class="toast" id="toast"></div>
 
-<script src="script.js?v=3.4"></script>
+<script src="script.js?v=3.5"></script>
 </body>
 </html>
