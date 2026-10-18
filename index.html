@@ -11,7 +11,7 @@
 <title>হিসাব ট্র্যাকার PRO</title>
 <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;600;700&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="icon" type="image/png" href="icon.png">
-<link rel="stylesheet" href="style.css?v=3.9">
+<link rel="stylesheet" href="style.css?v=4.0">
 <style>
 /* ── SVG ICON SYSTEM ── */
 .ic{display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;}
@@ -177,14 +177,6 @@ function ic(name){return`<span class="ic">${ICONS[name]||''}</span>`;}
     </div>
   </div>
   <div class="drawer-body">
-    <!-- Switch mode -->
-    <div class="drw-sec">অ্যাপ মোড / Switch Mode</div>
-    <button class="drw-item switch-mode" id="switch-mode-btn" onclick="switchMode()">
-      <span class="drw-icon" id="switch-mode-icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg></span>
-      <span id="switch-mode-text">Cash Tracker এ যান</span>
-    </button>
-
-    <div class="drw-divider"></div>
     <div class="drw-sec">থিম / Theme</div>
     <div class="theme-row">
       <button class="theme-opt" id="th-dark" onclick="setTheme('dark')">🌙 Dark</button>
@@ -1010,6 +1002,6 @@ function ic(name){return`<span class="ic">${ICONS[name]||''}</span>`;}
 
 <div class="toast" id="toast"></div>
 
-<script src="script.js?v=3.9"></script>
+<script src="script.js?v=4.0"></script>
 </body>
 </html>
