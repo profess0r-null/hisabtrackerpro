@@ -2803,7 +2803,7 @@ function openReceipt(type, id) {
   }
 
   const slipHtml = `
-    <div class="rc-slip" id="rc-visual-card">
+    <div class="rc-slip ${isRec?'slip-receive':'slip-give'}" id="rc-visual-card">
       <div class="rc-header">
         <div class="rc-brand">
           <span class="rc-logo">📒</span>
@@ -2853,14 +2853,14 @@ function openReceipt(type, id) {
         </div>
         <div class="rc-stat-col">
           <div class="rc-stat-lbl">${LANG==='bn'?'মোট এন্ট্রি':'Entries'}</div>
-          <div class="rc-stat-val">${p.history.length}</div>
+          <div class="rc-stat-val val-b">${p.history.length}</div>
         </div>
       </div>
       
       ${historyRowsHtml}
       
       <div class="rc-footer">
-        <div class="rc-barcode">
+        <div>
           <div class="rc-barcode-lines"></div>
           <div class="rc-barcode-txt">OFFICIAL VOUCHER • VERIFIED RECORD</div>
         </div>
@@ -2900,7 +2900,7 @@ function copyWA(type, id) {
   openReceipt(type, id);
 }
 
-function generateReceiptBlob(p, type) {
+function generateReceiptBlob(p, type, mimeType = 'image/jpeg') {
   return new Promise((resolve, reject) => {
     try {
       const d = ageDays(p);
@@ -2913,12 +2913,13 @@ function generateReceiptBlob(p, type) {
       }
       if(remAmt < 0) remAmt = 0;
       const settled = remAmt <= 0;
+      const isRec = type === 'receive';
       const recentTxns = p.history.slice(0, 6);
       
       const W = 620;
       const itemH = 34;
-      const H = 540 + (recentTxns.length * itemH);
-      const scale = 2; // High-resolution retina render
+      const H = 550 + (recentTxns.length * itemH);
+      const scale = 2.5; // High-resolution retina render
       
       const canvas = document.createElement('canvas');
       canvas.width = W * scale;
@@ -2926,44 +2927,42 @@ function generateReceiptBlob(p, type) {
       const ctx = canvas.getContext('2d');
       ctx.scale(scale, scale);
       
-      // Background card
-      ctx.fillStyle = '#0f172a';
-      ctx.beginPath();
-      _rcDrawRound(ctx, 0, 0, W, H, 20);
-      ctx.fill();
+      // Pure White Background (Light Theme Luxury Voucher)
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, W, H);
       
-      // Outer border
-      ctx.strokeStyle = '#334155';
+      // Outer card border
+      ctx.strokeStyle = '#e2e8f0';
       ctx.lineWidth = 1.5;
+      _rcDrawRound(ctx, 2, 2, W - 4, H - 4, 18);
       ctx.stroke();
       
-      // Top colored accent bar
-      ctx.fillStyle = type === 'receive' ? '#10b981' : '#ef4444';
-      ctx.fillRect(0, 0, W, 7);
+      // Top colored accent banner
+      ctx.fillStyle = isRec ? '#059669' : '#dc2626';
+      ctx.fillRect(2, 2, W - 4, 8);
       
       // Header brand
-      ctx.fillStyle = '#f8fafc';
+      ctx.fillStyle = '#0f172a';
       ctx.font = 'bold 22px Inter, sans-serif';
-      ctx.fillText('📒 HISAB TRACKER PRO', 30, 46);
+      ctx.fillText('📒 HISAB TRACKER PRO', 32, 48);
       
-      ctx.fillStyle = '#94a3b8';
-      ctx.font = '600 11.5px Inter, sans-serif';
-      ctx.fillText('DIGITAL MONEY RECEIPT SLIP • মানি রিসিট ভাউচার', 30, 68);
+      ctx.fillStyle = '#64748b';
+      ctx.font = '700 11px Inter, sans-serif';
+      ctx.fillText('DIGITAL MONEY RECEIPT SLIP • মানি রিসিট ভাউচার', 32, 70);
       
       // Voucher badge (right)
-      ctx.fillStyle = '#1e293b';
-      ctx.beginPath();
-      _rcDrawRound(ctx, W - 165, 30, 135, 30, 8);
+      ctx.fillStyle = '#f1f5f9';
+      _rcDrawRound(ctx, W - 165, 32, 135, 30, 8);
       ctx.fill();
-      ctx.strokeStyle = '#475569';
+      ctx.strokeStyle = '#cbd5e1';
       ctx.lineWidth = 1;
       ctx.stroke();
-      ctx.fillStyle = '#38bdf8';
+      ctx.fillStyle = '#1e293b';
       ctx.font = 'bold 12px monospace';
-      ctx.fillText('#REC-' + String(p.id).slice(-6), W - 153, 50);
+      ctx.fillText('#REC-' + String(p.id).slice(-6), W - 153, 52);
       
-      // Divider
-      ctx.strokeStyle = '#334155';
+      // Perforated ticket divider
+      ctx.strokeStyle = '#cbd5e1';
       ctx.setLineDash([5, 4]);
       ctx.beginPath();
       ctx.moveTo(30, 88);
@@ -2971,152 +2970,169 @@ function generateReceiptBlob(p, type) {
       ctx.stroke();
       ctx.setLineDash([]);
       
-      // Client info
-      ctx.fillStyle = '#94a3b8';
-      ctx.font = '11.5px Inter, sans-serif';
-      ctx.fillText('PARTY / গ্রাহক:', 30, 114);
-      ctx.fillStyle = '#ffffff';
-      ctx.font = 'bold 16px Inter, "Hind Siliguri", sans-serif';
-      ctx.fillText(p.name, 30, 136);
+      // Meta cards: Party card & Date/Status card
+      const metaY = 104;
+      const metaH = 56;
+      const halfW = (W - 74) / 2;
       
-      // Date info
-      ctx.fillStyle = '#94a3b8';
-      ctx.font = '11.5px Inter, sans-serif';
-      ctx.fillText('DATE / তারিখ:', 250, 114);
-      ctx.fillStyle = '#e2e8f0';
-      ctx.font = '600 13px Inter, sans-serif';
-      const dateStr = new Date().toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' });
-      ctx.fillText(dateStr, 250, 136);
-      
-      // Status info
-      ctx.fillStyle = '#94a3b8';
-      ctx.font = '11.5px Inter, sans-serif';
-      ctx.fillText('STATUS / অবস্থা:', 440, 114);
-      ctx.fillStyle = settled ? '#10b981' : (type==='receive'?'#38bdf8':'#f87171');
-      ctx.font = 'bold 13px Inter, sans-serif';
-      ctx.fillText(settled ? '✓ FULL PAID' : (type==='receive'?'RECEIVABLE':'PAYABLE'), 440, 136);
-      
-      // Big Due Box
-      const isRec = type === 'receive';
-      ctx.fillStyle = isRec ? 'rgba(16, 185, 129, 0.12)' : 'rgba(239, 68, 68, 0.12)';
-      ctx.beginPath();
-      _rcDrawRound(ctx, 30, 160, W - 60, 88, 14);
+      // Left meta card (Party)
+      ctx.fillStyle = '#f8fafc';
+      _rcDrawRound(ctx, 30, metaY, halfW, metaH, 10);
       ctx.fill();
-      ctx.strokeStyle = isRec ? 'rgba(16, 185, 129, 0.4)' : 'rgba(239, 68, 68, 0.4)';
+      ctx.strokeStyle = '#e2e8f0';
+      ctx.lineWidth = 1;
       ctx.stroke();
       
-      ctx.fillStyle = isRec ? '#34d399' : '#f87171';
-      ctx.font = 'bold 12px Inter, sans-serif';
-      ctx.fillText(settled ? 'SETTLED BALANCE / পরিশোধিত' : (isRec ? 'TOTAL RECEIVABLE / বকেয়া পাওনা' : 'TOTAL PAYABLE / বকেয়া দেনা'), 48, 186);
+      ctx.fillStyle = '#64748b';
+      ctx.font = '800 10px Inter, sans-serif';
+      ctx.fillText('PARTY / গ্রাহক:', 42, metaY + 20);
+      ctx.fillStyle = '#1e40af';
+      ctx.font = 'bold 16px Inter, "Hind Siliguri", sans-serif';
+      ctx.fillText(p.name, 42, metaY + 43);
       
-      ctx.fillStyle = isRec ? '#10b981' : '#ef4444';
-      ctx.font = '900 36px Inter, sans-serif';
-      ctx.fillText('৳ ' + fmt(remAmt), 48, 228);
+      // Right meta card (Date & Status)
+      ctx.fillStyle = '#f8fafc';
+      _rcDrawRound(ctx, 30 + halfW + 14, metaY, halfW, metaH, 10);
+      ctx.fill();
+      ctx.strokeStyle = '#e2e8f0';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      
+      ctx.fillStyle = '#64748b';
+      ctx.font = '800 10px Inter, sans-serif';
+      ctx.fillText('DATE & STATUS / তারিখ ও অবস্থা:', 44 + halfW + 14, metaY + 20);
+      const dateStr = new Date().toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' });
+      ctx.fillStyle = '#334155';
+      ctx.font = '700 12.5px Inter, sans-serif';
+      ctx.fillText(dateStr + ' • ' + (settled ? '✓ PAID' : (isRec ? 'RECEIVABLE' : 'PAYABLE')), 44 + halfW + 14, metaY + 43);
+      
+      // Big Due Box
+      const dueY = metaY + metaH + 14;
+      ctx.fillStyle = isRec ? '#ecfdf5' : '#fff1f2';
+      _rcDrawRound(ctx, 30, dueY, W - 60, 90, 14);
+      ctx.fill();
+      ctx.strokeStyle = isRec ? '#a7f3d0' : '#fecdd3';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+      
+      ctx.fillStyle = isRec ? '#059669' : '#dc2626';
+      ctx.font = 'bold 11px Inter, sans-serif';
+      ctx.fillText(settled ? 'SETTLED BALANCE / পরিশোধিত' : (isRec ? 'NET RECEIVABLE / মোট বকেয়া পাওনা' : 'NET PAYABLE / মোট বকেয়া দেনা'), 48, dueY + 28);
+      
+      ctx.fillStyle = isRec ? '#047857' : '#9f1239';
+      ctx.font = '900 38px Inter, sans-serif';
+      ctx.fillText('৳ ' + fmt(remAmt), 48, dueY + 70);
       
       if(!settled && d > 0) {
-        ctx.fillStyle = '#94a3b8';
+        ctx.fillStyle = '#64748b';
         ctx.font = '600 12px Inter, sans-serif';
-        ctx.fillText(`(Pending ${d} days / ${d} দিন)`, W - 200, 222);
+        ctx.fillText(`(Pending ${d} days / ${d} দিন)`, W - 200, dueY + 66);
       }
       
       // 3 Summary Cols
-      const statY = 268;
-      ctx.fillStyle = '#1e293b';
-      ctx.beginPath();
-      _rcDrawRound(ctx, 30, statY, W - 60, 56, 10);
+      const statY = dueY + 104;
+      ctx.fillStyle = '#f8fafc';
+      _rcDrawRound(ctx, 30, statY, W - 60, 58, 12);
       ctx.fill();
+      ctx.strokeStyle = '#e2e8f0';
+      ctx.lineWidth = 1;
+      ctx.stroke();
       
       const colW = (W - 60) / 3;
-      ctx.fillStyle = '#94a3b8';
-      ctx.font = '10.5px Inter, sans-serif';
-      ctx.fillText('ORIGINAL / মূল', 45, statY + 20);
-      ctx.fillStyle = '#f8fafc';
-      ctx.font = 'bold 14.5px Inter, sans-serif';
-      ctx.fillText('৳ ' + fmt(p.original), 45, statY + 42);
+      ctx.fillStyle = '#64748b';
+      ctx.font = '800 10px Inter, sans-serif';
+      ctx.fillText('ORIGINAL / মূল', 46, statY + 22);
+      ctx.fillStyle = '#0f172a';
+      ctx.font = 'bold 15px Inter, sans-serif';
+      ctx.fillText('৳ ' + fmt(p.original), 46, statY + 45);
       
-      ctx.fillStyle = '#94a3b8';
-      ctx.font = '10.5px Inter, sans-serif';
-      ctx.fillText('TOTAL PAID / পরিশোধ', 45 + colW, statY + 20);
-      ctx.fillStyle = '#34d399';
-      ctx.font = 'bold 14.5px Inter, sans-serif';
-      ctx.fillText('৳ ' + fmt(paidAmt), 45 + colW, statY + 42);
+      ctx.fillStyle = '#64748b';
+      ctx.font = '800 10px Inter, sans-serif';
+      ctx.fillText('TOTAL PAID / পরিশোধ', 46 + colW, statY + 22);
+      ctx.fillStyle = '#059669';
+      ctx.font = 'bold 15px Inter, sans-serif';
+      ctx.fillText('৳ ' + fmt(paidAmt), 46 + colW, statY + 45);
       
-      ctx.fillStyle = '#94a3b8';
-      ctx.font = '10.5px Inter, sans-serif';
-      ctx.fillText('TXNS / মোট এন্ট্রি', 45 + colW * 2, statY + 20);
-      ctx.fillStyle = '#38bdf8';
-      ctx.font = 'bold 14.5px Inter, sans-serif';
-      ctx.fillText(p.history.length + ' entries', 45 + colW * 2, statY + 42);
+      ctx.fillStyle = '#64748b';
+      ctx.font = '800 10px Inter, sans-serif';
+      ctx.fillText('ENTRIES / লেনদেন', 46 + colW * 2, statY + 22);
+      ctx.fillStyle = '#2563eb';
+      ctx.font = 'bold 15px Inter, sans-serif';
+      ctx.fillText(p.history.length + ' txns', 46 + colW * 2, statY + 45);
       
-      // Recent History
-      const histY = statY + 76;
-      ctx.fillStyle = '#94a3b8';
+      // Recent History Table
+      const histY = statY + 80;
+      ctx.fillStyle = '#475569';
       ctx.font = 'bold 11.5px Inter, sans-serif';
-      ctx.fillText('RECENT TRANSACTIONS / সাম্প্রতিক লেনদেন:', 30, histY);
+      ctx.fillText('RECENT TRANSACTIONS / সাম্প্রতিক লেনদেন:', 32, histY);
       
-      let curY = histY + 12;
+      let curY = histY + 14;
       if (recentTxns.length === 0) {
-        ctx.fillStyle = '#64748b';
+        ctx.fillStyle = '#94a3b8';
         ctx.font = 'italic 12px Inter, sans-serif';
-        ctx.fillText('No transaction history recorded', 30, curY + 20);
-        curY += 35;
+        ctx.fillText('No transaction history recorded', 32, curY + 20);
+        curY += 36;
       } else {
         recentTxns.forEach((h, idx) => {
-          curY += 26;
-          ctx.fillStyle = idx % 2 === 0 ? 'rgba(30, 41, 59, 0.4)' : 'transparent';
-          ctx.fillRect(30, curY - 16, W - 60, 24);
+          curY += 28;
+          ctx.fillStyle = idx % 2 === 0 ? '#f8fafc' : '#ffffff';
+          ctx.fillRect(30, curY - 18, W - 60, 26);
+          ctx.strokeStyle = '#f1f5f9';
+          ctx.strokeRect(30, curY - 18, W - 60, 26);
           
-          ctx.fillStyle = '#94a3b8';
-          ctx.font = '11.5px Inter, sans-serif';
-          ctx.fillText(fmtD(h.date), 40, curY);
+          ctx.fillStyle = '#64748b';
+          ctx.font = '600 11.5px Inter, sans-serif';
+          ctx.fillText(fmtD(h.date), 42, curY);
           
-          ctx.fillStyle = '#e2e8f0';
-          ctx.font = '500 12px Inter, "Hind Siliguri", sans-serif';
-          const n = h.note.length > 28 ? h.note.slice(0, 26) + '..' : h.note;
-          ctx.fillText(n, 135, curY);
+          ctx.fillStyle = '#1e293b';
+          ctx.font = '600 12.5px Inter, "Hind Siliguri", sans-serif';
+          const n = h.note.length > 26 ? h.note.slice(0, 24) + '..' : h.note;
+          ctx.fillText(n, 140, curY);
           
           const isAdd = h.t === 'add';
-          ctx.fillStyle = isAdd ? '#f87171' : '#34d399';
-          ctx.font = 'bold 12.5px Inter, sans-serif';
+          ctx.fillStyle = isAdd ? '#dc2626' : '#059669';
+          ctx.font = 'bold 13px Inter, sans-serif';
           const a = (isAdd ? '+' : '-') + ' ৳' + fmt(h.amt);
-          ctx.fillText(a, W - 140, curY);
+          ctx.fillText(a, W - 145, curY);
         });
-        curY += 14;
+        curY += 16;
       }
       
-      // Divider
-      ctx.strokeStyle = '#334155';
-      ctx.setLineDash([4, 4]);
+      // Footer Divider
+      ctx.strokeStyle = '#cbd5e1';
+      ctx.setLineDash([5, 4]);
       ctx.beginPath();
       ctx.moveTo(30, curY + 8);
       ctx.lineTo(W - 30, curY + 8);
       ctx.stroke();
       ctx.setLineDash([]);
       
-      // Footer Barcode
+      // Barcode & Stamp
       const footY = curY + 24;
-      _rcDrawBarcode(ctx, 30, footY, 180, 22);
+      _rcDrawBarcode(ctx, 32, footY, 170, 22);
       ctx.fillStyle = '#64748b';
       ctx.font = '9.5px Inter, monospace';
-      ctx.fillText('HISAB TRACKER PRO • hisabtracker.profess0r-null.xyz', 30, footY + 34);
+      ctx.fillText('HISAB TRACKER PRO • profess0r-null.xyz', 32, footY + 36);
       
       // Stamp
       ctx.save();
       ctx.translate(W - 110, footY + 12);
-      ctx.rotate(-8 * Math.PI / 180);
-      ctx.strokeStyle = '#10b981';
-      ctx.lineWidth = 1.8;
-      ctx.strokeRect(-55, -14, 110, 28);
-      ctx.fillStyle = '#10b981';
+      ctx.rotate(-6 * Math.PI / 180);
+      ctx.fillStyle = '#ecfdf5';
+      ctx.fillRect(-62, -15, 124, 30);
+      ctx.strokeStyle = '#059669';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(-62, -15, 124, 30);
+      ctx.fillStyle = '#059669';
       ctx.font = 'bold 10.5px Inter, sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText('VERIFIED SLIP ✓', 0, 4);
+      ctx.fillText('VERIFIED SLIP ✓', 0, 5);
       ctx.restore();
       
       canvas.toBlob(blob => {
         if(blob) resolve(blob);
         else reject(new Error('Canvas blob failed'));
-      }, 'image/png');
+      }, mimeType, 0.96);
     } catch(err) {
       reject(err);
     }
@@ -3136,7 +3152,7 @@ function _rcDrawRound(ctx, x, y, w, h, r) {
 }
 
 function _rcDrawBarcode(ctx, x, y, w, h) {
-  ctx.fillStyle = '#64748b';
+  ctx.fillStyle = '#1e293b';
   let cx = x;
   const bars = [2, 1, 3, 1, 2, 4, 1, 2, 3, 1, 1, 3, 2, 1, 4, 2, 1, 3, 2, 1, 2, 3, 1, 4, 2, 1, 3, 2, 1];
   for (let b of bars) {
@@ -3146,25 +3162,19 @@ function _rcDrawBarcode(ctx, x, y, w, h) {
   }
 }
 
-async function downloadReceiptImage() {
+async function downloadReceiptImage(format = 'jpg') {
   if (!CURRENT_RECEIPT_DATA) return;
   const { p, type } = CURRENT_RECEIPT_DATA;
-  toast(LANG==='bn'?'🎨 স্লিপ তৈরি হচ্ছে...':'🎨 Generating slip...');
+  toast(LANG === 'bn' ? '🎨 রসিদ ইমেজ তৈরি হচ্ছে...' : '🎨 Generating receipt image...');
   try {
-    const blob = await generateReceiptBlob(p, type);
-    const fileName = `Receipt_${p.name.replace(/[^a-zA-Z0-9_\u0980-\u09FF]/g,'_')}_${new Date().toISOString().split('T')[0]}.png`;
-    const file = new File([blob], fileName, { type: 'image/png' });
+    const mime = format === 'png' ? 'image/png' : 'image/jpeg';
+    const ext = format === 'png' ? 'png' : 'jpg';
+    const blob = await generateReceiptBlob(p, type, mime);
     
-    if (navigator.canShare && navigator.canShare({ files: [file] })) {
-      await navigator.share({
-        files: [file],
-        title: `Money Receipt - ${p.name}`,
-        text: getReceiptWhatsAppText(p, type)
-      });
-      toast(LANG==='bn'?'✅ শেয়ার সম্পন্ন হয়েছে!':'✅ Shared successfully!');
-      return;
-    }
+    const cleanName = (p.name || 'Party').replace(/[^a-zA-Z0-9_\u0980-\u09FF]/g, '_');
+    const fileName = `Receipt_${cleanName}_${new Date().toISOString().split('T')[0]}.${ext}`;
     
+    // Direct browser download into Downloads / Gallery
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -3172,11 +3182,41 @@ async function downloadReceiptImage() {
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
-    toast(LANG==='bn'?'📸 স্লিপ ইমেজ ডাউনলোড হয়েছে!':'📸 Receipt image downloaded!');
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+    
+    toast(LANG === 'bn' ? '📸 স্লিপ আপনার গ্যালারিতে/ডাউনলোডসে সেভ হয়েছে!' : '📸 Receipt image saved to Gallery!');
   } catch(e) {
     console.error(e);
-    toast(LANG==='bn'?'❌ ইমেজ তৈরিতে সমস্যা হয়েছে':'❌ Failed to generate image');
+    toast(LANG === 'bn' ? '❌ ইমেজ সেভ করতে সমস্যা হয়েছে' : '❌ Failed to save image');
+  }
+}
+
+async function shareReceiptSlip() {
+  if (!CURRENT_RECEIPT_DATA) return;
+  const { p, type } = CURRENT_RECEIPT_DATA;
+  toast(LANG === 'bn' ? '⏳ শেয়ার তৈরি হচ্ছে...' : '⏳ Preparing share...');
+  try {
+    const blob = await generateReceiptBlob(p, type, 'image/jpeg');
+    const cleanName = (p.name || 'Party').replace(/[^a-zA-Z0-9_\u0980-\u09FF]/g, '_');
+    const fileName = `Receipt_${cleanName}_${new Date().toISOString().split('T')[0]}.jpg`;
+    const file = new File([blob], fileName, { type: 'image/jpeg' });
+    
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      await navigator.share({
+        files: [file],
+        title: `Money Receipt - ${p.name}`,
+        text: getReceiptWhatsAppText(p, type)
+      });
+      toast(LANG === 'bn' ? '✅ শেয়ার সম্পন্ন হয়েছে!' : '✅ Shared successfully!');
+    } else {
+      // Fallback: download directly
+      downloadReceiptImage('jpg');
+    }
+  } catch(e) {
+    if (e.name !== 'AbortError') {
+      console.error(e);
+      toast(LANG === 'bn' ? '❌ শেয়ার করতে সমস্যা হয়েছে' : '❌ Share failed');
+    }
   }
 }
 
