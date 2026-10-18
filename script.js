@@ -15,8 +15,81 @@ const sb=supabase.createClient(SB_URL,SB_KEY);
 // Track anonymous visit
 (async()=>{try{await sb.from('visits').insert({user_agent:navigator.userAgent,logged_in:false});}catch(e){}})();
 
-let DB={receive:[],give:[],activityLog:[]};
-let CASH_DB={balance:0,history:[]};
+let ROOT_DB = null;
+let ROOT_CASH_DB = null;
+let DB = { receive: [], give: [], activityLog: [] };
+let CASH_DB = { balance: 0, history: [] };
+
+function ensureProfilesStructure(){
+  if(!ROOT_DB || typeof ROOT_DB !== 'object'){
+    ROOT_DB = {};
+  }
+  if(!ROOT_DB.profiles || !Array.isArray(ROOT_DB.profiles) || ROOT_DB.profiles.length === 0){
+    ROOT_DB.profiles = [
+      { id: 'default', name: 'ব্যক্তিগত', icon: '👤', isDefault: true, createdAt: Date.now() }
+    ];
+  }
+  if(!ROOT_DB.profilesData || typeof ROOT_DB.profilesData !== 'object'){
+    ROOT_DB.profilesData = {};
+  }
+  if(!ROOT_DB.profilesData['default']){
+    ROOT_DB.profilesData['default'] = {
+      receive: Array.isArray(ROOT_DB.receive) ? ROOT_DB.receive : (DB.receive || []),
+      give: Array.isArray(ROOT_DB.give) ? ROOT_DB.give : (DB.give || []),
+      activityLog: Array.isArray(ROOT_DB.activityLog) ? ROOT_DB.activityLog : (DB.activityLog || []),
+      categories: ROOT_DB.categories || DB.categories || {}
+    };
+  }
+
+  // Active profile ID resolution
+  const userKey = (typeof CUR_USER !== 'undefined' && CUR_USER) ? CUR_USER.id : 'guest';
+  const savedActive = localStorage.getItem('ht_active_profile_' + userKey);
+  if(savedActive && ROOT_DB.profiles.some(p => p.id === savedActive)){
+    ROOT_DB.activeProfileId = savedActive;
+  } else if(!ROOT_DB.activeProfileId || !ROOT_DB.profiles.some(p => p.id === ROOT_DB.activeProfileId)){
+    ROOT_DB.activeProfileId = 'default';
+  }
+
+  // Bind active profile to DB
+  const actId = ROOT_DB.activeProfileId;
+  if(!ROOT_DB.profilesData[actId]){
+    ROOT_DB.profilesData[actId] = { receive: [], give: [], activityLog: [], categories: {} };
+  }
+  DB = ROOT_DB.profilesData[actId];
+  if(!DB.receive) DB.receive = [];
+  if(!DB.give) DB.give = [];
+  if(!DB.activityLog) DB.activityLog = [];
+  if(!DB.categories) DB.categories = {};
+
+  // CASH_DB Profiles structure
+  if(!ROOT_CASH_DB || typeof ROOT_CASH_DB !== 'object'){
+    ROOT_CASH_DB = {};
+  }
+  if(!ROOT_CASH_DB.profilesData || typeof ROOT_CASH_DB.profilesData !== 'object'){
+    ROOT_CASH_DB.profilesData = {};
+  }
+  if(!ROOT_CASH_DB.profilesData['default']){
+    ROOT_CASH_DB.profilesData['default'] = {
+      balance: typeof ROOT_CASH_DB.balance === 'number' ? ROOT_CASH_DB.balance : (CASH_DB.balance || 0),
+      history: Array.isArray(ROOT_CASH_DB.history) ? ROOT_CASH_DB.history : (CASH_DB.history || []),
+      wallets: ROOT_CASH_DB.wallets || CASH_DB.wallets || null,
+      budget: ROOT_CASH_DB.budget || CASH_DB.budget || 0,
+      monthlyBudgets: ROOT_CASH_DB.monthlyBudgets || CASH_DB.monthlyBudgets || {}
+    };
+  }
+  if(!ROOT_CASH_DB.profilesData[actId]){
+    ROOT_CASH_DB.profilesData[actId] = {
+      balance: 0,
+      history: [],
+      wallets: { cash: 0, bkash: 0, nagad: 0, bank: 0 },
+      budget: 0,
+      monthlyBudgets: {}
+    };
+  }
+  CASH_DB = ROOT_CASH_DB.profilesData[actId];
+  if(!CASH_DB.history) CASH_DB.history = [];
+  if(typeof ensureWallets === 'function') ensureWallets();
+}
 
 // ── DEFAULT CATEGORIES ──
 const DEFAULT_CATS={
@@ -624,7 +697,10 @@ async function signOut(){
   if(CUR_USER)await saveData();
   await sb.auth.signOut();
   if(CUR_USER)localStorage.removeItem('ht_tr_'+CUR_USER.id);
-  CUR_USER=null; DB={receive:[],give:[],activityLog:[]};
+  CUR_USER=null;
+  ROOT_DB=null; ROOT_CASH_DB=null;
+  DB={receive:[],give:[],activityLog:[]};
+  CASH_DB={balance:0,history:[]};
   closeDrawer();
   document.getElementById('app').style.display='none';
   document.getElementById('pin-screen').style.display='none';
@@ -659,7 +735,9 @@ sb.auth.onAuthStateChange(async(event,session)=>{
   } else {
     _appInitialized=false;
     CUR_USER=null;
+    ROOT_DB=null; ROOT_CASH_DB=null;
     DB={receive:[],give:[],activityLog:[]};
+    CASH_DB={balance:0,history:[]};
     document.getElementById('app').style.display='none';
     document.getElementById('pin-screen').style.display='none';
     document.getElementById('auth-screen').style.display='flex';
@@ -806,6 +884,7 @@ async function showApp(){
   (async()=>{try{await sb.from('visits').insert({user_agent:navigator.userAgent,logged_in:true});}catch(e){}})();
   await loadData();
   await loadCashDataCloud();
+  updateProfileHeaderUI();
   logActivity('Login সফল',CUR_USER.email);
   
   if (_dataLoaded) {
@@ -832,16 +911,14 @@ async function loadData(){
   try {
     const{data,error}=await sb.from('hisab_users').select('data').eq('id',CUR_USER.id).maybeSingle();
     if(data&&data.data){
-      DB=data.data;
-      if(!DB.receive)DB.receive=[];
-      if(!DB.give)DB.give=[];
-      if(!DB.activityLog)DB.activityLog=[];
-      if(!DB.categories)DB.categories={};
+      ROOT_DB=data.data;
+      ensureProfilesStructure();
       // PIN cloud থেকে localStorage এ sync
-      if(DB.pinHash) localStorage.setItem(pk(),DB.pinHash);
+      if(ROOT_DB.pinHash) localStorage.setItem(pk(),ROOT_DB.pinHash);
       _dataLoaded = true;
     }else if(!error){
-      await sb.from('hisab_users').insert({id:CUR_USER.id,data:DB});
+      ensureProfilesStructure();
+      await sb.from('hisab_users').insert({id:CUR_USER.id,data:ROOT_DB});
       _dataLoaded = true;
     } else {
       throw error;
@@ -850,8 +927,9 @@ async function loadData(){
     // fallback to local storage
     const raw = localStorage.getItem('ht_'+CUR_USER.id);
     if(raw) {
-      try { DB = JSON.parse(raw); } catch(e2) {}
+      try { ROOT_DB = JSON.parse(raw); } catch(e2) {}
     }
+    ensureProfilesStructure();
     _dataLoaded = false;
   }
 }
@@ -859,9 +937,19 @@ let _retrySyncTimeout=null;
 async function saveData(showLoginToast=false){
   if(_retrySyncTimeout) { clearTimeout(_retrySyncTimeout); _retrySyncTimeout=null; }
   setSyncState('saving','Saving...');
-  localStorage.setItem('ht_'+CUR_USER.id,JSON.stringify(DB));
+  ensureProfilesStructure();
+
+  // Keep legacy top-level fields synced if active profile is default
+  if(ROOT_DB.activeProfileId === 'default'){
+    ROOT_DB.receive = DB.receive;
+    ROOT_DB.give = DB.give;
+    ROOT_DB.activityLog = DB.activityLog;
+    ROOT_DB.categories = DB.categories;
+  }
+
+  localStorage.setItem('ht_'+CUR_USER.id,JSON.stringify(ROOT_DB));
   try{
-    const { error } = await sb.from('hisab_users').upsert({id:CUR_USER.id,data:DB,updated_at:new Date().toISOString()});
+    const { error } = await sb.from('hisab_users').upsert({id:CUR_USER.id,data:ROOT_DB,updated_at:new Date().toISOString()});
     if(error) throw error;
     if(showLoginToast){
       toast(LANG==='bn'?'👋 স্বাগতম!':'👋 Welcome!');
@@ -873,42 +961,51 @@ async function saveData(showLoginToast=false){
   }
 }
 
-// ── CASH DATA (local only) ──
+// ── CASH DATA ──
 function cashKey(){return'ht_cash_'+(CUR_USER?CUR_USER.id:'guest');}
 function loadCashData(){
   const raw=localStorage.getItem(cashKey());
-  if(raw)try{CASH_DB=JSON.parse(raw);}catch(e){CASH_DB={balance:0,history:[]};}
-  if(!CASH_DB.history)CASH_DB.history=[];
+  if(raw)try{ROOT_CASH_DB=JSON.parse(raw);}catch(e){}
+  ensureProfilesStructure();
 }
 async function loadCashDataCloud(){
   try{
     const{data,error}=await sb.from('hisab_cash').select('data').eq('id',CUR_USER.id).maybeSingle();
     if(data&&data.data){
-      CASH_DB=data.data;
-      if(!CASH_DB.history)CASH_DB.history=[];
-      localStorage.setItem(cashKey(),JSON.stringify(CASH_DB));
+      ROOT_CASH_DB=data.data;
+      ensureProfilesStructure();
+      localStorage.setItem(cashKey(),JSON.stringify(ROOT_CASH_DB));
     } else if(!error){
       // first time — check localStorage backup
       const raw=localStorage.getItem(cashKey());
-      if(raw)try{CASH_DB=JSON.parse(raw);}catch(e){}
-      if(!CASH_DB.history)CASH_DB.history=[];
+      if(raw)try{ROOT_CASH_DB=JSON.parse(raw);}catch(e){}
+      ensureProfilesStructure();
       // save to cloud
-      await sb.from('hisab_cash').insert({id:CUR_USER.id,data:CASH_DB});
+      await sb.from('hisab_cash').insert({id:CUR_USER.id,data:ROOT_CASH_DB});
     }
   }catch(e){
     // fallback to localStorage
     const raw=localStorage.getItem(cashKey());
-    if(raw)try{CASH_DB=JSON.parse(raw);}catch(e2){}
-    if(!CASH_DB.history)CASH_DB.history=[];
+    if(raw)try{ROOT_CASH_DB=JSON.parse(raw);}catch(e2){}
+    ensureProfilesStructure();
   }
 }
 function saveCashData(){
   if(window._retryCashSync) { clearTimeout(window._retryCashSync); window._retryCashSync=null; }
-  localStorage.setItem(cashKey(),JSON.stringify(CASH_DB));
+  ensureProfilesStructure();
+
+  if(ROOT_DB && ROOT_DB.activeProfileId === 'default'){
+    ROOT_CASH_DB.balance = CASH_DB.balance;
+    ROOT_CASH_DB.history = CASH_DB.history;
+    ROOT_CASH_DB.wallets = CASH_DB.wallets;
+    ROOT_CASH_DB.budget = CASH_DB.budget;
+  }
+
+  localStorage.setItem(cashKey(),JSON.stringify(ROOT_CASH_DB));
   // cloud sync async
   if(CUR_USER){
     setSyncState('saving','Saving...');
-    sb.from('hisab_cash').upsert({id:CUR_USER.id,data:CASH_DB,updated_at:new Date().toISOString()}).then(({error})=>{
+    sb.from('hisab_cash').upsert({id:CUR_USER.id,data:ROOT_CASH_DB,updated_at:new Date().toISOString()}).then(({error})=>{
       if(error){
         setSyncState('fail','Sync failed ✕');
         window._retryCashSync = setTimeout(()=>saveCashData(), 5000);
@@ -917,6 +1014,231 @@ function saveCashData(){
       }
     });
   }
+}
+
+// ── MULTI-PROFILE (KHATA / BOOKS) SYSTEM ──
+function getActiveProfile(){
+  ensureProfilesStructure();
+  const actId = ROOT_DB.activeProfileId || 'default';
+  return ROOT_DB.profiles.find(p => p.id === actId) || ROOT_DB.profiles[0];
+}
+
+function updateProfileHeaderUI(){
+  const p = getActiveProfile();
+  if(!p) return;
+  const pillIcon = document.getElementById('hdr-profile-icon');
+  const pillName = document.getElementById('hdr-profile-name');
+  if(pillIcon) pillIcon.textContent = p.icon || '📁';
+  if(pillName) pillName.textContent = p.name || 'ব্যক্তিগত';
+
+  // Drawer profile info
+  const drwIcon = document.getElementById('drw-profile-icon');
+  const drwName = document.getElementById('drw-profile-name');
+  if(drwIcon) drwIcon.textContent = p.icon || '📁';
+  if(drwName) drwName.textContent = p.name || 'ব্যক্তিগত';
+}
+
+function switchProfile(profileId, showToast = true){
+  ensureProfilesStructure();
+  const target = ROOT_DB.profiles.find(p => p.id === profileId);
+  if(!target) return;
+
+  ROOT_DB.activeProfileId = profileId;
+  const userKey = (typeof CUR_USER !== 'undefined' && CUR_USER) ? CUR_USER.id : 'guest';
+  localStorage.setItem('ht_active_profile_' + userKey, profileId);
+
+  ensureProfilesStructure();
+  updateProfileHeaderUI();
+
+  // Re-render both views with the new profile data
+  render();
+  renderCash();
+  renderAllQtags();
+
+  // Sync to storage
+  saveData();
+  saveCashData();
+
+  cm('m-profiles');
+  if(showToast){
+    toast(`${target.icon || '📁'} খাতা পরিবর্তিত: ${target.name}`);
+  }
+}
+
+function openProfileSwitcher(){
+  ensureProfilesStructure();
+  const listEl = document.getElementById('profiles-list');
+  if(!listEl) return;
+
+  const activeId = ROOT_DB.activeProfileId || 'default';
+  
+  listEl.innerHTML = ROOT_DB.profiles.map(p => {
+    const isActive = p.id === activeId;
+    const hData = ROOT_DB.profilesData[p.id] || { receive: [], give: [] };
+    const rTot = (hData.receive || []).reduce((s, x) => s + (x.remaining || 0), 0);
+    const gTot = (hData.give || []).reduce((s, x) => s + (x.remaining || 0), 0);
+    const cData = (ROOT_CASH_DB && ROOT_CASH_DB.profilesData && ROOT_CASH_DB.profilesData[p.id]) || { balance: 0 };
+    const cBal = cData.balance || 0;
+
+    const esc = s => String(s).replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+
+    return `
+      <div class="profile-card ${isActive ? 'active' : ''}" onclick="switchProfile('${p.id}')">
+        <div class="pcard-icon">${p.icon || '📁'}</div>
+        <div class="pcard-info">
+          <div class="pcard-title-row">
+            <span class="pcard-name">${esc(p.name)}</span>
+            ${isActive ? '<span class="pcard-badge-active"><span class="bn">✓ সক্রিয়</span><span class="en">Active</span></span>' : ''}
+          </div>
+          <div class="pcard-stats">
+            <span>পাওনা: ৳${fmt(rTot)}</span>
+            <span class="pcard-dot">•</span>
+            <span>দেনা: ৳${fmt(gTot)}</span>
+            <span class="pcard-dot">•</span>
+            <span style="color:var(--text)">ক্যাশ: ৳${fmt(cBal)}</span>
+          </div>
+        </div>
+        <div class="pcard-actions" onclick="event.stopPropagation()">
+          <button class="pcard-action-btn" title="সম্পাদনা" onclick="openEditProfile('${p.id}')">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+          </button>
+          ${!p.isDefault && ROOT_DB.profiles.length > 1 ? `
+          <button class="pcard-action-btn del" title="মুছুন" onclick="confirmDeleteProfile('${p.id}')">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+          </button>
+          ` : ''}
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  document.getElementById('m-profiles').classList.add('on');
+}
+
+let _editingProfileId = null;
+let _selectedProfileEmoji = '📁';
+const PROFILE_EMOJI_SUGGESTIONS = ['👤','🏢','💼','🛒','🏠','🍲','🎓','🚗','✈️','📱','🛠️','💰','📦','🤝','🎯','❤️'];
+
+function openCreateProfileModal(){
+  _editingProfileId = null;
+  _selectedProfileEmoji = '📁';
+  document.getElementById('m-pe-title').textContent = LANG === 'bn' ? 'নতুন খাতা / প্রোফাইল তৈরি' : 'Create New Profile / Book';
+  document.getElementById('pe-name').value = '';
+  document.getElementById('pe-custom-icon').value = '';
+  renderEmojiPicker();
+  cm('m-profiles');
+  document.getElementById('m-profile-edit').classList.add('on');
+}
+
+function openEditProfile(id){
+  ensureProfilesStructure();
+  const p = ROOT_DB.profiles.find(x => x.id === id);
+  if(!p) return;
+  _editingProfileId = id;
+  _selectedProfileEmoji = p.icon || '📁';
+  document.getElementById('m-pe-title').textContent = LANG === 'bn' ? 'খাতা সম্পাদনা' : 'Edit Profile / Book';
+  document.getElementById('pe-name').value = p.name;
+  document.getElementById('pe-custom-icon').value = p.icon || '';
+  renderEmojiPicker();
+  cm('m-profiles');
+  document.getElementById('m-profile-edit').classList.add('on');
+}
+
+function selectProfileEmoji(emoji){
+  _selectedProfileEmoji = emoji;
+  document.getElementById('pe-custom-icon').value = emoji;
+  renderEmojiPicker();
+}
+
+function renderEmojiPicker(){
+  const cont = document.getElementById('pe-emoji-picker');
+  if(!cont) return;
+  cont.innerHTML = PROFILE_EMOJI_SUGGESTIONS.map(e => {
+    const isSel = e === _selectedProfileEmoji;
+    return `<button type="button" class="pe-emoji-btn ${isSel ? 'selected' : ''}" onclick="selectProfileEmoji('${e}')">${e}</button>`;
+  }).join('');
+}
+
+function saveProfileSubmit(){
+  const nameInput = document.getElementById('pe-name');
+  const name = nameInput.value.trim();
+  if(!name){
+    toast('❌ খাতার একটি নাম লিখুন!');
+    nameInput.focus();
+    return;
+  }
+  const customIcon = document.getElementById('pe-custom-icon').value.trim();
+  const icon = customIcon || _selectedProfileEmoji || '📁';
+
+  ensureProfilesStructure();
+
+  if(_editingProfileId){
+    const p = ROOT_DB.profiles.find(x => x.id === _editingProfileId);
+    if(p){
+      p.name = name;
+      p.icon = icon;
+    }
+    toast(`✅ খাতা আপডেট হয়েছে: ${icon} ${name}`);
+    cm('m-profile-edit');
+    saveData();
+    updateProfileHeaderUI();
+    if(ROOT_DB.activeProfileId === _editingProfileId){
+      render();
+      renderCash();
+    }
+  } else {
+    const newId = 'prof_' + Date.now();
+    ROOT_DB.profiles.push({
+      id: newId,
+      name: name,
+      icon: icon,
+      createdAt: Date.now()
+    });
+    ROOT_DB.profilesData[newId] = {
+      receive: [],
+      give: [],
+      activityLog: [{ action: `খাতা তৈরি করা হয়েছে: ${name}`, time: Date.now() }],
+      categories: {}
+    };
+    ROOT_CASH_DB.profilesData[newId] = {
+      balance: 0,
+      history: [],
+      wallets: { cash: 0, bkash: 0, nagad: 0, bank: 0 },
+      budget: 0,
+      monthlyBudgets: {}
+    };
+    cm('m-profile-edit');
+    switchProfile(newId, false);
+    toast(`🎉 নতুন খাতা "${icon} ${name}" তৈরি হয়েছে!`);
+  }
+}
+
+function confirmDeleteProfile(id){
+  ensureProfilesStructure();
+  const p = ROOT_DB.profiles.find(x => x.id === id);
+  if(!p) return;
+  if(p.isDefault || ROOT_DB.profiles.length <= 1){
+    toast('⚠️ প্রাথমিক ব্যক্তিগত খাতাটি মুছে ফেলা যাবে না!');
+    return;
+  }
+  if(!confirm(`আপনি কি নিশ্চিত যে "${p.name}" খাতাটি মুছে ফেলতে চান?\n\nএর ভেতরের সকল দেনা-পাওনা ও আয়-ব্যয় মুছে যাবে!`)){
+    return;
+  }
+
+  if(ROOT_DB.activeProfileId === id){
+    switchProfile('default', false);
+  }
+
+  ROOT_DB.profiles = ROOT_DB.profiles.filter(x => x.id !== id);
+  delete ROOT_DB.profilesData[id];
+  if(ROOT_CASH_DB && ROOT_CASH_DB.profilesData){
+    delete ROOT_CASH_DB.profilesData[id];
+  }
+
+  saveData();
+  saveCashData();
+  openProfileSwitcher();
+  toast(`🗑️ "${p.name}" খাতাটি মুছে ফেলা হয়েছে`);
 }
 
 // ── EXPENSE TRACKER PRO METADATA & DATA STRUCTURES ──
@@ -3112,22 +3434,57 @@ function render(){
 }
 
 // ── BACKUP ──
-function exportData(){const b=new Blob([JSON.stringify(DB)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='hisab_backup.json';a.click();}
+function exportData(){
+  ensureProfilesStructure();
+  const payload = {
+    version: 2,
+    appName: 'HisabTrackerPRO',
+    exportedAt: new Date().toISOString(),
+    user: (typeof CUR_USER !== 'undefined' && CUR_USER) ? CUR_USER.email : 'user',
+    hisab: ROOT_DB,
+    cash: ROOT_CASH_DB
+  };
+  const b=new Blob([JSON.stringify(payload, null, 2)],{type:'application/json'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(b);
+  a.download=`hisab_backup_${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+}
 function triggerImport(){document.getElementById('importFile').click();}
 function handleImport(e){
   const r=new FileReader();
   r.onload=ev=>{
     try{
-      DB=JSON.parse(ev.target.result);
-      if(!DB.activityLog)DB.activityLog=[];
+      const parsed=JSON.parse(ev.target.result);
+      if(parsed.hisab && parsed.cash){
+        ROOT_DB = parsed.hisab;
+        ROOT_CASH_DB = parsed.cash;
+        ensureProfilesStructure();
+        switchProfile(ROOT_DB.activeProfileId || 'default', false);
+      } else if(parsed.receive || parsed.give){
+        ensureProfilesStructure();
+        DB.receive = parsed.receive || [];
+        DB.give = parsed.give || [];
+        if(parsed.categories) DB.categories = parsed.categories;
+        if(parsed.activityLog) DB.activityLog = parsed.activityLog;
+      }
       logActivity('Backup import করা হয়েছে');
-      saveData();render();toast('✅ Imported!');
-    }catch{toast('❌ Invalid file!');}
+      saveData();
+      saveCashData();
+      render();
+      renderCash();
+      updateProfileHeaderUI();
+      toast('✅ Backup সফলভাবে Import হয়েছে!');
+    }catch(err){
+      toast('❌ Invalid backup file!');
+    }
   };
   r.readAsText(e.target.files[0]);
 }
 
 document.addEventListener('DOMContentLoaded',()=>{
+  ensureProfilesStructure();
+  updateProfileHeaderUI();
   ensureWallets();
   updateMonthFilterUI();
   const noteField=document.getElementById('r-no');

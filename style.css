@@ -115,10 +115,260 @@ body{background:var(--bg);color:var(--text);font-family:'Inter','Hind Siliguri',
 .hamburger:active{background:var(--card);}
 .hb-line{width:20px;height:2.5px;background:var(--text);border-radius:2px;}
 
-/* mode badge in header */
+/* mode badge and profile pill in header */
+.profile-pill-btn{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:999px;
+  padding:4px 9px 4px 7px;
+  cursor:pointer;
+  color:var(--text);
+  font-size:12px;
+  font-weight:700;
+  transition:all .18s ease;
+  -webkit-tap-highlight-color:transparent;
+  box-shadow:0 1px 3px rgba(0,0,0,.08);
+}
+.profile-pill-btn:hover{
+  background:rgba(56,189,248,.12);
+  border-color:var(--primary);
+}
+.profile-pill-btn:active{
+  transform:scale(.95);
+}
+.profile-pill-icon{
+  font-size:14px;
+  line-height:1;
+}
+.profile-pill-name{
+  max-width:92px;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  color:var(--text);
+  line-height:1.2;
+}
+.profile-pill-caret{
+  color:var(--muted);
+  flex-shrink:0;
+  transition:transform .2s;
+}
+
 .mode-badge{font-size:10px;font-weight:800;padding:3px 8px;border-radius:999px;letter-spacing:.05em;text-transform:uppercase;}
 .mode-badge.hisab{background:rgba(56,189,248,.15);color:var(--primary);border:1px solid rgba(56,189,248,.3);}
 .mode-badge.cash{background:rgba(16,185,129,.15);color:var(--green);border:1px solid rgba(16,185,129,.3);}
+
+/* ─── DRAWER PROFILE ITEM ─── */
+.drw-profile-card{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:10px 12px;
+  margin:4px 6px 6px;
+  background:linear-gradient(135deg, rgba(56,189,248,.08), rgba(99,102,241,.06));
+  border:1px solid rgba(56,189,248,.2);
+  border-radius:12px;
+  cursor:pointer;
+  transition:all .2s;
+}
+.drw-profile-card:active{
+  transform:scale(.98);
+  background:rgba(56,189,248,.15);
+}
+.drw-profile-card-left{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  min-width:0;
+}
+.drw-profile-icon{
+  font-size:18px;
+  line-height:1;
+  width:32px;
+  height:32px;
+  border-radius:10px;
+  background:var(--card);
+  border:1px solid var(--border);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  flex-shrink:0;
+}
+.drw-profile-title{
+  font-size:13px;
+  font-weight:800;
+  color:var(--text);
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.drw-profile-meta{
+  font-size:11px;
+  color:var(--muted);
+  font-weight:600;
+}
+.drw-profile-switch-btn{
+  font-size:11px;
+  font-weight:800;
+  color:var(--primary);
+  background:rgba(56,189,248,.12);
+  border-radius:6px;
+  padding:4px 8px;
+  white-space:nowrap;
+}
+
+/* ─── PROFILE SWITCHER MODAL ─── */
+.profiles-modal{
+  max-width:440px;
+}
+.profiles-list{
+  display:flex;
+  flex-direction:column;
+  gap:9px;
+  margin:14px 0 16px;
+  max-height:50vh;
+  overflow-y:auto;
+  padding-right:2px;
+}
+.profile-card{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding:12px 14px;
+  background:var(--card);
+  border:1.5px solid var(--border);
+  border-radius:14px;
+  cursor:pointer;
+  transition:all .2s ease;
+  position:relative;
+}
+.profile-card:hover{
+  border-color:rgba(56,189,248,.4);
+  background:rgba(56,189,248,.03);
+}
+.profile-card.active{
+  border-color:var(--primary);
+  background:linear-gradient(135deg, rgba(56,189,248,.1), rgba(99,102,241,.06));
+  box-shadow:0 0 0 1px rgba(56,189,248,.3);
+}
+.pcard-icon{
+  width:42px;
+  height:42px;
+  border-radius:12px;
+  background:var(--bg2);
+  border:1px solid var(--border);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:22px;
+  flex-shrink:0;
+}
+.profile-card.active .pcard-icon{
+  background:linear-gradient(135deg, #38bdf8, #818cf8);
+  border-color:transparent;
+  box-shadow:0 4px 12px rgba(56,189,248,.3);
+}
+.pcard-info{
+  flex:1;
+  min-width:0;
+}
+.pcard-title-row{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  margin-bottom:3px;
+}
+.pcard-name{
+  font-size:14px;
+  font-weight:800;
+  color:var(--text);
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.pcard-badge-active{
+  font-size:10px;
+  font-weight:800;
+  padding:2px 7px;
+  border-radius:999px;
+  background:var(--green);
+  color:#fff;
+  letter-spacing:.03em;
+  flex-shrink:0;
+}
+.pcard-stats{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  font-size:11px;
+  font-weight:600;
+  color:var(--muted);
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.pcard-dot{
+  opacity:.4;
+}
+.pcard-actions{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  flex-shrink:0;
+}
+.pcard-action-btn{
+  width:30px;
+  height:30px;
+  border-radius:8px;
+  border:1px solid var(--border);
+  background:var(--surface);
+  color:var(--text2);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  cursor:pointer;
+  transition:all .15s;
+}
+.pcard-action-btn:hover{
+  border-color:var(--primary);
+  color:var(--primary);
+}
+.pcard-action-btn.del:hover{
+  border-color:var(--red);
+  color:var(--red);
+  background:rgba(239,68,68,.1);
+}
+
+/* ─── EMOJI PICKER IN EDIT PROFILE ─── */
+.pe-emoji-grid{
+  display:grid;
+  grid-template-columns:repeat(8, 1fr);
+  gap:6px;
+  margin:10px 0 14px;
+}
+.pe-emoji-btn{
+  height:36px;
+  border-radius:10px;
+  border:1px solid var(--border);
+  background:var(--card);
+  font-size:17px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  cursor:pointer;
+  transition:all .15s;
+}
+.pe-emoji-btn:hover{
+  transform:scale(1.1);
+}
+.pe-emoji-btn.selected{
+  border-color:var(--primary);
+  background:rgba(56,189,248,.18);
+  box-shadow:0 0 0 2px rgba(56,189,248,.4);
+}
 
 /* ─── SYNC ─── */
 .sync-bar{position:fixed;bottom:110px;left:50%;transform:translateX(-50%);z-index:400;pointer-events:none;}

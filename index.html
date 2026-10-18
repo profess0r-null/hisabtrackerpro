@@ -11,7 +11,7 @@
 <title>হিসাব ট্র্যাকার PRO</title>
 <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;600;700&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="icon" type="image/png" href="icon.png">
-<link rel="stylesheet" href="style.css?v=4.0">
+<link rel="stylesheet" href="style.css?v=4.1">
 <style>
 /* ── SVG ICON SYSTEM ── */
 .ic{display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;}
@@ -147,6 +147,11 @@ function ic(name){return`<span class="ic">${ICONS[name]||''}</span>`;}
     </div>
   </div>
   <div class="hdr-right">
+    <button class="profile-pill-btn" id="hdr-profile-btn" onclick="openProfileSwitcher()" title="খাতা / প্রোফাইল পরিবর্তন">
+      <span class="profile-pill-icon" id="hdr-profile-icon">👤</span>
+      <span class="profile-pill-name" id="hdr-profile-name">ব্যক্তিগত</span>
+      <svg class="profile-pill-caret" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+    </button>
     <span class="mode-badge hisab" id="mode-badge">HISAB</span>
   </div>
 </header>
@@ -177,6 +182,19 @@ function ic(name){return`<span class="ic">${ICONS[name]||''}</span>`;}
     </div>
   </div>
   <div class="drawer-body">
+    <div class="drw-sec">খাতা / প্রোফাইল (Profiles)</div>
+    <div class="drw-profile-card" onclick="openProfileSwitcher(); closeDrawer();">
+      <div class="drw-profile-card-left">
+        <span class="drw-profile-icon" id="drw-profile-icon">👤</span>
+        <div style="min-width:0;">
+          <div class="drw-profile-title" id="drw-profile-name">ব্যক্তিগত</div>
+          <div class="drw-profile-meta">খাতা পরিবর্তন / যোগ করুন</div>
+        </div>
+      </div>
+      <span class="drw-profile-switch-btn">Switch ⇄</span>
+    </div>
+    <div class="drw-divider"></div>
+
     <div class="drw-sec">থিম / Theme</div>
     <div class="theme-row">
       <button class="theme-opt" id="th-dark" onclick="setTheme('dark')">🌙 Dark</button>
@@ -1000,8 +1018,77 @@ function ic(name){return`<span class="ic">${ICONS[name]||''}</span>`;}
   </div>
 </div>
 
+<!-- ══ PROFILES LIST & SWITCHER MODAL ══ -->
+<div class="overlay" id="m-profiles" onclick="if(event.target===this)cm('m-profiles')">
+  <div class="modal profiles-modal">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+      <div class="modal-title" style="margin-bottom:0;">
+        <span class="bn">📁 খাতা / প্রোফাইল</span><span class="en">📁 Books / Profiles</span>
+      </div>
+      <button class="drw-close" onclick="cm('m-profiles')" aria-label="Close">✕</button>
+    </div>
+    <div class="modal-sub">
+      <span class="bn">ভিন্ন ভিন্ন বিষয়ের হিসাব ও ক্যাশ ট্র্যাকার আলাদা রাখুন</span>
+      <span class="en">Keep hisab & cash records separated per topic</span>
+    </div>
+
+    <div class="profiles-list" id="profiles-list">
+      <!-- Generated dynamically -->
+    </div>
+
+    <div class="modal-btns" style="margin-top:14px;">
+      <button type="button" class="btn-a" style="flex:1" onclick="cm('m-profiles')">
+        <span class="bn">বন্ধ করুন</span><span class="en">Close</span>
+      </button>
+      <button type="button" class="sbtn sbtn-b" style="flex:1.5" onclick="openCreateProfileModal()">
+        <span class="bn">+ নতুন খাতা তৈরি</span><span class="en">+ Create Book</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ CREATE / EDIT PROFILE MODAL ══ -->
+<div class="overlay" id="m-profile-edit" onclick="if(event.target===this)cm('m-profile-edit')">
+  <div class="modal">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+      <div class="modal-title" id="m-pe-title" style="margin-bottom:0;">
+        <span class="bn">নতুন খাতা তৈরি</span><span class="en">Create New Book</span>
+      </div>
+      <button class="drw-close" onclick="cm('m-profile-edit')" aria-label="Close">✕</button>
+    </div>
+    <div class="modal-sub">
+      <span class="bn">খাতার নাম ও একটি মানানসই আইকন নির্বাচন করুন</span>
+      <span class="en">Enter book name and pick a matching icon</span>
+    </div>
+
+    <div class="inp-wrap" style="margin-bottom:12px;">
+      <input id="pe-name" type="text" placeholder="খাতার নাম (যেমন: মেস হিসাব, দোকান, প্রজেক্ট)" class="ai">
+    </div>
+
+    <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">
+      <span class="bn">আইকন নির্বাচন করুন</span><span class="en">Select Icon</span>
+    </div>
+    <div class="pe-emoji-grid" id="pe-emoji-picker">
+      <!-- Generated dynamically -->
+    </div>
+
+    <div class="inp-wrap" style="margin-bottom:14px;">
+      <input id="pe-custom-icon" type="text" maxlength="4" placeholder="অথবা কাস্টম ইমোজি লিখুন" class="ai" style="text-align:center;font-size:18px;">
+    </div>
+
+    <div class="modal-btns">
+      <button type="button" class="btn-a" style="flex:1" onclick="cm('m-profile-edit');openProfileSwitcher();">
+        <span class="bn">বাতিল</span><span class="en">Cancel</span>
+      </button>
+      <button type="button" class="sbtn sbtn-g" style="flex:1.5" onclick="saveProfileSubmit()">
+        <span class="bn">সংরক্ষণ করুন ✓</span><span class="en">Save Book ✓</span>
+      </button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
-<script src="script.js?v=4.0"></script>
+<script src="script.js?v=4.1"></script>
 </body>
 </html>
