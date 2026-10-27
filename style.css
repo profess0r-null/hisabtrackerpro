@@ -1122,7 +1122,7 @@ input:focus{border-color:var(--primary);}
   top: 0;
   left: 50%;
   transform: translateX(-50%);
-  width: 104px;
+  width: 112px;
   height: 100%;
   pointer-events: none;
 }
