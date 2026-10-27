@@ -412,6 +412,7 @@ function applyMode(){
       badge.innerHTML='<span class="bn">দেনা-পাওনা</span><span class="en">HISAB</span>';
       badge.className='mode-badge hisab';
     }
+    renderHisabMiniWallets();
   } else {
     if(logoSub) logoSub.innerHTML='<span class="bn">দৈনন্দিন আয়-ব্যয় • PRO</span><span class="en">EXPENSE • PRO</span>';
     if(badge){
@@ -1014,6 +1015,7 @@ function saveCashData(){
   }
 
   localStorage.setItem(cashKey(),JSON.stringify(ROOT_CASH_DB));
+  if(typeof renderHisabMiniWallets === 'function') renderHisabMiniWallets();
   // cloud sync async
   if(CUR_USER){
     setSyncState('saving','Saving...');
@@ -3779,6 +3781,7 @@ function render(){
   else if(net<0){ns.textContent=LANG==='bn'?'▼ আপনি দেবেন':'▼ You owe more';ni.innerHTML=`<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></svg>`;}
   else{ns.textContent=LANG==='bn'?'= সমান':'= Balanced';ni.innerHTML=`<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 9h14M5 15h14"/></svg>`;}
   renderTop();
+  renderHisabMiniWallets();
   const fl=list=>q?list.filter(p=>p.name.toLowerCase().includes(q)):list;
   const sR=fl([...DB.receive].filter(p=>p.remaining>0)).sort((a,b)=>b.remaining-a.remaining);
   const shR=SA.r?sR:sR.slice(0,3);
@@ -3797,6 +3800,50 @@ function render(){
   bG.querySelector('.bn').textContent=SA.g?'কম দেখুন':`সব দেখুন (${sG.length})`;
   bG.querySelector('.en').textContent=SA.g?'Show Less':`See All (${sG.length})`;
   if(TAB==='a') renderAll();
+}
+
+// ── HISAB MINI WALLETS STRIP (OPTION 2) ──
+function renderHisabMiniWallets(){
+  const wrap = document.getElementById('hisab-mini-wallets');
+  if(!wrap) return;
+
+  ensureProfilesStructure();
+  ensureWallets();
+
+  const w = CASH_DB.wallets || { cash: 0, bkash: 0, nagad: 0, bank: 0 };
+  const totalBal = Object.values(w).reduce((s, v) => s + (Number(v) || 0), 0);
+
+  const totalEl = document.getElementById('hmw-total');
+  if(totalEl) totalEl.textContent = '৳' + fmt(totalBal);
+
+  const grid = document.getElementById('hmw-grid');
+  if(!grid) return;
+
+  const keys = ['cash', 'bkash', 'nagad', 'bank'];
+  grid.innerHTML = keys.map(k => {
+    const meta = WALLET_META[k] || { icon: '💵', name: 'নগদ', en: 'Cash' };
+    const amt = w[k] || 0;
+    const nameStr = LANG === 'bn' ? meta.name : meta.en;
+    return `
+      <div class="hmw-pill" onclick="goToCashWallet('${k}', event)" title="${nameStr}: ৳${fmt(amt)} (${LANG==='bn'?'ক্লিক করে আয়-ব্যয়ে যান':'Click to view in Expense'})">
+        <div class="hmw-pill-top">
+          <span class="hmw-pill-icon">${meta.icon}</span>
+          <span class="hmw-pill-name">${nameStr}</span>
+        </div>
+        <div class="hmw-pill-amt">৳${fmt(amt)}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+function goToCashWallet(wKey, ev){
+  if(ev) ev.stopPropagation();
+  setAppTab('cash');
+  if(wKey && typeof toggleWalletFilter === 'function'){
+    if(WALLET_FILTER !== wKey){
+      toggleWalletFilter(wKey);
+    }
+  }
 }
 
 // ── BACKUP ──
