@@ -992,9 +992,21 @@ async function loadCashDataCloud(){
 }
 function saveCashData(){
   if(window._retryCashSync) { clearTimeout(window._retryCashSync); window._retryCashSync=null; }
-  ensureProfilesStructure();
+  
+  const actId = (ROOT_DB && ROOT_DB.activeProfileId) || 'default';
+  if(!ROOT_CASH_DB || typeof ROOT_CASH_DB !== 'object') ROOT_CASH_DB = {};
+  if(!ROOT_CASH_DB.profilesData || typeof ROOT_CASH_DB.profilesData !== 'object') ROOT_CASH_DB.profilesData = {};
 
-  if(ROOT_DB && ROOT_DB.activeProfileId === 'default'){
+  ROOT_CASH_DB.profilesData[actId] = {
+    balance: CASH_DB.balance || 0,
+    history: CASH_DB.history || [],
+    wallets: CASH_DB.wallets || { cash: 0, bkash: 0, nagad: 0, bank: 0 },
+    budget: CASH_DB.budget || 0,
+    monthlyBudgets: CASH_DB.monthlyBudgets || {}
+  };
+  CASH_DB = ROOT_CASH_DB.profilesData[actId];
+
+  if(actId === 'default'){
     ROOT_CASH_DB.balance = CASH_DB.balance;
     ROOT_CASH_DB.history = CASH_DB.history;
     ROOT_CASH_DB.wallets = CASH_DB.wallets;
@@ -1909,10 +1921,56 @@ function clearCashHistory(){
 
 function confirmClearCashExecution(){
   cm('m-clearcash');
-  CASH_DB = { balance: 0, wallets: { cash: 0, bkash: 0, nagad: 0, bank: 0 }, history: [] };
+  const actId = (ROOT_DB && ROOT_DB.activeProfileId) || 'default';
+
+  // 1. Snapshot for Undo
+  const snapHistory = [...(CASH_DB.history || [])];
+  const snapWallets = { ...(CASH_DB.wallets || { cash: 0, bkash: 0, nagad: 0, bank: 0 }) };
+  const snapBalance = CASH_DB.balance || 0;
+
+  // 2. Clear current CASH_DB properties in-place
+  CASH_DB.balance = 0;
+  CASH_DB.wallets = { cash: 0, bkash: 0, nagad: 0, bank: 0 };
+  CASH_DB.history = [];
+
+  // 3. Clear in ROOT_CASH_DB.profilesData
+  if(!ROOT_CASH_DB || typeof ROOT_CASH_DB !== 'object') ROOT_CASH_DB = {};
+  if(!ROOT_CASH_DB.profilesData || typeof ROOT_CASH_DB.profilesData !== 'object') ROOT_CASH_DB.profilesData = {};
+  ROOT_CASH_DB.profilesData[actId] = {
+    balance: 0,
+    history: [],
+    wallets: { cash: 0, bkash: 0, nagad: 0, bank: 0 },
+    budget: CASH_DB.budget || 0,
+    monthlyBudgets: CASH_DB.monthlyBudgets || {}
+  };
+  CASH_DB = ROOT_CASH_DB.profilesData[actId];
+
+  // 4. Clear legacy top-level if default profile
+  if(actId === 'default'){
+    ROOT_CASH_DB.balance = 0;
+    ROOT_CASH_DB.wallets = { cash: 0, bkash: 0, nagad: 0, bank: 0 };
+    ROOT_CASH_DB.history = [];
+  }
+
   saveCashData();
   renderCash();
-  toast(LANG === 'bn' ? '🗑️ সব ইতিহাস মুছে ফেলা হয়েছে' : '🗑️ All history cleared');
+
+  toast(LANG === 'bn' ? '🗑️ সব ইতিহাস মুছে ফেলা হয়েছে' : '🗑️ All history cleared', () => {
+    CASH_DB.history = snapHistory;
+    CASH_DB.wallets = snapWallets;
+    CASH_DB.balance = snapBalance;
+    if(ROOT_CASH_DB && ROOT_CASH_DB.profilesData){
+      ROOT_CASH_DB.profilesData[actId] = CASH_DB;
+    }
+    if(actId === 'default' && ROOT_CASH_DB){
+      ROOT_CASH_DB.balance = snapBalance;
+      ROOT_CASH_DB.wallets = snapWallets;
+      ROOT_CASH_DB.history = snapHistory;
+    }
+    saveCashData();
+    renderCash();
+    toast(LANG === 'bn' ? '↩️ ফিরিয়ে আনা হয়েছে' : '↩️ Restored');
+  });
 }
 
 function openCashEdit(id){

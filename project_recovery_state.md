@@ -1,14 +1,22 @@
 # Project Recovery State
 
-**Last Updated:** 2026-10-27 09:57 PM (BST)
-**Current Git Commit:** `34d4bb2` (`feat: implement phase 1 auto cashflow and wallet sync on due payments and settlements`)
-**Remote Status:** Synced and pushed to `origin/main` (`https://github.com/profess0r-null/hisabtrackerpro.git`)
+**Last Updated:** 2026-10-27 10:23 PM (BST)
 **Current Git Branch:** `main`
-**Latest Feature:** Phase 1: Hisab & Expense Cross-Integration (Auto Cashflow & Wallet Sync on Payments)
+**Latest Fix:** Fix Expense Tracker "Clear All" (`confirmClearCashExecution`) profile reference bug
 
 ---
 
 ## 📌 Summary of Latest Work Done
+
+### Bug Fix: Expense Tracker "Clear All" (`confirmClearCashExecution`)
+- **Root Cause:** In `confirmClearCashExecution()`, `CASH_DB = { ... }` was assigning a new object to the local variable without mutating `ROOT_CASH_DB.profilesData[actId]`. When `saveCashData()` called `ensureProfilesStructure()`, `ensureProfilesStructure()` restored `CASH_DB` from `ROOT_CASH_DB.profilesData[actId]`, reviving the old transactions and preventing the list from clearing.
+- **Fix:**
+  - Mutated `CASH_DB` in-place (`history = []`, `balance = 0`, `wallets = ...`).
+  - Explicitly updated `ROOT_CASH_DB.profilesData[actId]` and top-level `ROOT_CASH_DB`.
+  - Updated `saveCashData()` to sync active profile data directly to `ROOT_CASH_DB.profilesData[actId]`.
+  - Added Undo capability to the "All history cleared" toast.
+  - Bumped cache query strings to `v=4.6` in `index.html` and Service Worker cache to `hisab-v24` in `sw.js`.
+- **Verified:** Tested in browser subagent. Clicking "Clear All" now instantly wipes all transactions, resets wallets/balance to ৳0, and displays the empty state cleanly.
 
 ### Phase 1: দেনা-পাওনা পরিশোধে ওয়ালেট অটো-সিঙ্ক (Auto Cashflow & Wallet Sync)
 
