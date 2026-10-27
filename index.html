@@ -11,7 +11,7 @@
 <title>হিসাব ট্র্যাকার PRO</title>
 <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;600;700&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="icon" type="image/png" href="icon.png">
-<link rel="stylesheet" href="style.css?v=4.4">
+<link rel="stylesheet" href="style.css?v=4.5">
 <style>
 /* ── SVG ICON SYSTEM ── */
 .ic{display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;}
@@ -626,9 +626,46 @@ function ic(name){return`<span class="ic">${ICONS[name]||''}</span>`;}
   <div style="margin-bottom:10px;">
     <button type="button" id="btn-pay-full-fill" class="pay-full-chip" style="display:none;" onclick="fillFullPayment()"></button>
   </div>
-  <div class="inp-wrap"><input id="pa" type="number" inputmode="numeric" placeholder="পরিমাণ / Amount"></div>
+  <div class="inp-wrap"><input id="pa" type="number" inputmode="numeric" placeholder="পরিমাণ / Amount" oninput="updatePayWalletHint()"></div>
   <div class="inp-wrap"><input id="pn" type="text" placeholder="নোট / Note"></div>
   <div class="qtags" id="pay-qtags"></div>
+
+  <!-- Wallet Cashflow Sync Box -->
+  <div class="pay-wallet-sync-box" id="pay-wallet-sync-box">
+    <div class="pay-ws-header">
+      <div class="pay-ws-title">
+        <span class="pay-ws-icon">🔄</span>
+        <span id="pay-ws-lbl">
+          <span class="bn">ওয়ালেটে লেনদেন রেকর্ড করুন:</span>
+          <span class="en">Sync to Wallet Cashbook:</span>
+        </span>
+      </div>
+      <label class="pay-ws-toggle-wrap" title="ওয়ালেটে সমন্বয় চালু/বন্ধ">
+        <input type="checkbox" id="pay-sync-toggle" checked onchange="togglePayWalletSync(this.checked)">
+        <span class="pay-ws-switch"></span>
+      </label>
+    </div>
+    <div class="pay-ws-wallets" id="pay-ws-wallets">
+      <button type="button" class="pws-btn on" data-w="cash" onclick="selectPayWallet('cash', this)">
+        <span class="pws-icon">💵</span>
+        <span class="pws-name"><span class="bn">নগদ</span><span class="en">Cash</span></span>
+      </button>
+      <button type="button" class="pws-btn" data-w="bkash" onclick="selectPayWallet('bkash', this)">
+        <span class="pws-icon">📱</span>
+        <span class="pws-name"><span class="bn">বিকাশ</span><span class="en">bKash</span></span>
+      </button>
+      <button type="button" class="pws-btn" data-w="nagad" onclick="selectPayWallet('nagad', this)">
+        <span class="pws-icon">📱</span>
+        <span class="pws-name"><span class="bn">নগদ</span><span class="en">Nagad</span></span>
+      </button>
+      <button type="button" class="pws-btn" data-w="bank" onclick="selectPayWallet('bank', this)">
+        <span class="pws-icon">🏦</span>
+        <span class="pws-name"><span class="bn">ব্যাংক</span><span class="en">Bank</span></span>
+      </button>
+    </div>
+    <div class="pay-ws-hint" id="pay-ws-hint"></div>
+  </div>
+
   <div class="modal-btns">
     <button class="btn-a" style="flex:1" onclick="cm('m-pay')">Cancel</button>
     <button class="sbtn sbtn-g" style="flex:1.5" onclick="confirmPay()">Confirm ✓</button>
@@ -665,6 +702,42 @@ function ic(name){return`<span class="ic">${ICONS[name]||''}</span>`;}
         <span class="en">Balance becomes ৳0. You can immediately <b>Undo</b> if done by mistake.</span>
       </div>
     </div>
+  </div>
+
+  <!-- Wallet Sync for All Clear -->
+  <div class="pay-wallet-sync-box" id="ac-wallet-sync-box" style="margin-top:12px;">
+    <div class="pay-ws-header">
+      <div class="pay-ws-title">
+        <span class="pay-ws-icon">🔄</span>
+        <span id="ac-ws-lbl">
+          <span class="bn">ওয়ালেটে সমন্বয় করুন:</span>
+          <span class="en">Sync to Wallet Cashbook:</span>
+        </span>
+      </div>
+      <label class="pay-ws-toggle-wrap" title="ওয়ালেটে সমন্বয় চালু/বন্ধ">
+        <input type="checkbox" id="ac-sync-toggle" checked onchange="toggleAcWalletSync(this.checked)">
+        <span class="pay-ws-switch"></span>
+      </label>
+    </div>
+    <div class="pay-ws-wallets" id="ac-ws-wallets">
+      <button type="button" class="pws-btn on" data-w="cash" onclick="selectAcWallet('cash', this)">
+        <span class="pws-icon">💵</span>
+        <span class="pws-name"><span class="bn">নগদ</span><span class="en">Cash</span></span>
+      </button>
+      <button type="button" class="pws-btn" data-w="bkash" onclick="selectAcWallet('bkash', this)">
+        <span class="pws-icon">📱</span>
+        <span class="pws-name"><span class="bn">বিকাশ</span><span class="en">bKash</span></span>
+      </button>
+      <button type="button" class="pws-btn" data-w="nagad" onclick="selectAcWallet('nagad', this)">
+        <span class="pws-icon">📱</span>
+        <span class="pws-name"><span class="bn">নগদ</span><span class="en">Nagad</span></span>
+      </button>
+      <button type="button" class="pws-btn" data-w="bank" onclick="selectAcWallet('bank', this)">
+        <span class="pws-icon">🏦</span>
+        <span class="pws-name"><span class="bn">ব্যাংক</span><span class="en">Bank</span></span>
+      </button>
+    </div>
+    <div class="pay-ws-hint" id="ac-ws-hint"></div>
   </div>
 
   <div class="modal-btns" style="margin-top:14px;">
@@ -1098,6 +1171,6 @@ function ic(name){return`<span class="ic">${ICONS[name]||''}</span>`;}
 
 <div class="toast" id="toast"></div>
 
-<script src="script.js?v=4.4"></script>
+<script src="script.js?v=4.5"></script>
 </body>
 </html>

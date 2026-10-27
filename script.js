@@ -1270,6 +1270,7 @@ const EXPENSE_CATEGORIES = [
   { id: 'education', e: '🎓', bn: 'শিক্ষা', en: 'Education', color: '#6366f1' },
   { id: 'entertainment', e: '🍿', bn: 'বিনোদন', en: 'Entertainment', color: '#10b981' },
   { id: 'family', e: '👨‍👩‍👧', bn: 'পরিবার', en: 'Family', color: '#eab308' },
+  { id: 'debt_out', e: '📤', bn: 'দেনা পরিশোধ', en: 'Due Paid', color: '#ef4444' },
   { id: 'other', e: '📦', bn: 'অন্যান্য', en: 'Other', color: '#64748b' }
 ];
 
@@ -1279,6 +1280,7 @@ const INCOME_CATEGORIES = [
   { id: 'bonus', e: '🎁', bn: 'বোনাস', en: 'Bonus', color: '#f59e0b' },
   { id: 'freelance', e: '💻', bn: 'ফ্রিল্যান্সিং', en: 'Freelance', color: '#8b5cf6' },
   { id: 'gift', e: '🤝', bn: 'উপহার / সাহায্য', en: 'Gift', color: '#ec4899' },
+  { id: 'debt_in', e: '📥', bn: 'পাওনা আদায়', en: 'Due Collected', color: '#10b981' },
   { id: 'other_in', e: '💰', bn: 'অন্যান্য আয়', en: 'Other', color: '#3b82f6' }
 ];
 
@@ -2469,6 +2471,102 @@ function addEntry(type){
   logActivity(`${type==='receive'?'পাওনা':'দেনা'} যোগ`,`${name} — ৳${fmt(amt)} (${note})`);
   saveData();render();toast(LANG==='bn'?'✅ যোগ হয়েছে!':'✅ Added!');
 }
+// ── PAYMENT WALLET CASHFLOW SYNC (PHASE 1) ──
+let SELECTED_PAY_WALLET = 'cash';
+let SELECTED_AC_WALLET = 'cash';
+
+function selectPayWallet(w, btn) {
+  SELECTED_PAY_WALLET = w;
+  document.querySelectorAll('#pay-ws-wallets .pws-btn').forEach(b => b.classList.remove('on'));
+  if (btn) btn.classList.add('on');
+  updatePayWalletHint();
+}
+
+function togglePayWalletSync(enabled) {
+  const walletsWrap = document.getElementById('pay-ws-wallets');
+  if (walletsWrap) {
+    if (enabled) walletsWrap.classList.remove('disabled');
+    else walletsWrap.classList.add('disabled');
+  }
+  updatePayWalletHint();
+}
+
+function updatePayWalletHint() {
+  const hintEl = document.getElementById('pay-ws-hint');
+  if (!hintEl) return;
+  const toggle = document.getElementById('pay-sync-toggle');
+  const isSync = toggle ? toggle.checked : true;
+  if (!isSync) {
+    hintEl.className = 'pay-ws-hint off';
+    hintEl.innerHTML = LANG === 'bn' 
+      ? '🚫 ওয়ালেটে কোনো প্রভাব পড়বে না (শুধুমাত্র খাতায় হিসাব আপডেট হবে)' 
+      : '🚫 No wallet sync (Hisab record only)';
+    return;
+  }
+  const amt = parseFloat(document.getElementById('pa')?.value) || 0;
+  const w = SELECTED_PAY_WALLET || 'cash';
+  const wMeta = WALLET_META[w] || { icon: '💵', name: 'নগদ', en: 'Cash' };
+  const wLabel = `${wMeta.icon} ${LANG === 'bn' ? wMeta.name : wMeta.en}`;
+  const isRec = CTX.type === 'receive';
+  if (isRec) {
+    hintEl.className = 'pay-ws-hint income';
+    hintEl.innerHTML = LANG === 'bn'
+      ? `📥 <b>${wLabel}</b> ওয়ালেটে আয় হিসেবে +৳${fmt(amt)} জমা হবে`
+      : `📥 +৳${fmt(amt)} will be deposited as Income into <b>${wLabel}</b>`;
+  } else {
+    hintEl.className = 'pay-ws-hint expense';
+    hintEl.innerHTML = LANG === 'bn'
+      ? `📤 <b>${wLabel}</b> ওয়ালেট থেকে -৳${fmt(amt)} খরচ কাটা হবে`
+      : `📤 -৳${fmt(amt)} will be deducted as Expense from <b>${wLabel}</b>`;
+  }
+}
+
+function selectAcWallet(w, btn) {
+  SELECTED_AC_WALLET = w;
+  document.querySelectorAll('#ac-ws-wallets .pws-btn').forEach(b => b.classList.remove('on'));
+  if (btn) btn.classList.add('on');
+  updateAcWalletHint();
+}
+
+function toggleAcWalletSync(enabled) {
+  const walletsWrap = document.getElementById('ac-ws-wallets');
+  if (walletsWrap) {
+    if (enabled) walletsWrap.classList.remove('disabled');
+    else walletsWrap.classList.add('disabled');
+  }
+  updateAcWalletHint();
+}
+
+function updateAcWalletHint() {
+  const hintEl = document.getElementById('ac-ws-hint');
+  if (!hintEl) return;
+  const toggle = document.getElementById('ac-sync-toggle');
+  const isSync = toggle ? toggle.checked : true;
+  if (!isSync) {
+    hintEl.className = 'pay-ws-hint off';
+    hintEl.innerHTML = LANG === 'bn' 
+      ? '🚫 ওয়ালেটে কোনো প্রভাব পড়বে না (শুধুমাত্র সম্পূর্ণ শোধ চিহ্নিত হবে)' 
+      : '🚫 No wallet sync (Hisab mark settled only)';
+    return;
+  }
+  const due = PENDING_ALL_CLEAR ? PENDING_ALL_CLEAR.due : 0;
+  const type = PENDING_ALL_CLEAR ? PENDING_ALL_CLEAR.type : 'receive';
+  const w = SELECTED_AC_WALLET || 'cash';
+  const wMeta = WALLET_META[w] || { icon: '💵', name: 'নগদ', en: 'Cash' };
+  const wLabel = `${wMeta.icon} ${LANG === 'bn' ? wMeta.name : wMeta.en}`;
+  if (type === 'receive') {
+    hintEl.className = 'pay-ws-hint income';
+    hintEl.innerHTML = LANG === 'bn'
+      ? `📥 <b>${wLabel}</b> ওয়ালেটে আয় হিসেবে +৳${fmt(due)} জমা হবে`
+      : `📥 +৳${fmt(due)} will be deposited as Income into <b>${wLabel}</b>`;
+  } else {
+    hintEl.className = 'pay-ws-hint expense';
+    hintEl.innerHTML = LANG === 'bn'
+      ? `📤 <b>${wLabel}</b> ওয়ালেট থেকে -৳${fmt(due)} খরচ কাটা হবে`
+      : `📤 -৳${fmt(due)} will be deducted as Expense from <b>${wLabel}</b>`;
+  }
+}
+
 function openPay(type,id){
   const p=DB[type].find(x=>x.id===id);CTX={type,id};
   const breakdown=getLoanBreakdown(p);
@@ -2481,6 +2579,25 @@ function openPay(type,id){
     chip.style.display=due>0?'inline-flex':'none';
     chip.innerHTML=`<span class="bn">⚡ সম্পূর্ণ পরিশোধ (৳${fmt(due)})</span><span class="en">⚡ Full Pay (৳${fmt(due)})</span>`;
   }
+
+  // Configure wallet sync
+  const toggle = document.getElementById('pay-sync-toggle');
+  if(toggle) toggle.checked = true;
+  togglePayWalletSync(true);
+  SELECTED_PAY_WALLET = 'cash';
+  document.querySelectorAll('#pay-ws-wallets .pws-btn').forEach(b => {
+    b.classList.toggle('on', b.getAttribute('data-w') === 'cash');
+  });
+
+  const wsLbl = document.getElementById('pay-ws-lbl');
+  if(wsLbl){
+    if(type === 'receive'){
+      wsLbl.innerHTML = '<span class="bn">ওয়ালেটে টাকা জমা করুন (আয়):</span><span class="en">Deposit money to Wallet:</span>';
+    } else {
+      wsLbl.innerHTML = '<span class="bn">ওয়ালেট থেকে খরচ করুন (ব্যয়):</span><span class="en">Pay from Wallet:</span>';
+    }
+  }
+  updatePayWalletHint();
   
   renderQtags('pay-qtags','hisabPay','pn');
   document.getElementById('m-pay').classList.add('on');
@@ -2493,6 +2610,7 @@ function fillFullPayment(){
   const due=(CTX.type==='receive'&&breakdown)?Math.max(0,breakdown.totalRepayment-breakdown.paidAmount):p.remaining;
   document.getElementById('pa').value=due;
   document.getElementById('pn').value=LANG==='bn'?'সম্পূর্ণ পরিশোধ':'Full Payment';
+  updatePayWalletHint();
 }
 
 let PENDING_ALL_CLEAR = null;
@@ -2515,6 +2633,25 @@ function oneClickAllClear(type, id, ev){
   const amtEl=document.getElementById('ac-party-amt');
   if(nameEl) nameEl.textContent=p.name;
   if(amtEl) amtEl.textContent='৳'+fmt(due);
+
+  // Configure wallet sync for all clear
+  const toggle = document.getElementById('ac-sync-toggle');
+  if(toggle) toggle.checked = true;
+  toggleAcWalletSync(true);
+  SELECTED_AC_WALLET = 'cash';
+  document.querySelectorAll('#ac-ws-wallets .pws-btn').forEach(b => {
+    b.classList.toggle('on', b.getAttribute('data-w') === 'cash');
+  });
+
+  const wsLbl = document.getElementById('ac-ws-lbl');
+  if(wsLbl){
+    if(type === 'receive'){
+      wsLbl.innerHTML = '<span class="bn">ওয়ালেটে টাকা জমা করুন (আয়):</span><span class="en">Deposit money to Wallet:</span>';
+    } else {
+      wsLbl.innerHTML = '<span class="bn">ওয়ালেট থেকে খরচ করুন (ব্যয়):</span><span class="en">Pay from Wallet:</span>';
+    }
+  }
+  updateAcWalletHint();
   
   document.getElementById('m-allclear').classList.add('on');
 }
@@ -2523,18 +2660,64 @@ function confirmAllClearExecution(){
   if(!PENDING_ALL_CLEAR) return;
   const { type, id, due } = PENDING_ALL_CLEAR;
   PENDING_ALL_CLEAR = null;
+  
+  const syncToggle = document.getElementById('ac-sync-toggle');
+  const syncOn = syncToggle ? syncToggle.checked : true;
+  const selectedWallet = SELECTED_AC_WALLET || 'cash';
+  
   cm('m-allclear');
   
   const p=DB[type]?.find(x=>x.id===id);
   if(!p) return;
   
   const ts=Date.now();
+  let cashTxnId = null;
+
+  if (syncOn) {
+    ensureWallets();
+    cashTxnId = ts;
+    const isRec = type === 'receive';
+    if (isRec) {
+      CASH_DB.wallets[selectedWallet] = (CASH_DB.wallets[selectedWallet] || 0) + due;
+      CASH_DB.balance = (CASH_DB.balance || 0) + due;
+      CASH_DB.history.unshift({
+        id: cashTxnId,
+        type: 'add',
+        amt: due,
+        note: `সব শোধ (পাওনা আদায়): ${p.name}`,
+        category: 'debt_in',
+        wallet: selectedWallet,
+        date: ts,
+        refHisabId: p.id,
+        refType: 'receive'
+      });
+    } else {
+      CASH_DB.wallets[selectedWallet] = (CASH_DB.wallets[selectedWallet] || 0) - due;
+      CASH_DB.balance = (CASH_DB.balance || 0) - due;
+      CASH_DB.history.unshift({
+        id: cashTxnId,
+        type: 'sub',
+        amt: due,
+        note: `সব শোধ (দেনা পরিশোধ): ${p.name}`,
+        category: 'debt_out',
+        wallet: selectedWallet,
+        date: ts,
+        refHisabId: p.id,
+        refType: 'give'
+      });
+    }
+    saveCashData();
+    if(typeof renderCash === 'function') renderCash();
+  }
+
   const hist={
     id: ts,
     date: ts,
     amt: due,
     note: LANG==='bn'?'সম্পূর্ণ পরিশোধ (All Clear)':'Full Payment (All Clear)',
-    t: 'pay'
+    t: 'pay',
+    wallet: syncOn ? selectedWallet : null,
+    cashTxnId: cashTxnId
   };
   
   // Snapshots for Undo
@@ -2545,7 +2728,8 @@ function confirmAllClearExecution(){
   p.remaining=0;
   p.clearedAt=ts;
   
-  logActivity('সম্পূর্ণ পরিশোধ',`${p.name} — ৳${fmt(due)}`);
+  const wName = WALLET_META[selectedWallet]?.name || selectedWallet;
+  logActivity('সম্পূর্ণ পরিশোধ',`${p.name} — ৳${fmt(due)}${syncOn ? ` (${wName})` : ''}`);
   saveData();
   render();
   
@@ -2553,21 +2737,91 @@ function confirmAllClearExecution(){
     p.history = p.history.filter(h => h.id !== ts);
     p.remaining = oldRemaining;
     p.clearedAt = oldClearedAt;
+
+    if (cashTxnId) {
+      ensureWallets();
+      const isRec = type === 'receive';
+      if (isRec) {
+        CASH_DB.wallets[selectedWallet] = (CASH_DB.wallets[selectedWallet] || 0) - due;
+        CASH_DB.balance = (CASH_DB.balance || 0) - due;
+      } else {
+        CASH_DB.wallets[selectedWallet] = (CASH_DB.wallets[selectedWallet] || 0) + due;
+        CASH_DB.balance = (CASH_DB.balance || 0) + due;
+      }
+      CASH_DB.history = CASH_DB.history.filter(h => h.id !== cashTxnId);
+      saveCashData();
+      if(typeof renderCash === 'function') renderCash();
+    }
+
     saveData();
     render();
     toast(LANG==='bn'?'↩️ আনডু করা হয়েছে':'↩️ Undone');
   };
   
-  toast(LANG==='bn'?`🎉 ${p.name}-এর ৳${fmt(due)} সম্পূর্ণ শোধ হয়েছে!`:`🎉 ${p.name} fully paid ৳${fmt(due)}!`, undoFn);
+  const syncMsg = syncOn ? (type === 'receive' ? ` (+৳${fmt(due)} ${wName}-এ জমা)` : ` (-৳${fmt(due)} ${wName} থেকে খরচ)`) : '';
+  toast(LANG==='bn'?`🎉 ${p.name}-এর ৳${fmt(due)} সম্পূর্ণ শোধ হয়েছে!${syncMsg}`:`🎉 ${p.name} fully paid ৳${fmt(due)}!${syncMsg}`, undoFn);
 }
+
 function confirmPay(){
   const amt=parseFloat(document.getElementById('pa').value);
-  const note=document.getElementById('pn').value||'Payment';
+  const note=document.getElementById('pn').value.trim()||'Payment';
   if(isNaN(amt)||amt<=0)return;
   const p=DB[CTX.type].find(x=>x.id===CTX.id);
+  if(!p) return;
+
+  const syncToggle = document.getElementById('pay-sync-toggle');
+  const syncOn = syncToggle ? syncToggle.checked : true;
+  const selectedWallet = SELECTED_PAY_WALLET || 'cash';
   
   const ts=Date.now();
-  p.history.unshift({id:ts,date:ts,amt,note,t:'pay'});
+  let cashTxnId = null;
+
+  if (syncOn) {
+    ensureWallets();
+    cashTxnId = ts;
+    const isRec = CTX.type === 'receive';
+    if (isRec) {
+      CASH_DB.wallets[selectedWallet] = (CASH_DB.wallets[selectedWallet] || 0) + amt;
+      CASH_DB.balance = (CASH_DB.balance || 0) + amt;
+      CASH_DB.history.unshift({
+        id: cashTxnId,
+        type: 'add',
+        amt: amt,
+        note: `পাওনা আদায়: ${p.name}${note && note !== 'Payment' ? ' ('+note+')' : ''}`,
+        category: 'debt_in',
+        wallet: selectedWallet,
+        date: ts,
+        refHisabId: p.id,
+        refType: 'receive'
+      });
+    } else {
+      CASH_DB.wallets[selectedWallet] = (CASH_DB.wallets[selectedWallet] || 0) - amt;
+      CASH_DB.balance = (CASH_DB.balance || 0) - amt;
+      CASH_DB.history.unshift({
+        id: cashTxnId,
+        type: 'sub',
+        amt: amt,
+        note: `দেনা পরিশোধ: ${p.name}${note && note !== 'Payment' ? ' ('+note+')' : ''}`,
+        category: 'debt_out',
+        wallet: selectedWallet,
+        date: ts,
+        refHisabId: p.id,
+        refType: 'give'
+      });
+    }
+    saveCashData();
+    if(typeof renderCash === 'function') renderCash();
+  }
+
+  p.history.unshift({
+    id: ts,
+    date: ts,
+    amt,
+    note,
+    t: 'pay',
+    wallet: syncOn ? selectedWallet : null,
+    cashTxnId: cashTxnId
+  });
   
   const breakdown = getLoanBreakdown(p);
   if(breakdown) {
@@ -2577,8 +2831,14 @@ function confirmPay(){
   }
   
   if(p.remaining===0) p.clearedAt=ts;
-  logActivity('পরিশোধ',`${p.name} — ৳${fmt(amt)}`);
-  cm('m-pay');saveData();render();toast(LANG==='bn'?'💸 পরিশোধ হয়েছে!':'💸 Recorded!');
+  const wName = WALLET_META[selectedWallet]?.name || selectedWallet;
+  logActivity('পরিশোধ',`${p.name} — ৳${fmt(amt)}${syncOn ? ` (${wName})` : ''}`);
+  cm('m-pay');
+  saveData();
+  render();
+  
+  const syncMsg = syncOn ? (CTX.type === 'receive' ? ` (+৳${fmt(amt)} ${wName}-এ জমা)` : ` (-৳${fmt(amt)} ${wName} থেকে খরচ)`) : '';
+  toast(LANG==='bn'?`💸 পরিশোধ হয়েছে!${syncMsg}`:`💸 Recorded!${syncMsg}`);
 }
 function openAddMore(type,id){
   const p=DB[type].find(x=>x.id===id);CTX={type,id};
@@ -2746,7 +3006,8 @@ function getReceiptWhatsAppText(p, type) {
     t += `\n📝 *সাম্প্রতিক লেনদেনসমূহ:*\n`;
     recent.forEach(h => {
       const sign = h.t === 'add' ? '+' : '-';
-      t += `• ${fmtD(h.date)} — ${h.note}: ${sign}৳${fmt(h.amt)}\n`;
+      const wBadge = (h.wallet && WALLET_META[h.wallet]) ? ` [${WALLET_META[h.wallet].icon} ${LANG==='bn'?WALLET_META[h.wallet].name:WALLET_META[h.wallet].en}]` : '';
+      t += `• ${fmtD(h.date)} — ${h.note}${wBadge}: ${sign}৳${fmt(h.amt)}\n`;
     });
     if (p.history.length > 5) {
       t += `• ...এবং আরো ${p.history.length - 5}টি লেনদেন\n`;
@@ -2787,12 +3048,14 @@ function openReceipt(type, id) {
     historyRowsHtml = `
       <div class="rc-history-wrap">
         <div class="rc-hist-title">${LANG==='bn'?'সাম্প্রতিক লেনদেন':'Recent Transactions'} (${Math.min(5, p.history.length)}/${p.history.length})</div>
-        ${recentTxns.map(h => `
+        ${recentTxns.map(h => {
+          const wInfo = (h.wallet && WALLET_META[h.wallet]) ? `<span style="font-size:11px;opacity:0.85;margin-left:4px;">(${WALLET_META[h.wallet].icon} ${LANG==='bn'?WALLET_META[h.wallet].name:WALLET_META[h.wallet].en})</span>` : '';
+          return `
           <div class="rc-hist-row">
-            <span>${fmtD(h.date)} — ${h.note}</span>
+            <span>${fmtD(h.date)} — ${h.note}${wInfo}</span>
             <b style="color:var(--${h.t==='add'?'red':'green'})">${h.t==='add'?'+':'-'}৳${fmt(h.amt)}</b>
           </div>
-        `).join('')}
+        `;}).join('')}
       </div>
     `;
   }
@@ -3227,7 +3490,12 @@ function renderCardHistoryItems(p, isExp) {
   if (!p || !p.history || !p.history.length) return '';
   const maxShown = isExp ? 20 : 5;
   const list = p.history.slice(0, maxShown);
-  const items = list.map(h => `<div class="hi ${h.t==='add'?'ar':'pr'}"><span>${fmtD(h.date)} — ${h.note}</span><b style="color:var(--${h.t==='add'?'green':'red'})">${h.t==='add'?'+':'-'} ৳${fmt(h.amt)}</b></div>`).join('');
+  const items = list.map(h => {
+    const wBadge = (h.wallet && WALLET_META[h.wallet]) 
+      ? `<span class="hist-wbadge" title="${WALLET_META[h.wallet].name}">${WALLET_META[h.wallet].icon} ${LANG==='bn'?WALLET_META[h.wallet].name:WALLET_META[h.wallet].en}</span>` 
+      : '';
+    return `<div class="hi ${h.t==='add'?'ar':'pr'}"><span>${fmtD(h.date)} — ${h.note}${wBadge}</span><b style="color:var(--${h.t==='add'?'green':'red'})">${h.t==='add'?'+':'-'} ৳${fmt(h.amt)}</b></div>`;
+  }).join('');
   
   if (p.history.length <= 5) {
     return items;
