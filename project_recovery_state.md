@@ -1,31 +1,32 @@
 # Project Recovery State
 
-**Last Updated:** 2026-10-27 10:50 PM (BST)
+**Last Updated:** 2026-10-28 12:12 AM (BST)
 **Current Git Branch:** `main`
-**Latest Feature:** Option 2 — দেনা-পাওনা (Hisab) ড্যাশবোর্ডে মিনি ওয়ালেট ব্যালেন্স স্ট্রিপ (Mini Wallet Strip)
+**Latest Fix:** বটম নেভিগেশন বারের নচ কার্ভ স্মুথিং (Smooth Organic Bezier Notch Curves)
 
 ---
 
 ## 📌 Summary of Latest Work Done
 
-### Feature: Option 2 — Mini Wallet Strip in Hisab Dashboard
-- **User Request:** "eikhane jodi expense er wallet balance show korto tahole valo hoto maybe naki? -> option 2"
-- **Implementation Details:**
-  1. **HTML Structure (`index.html`):**
-     - Inserted `<div class="hisab-mini-wallets" id="hisab-mini-wallets">` right below `#net-card` and above `.search-wrap`.
-     - Includes a top summary header showing total wallet balance (`#hmw-total`) and a quick link `আয়-ব্যয় দেখুন →` to navigate directly to the Expense tab.
-     - Includes a 4-column responsive grid (`#hmw-grid`) displaying pills for Cash (`💵 নগদ`), bKash (`📱 বিকাশ`), Nagad (`📱 নগদ`), and Bank (`🏦 ব্যাংক`).
-  2. **JavaScript Logic (`script.js`):**
-     - Created `renderHisabMiniWallets()` to read `CASH_DB.wallets`, calculate total wallet balance, and dynamically render each wallet's balance.
-     - Added `goToCashWallet(wKey, ev)` which seamlessly switches to the Expense tab (`setAppTab('cash')`) and activates the filter for the clicked wallet (`toggleWalletFilter(wKey)`).
-     - Hooked `renderHisabMiniWallets()` into `render()`, `applyMode()`, and `saveCashData()`, ensuring balances stay synchronized in real time whenever transactions or payments are updated.
-  3. **Modern Styling (`style.css`):**
-     - High-contrast card styling with subtle borders, border-radius, and hover animations.
-     - Full dark mode and light mode compatibility.
-     - Micro-interactions (hover elevation, tap scale feedback) with ellipsis protection for clean mobile responsiveness.
-  4. **PWA & Cache Invalidation:**
-     - Bumped `style.css?v=4.7` and `script.js?v=4.7` in [index.html](file:///c:/xampp/htdocs/hisabtracker/index.html).
-     - Bumped Service Worker cache to `hisab-v25` in [sw.js](file:///c:/xampp/htdocs/hisabtracker/sw.js).
+### Fix: Bottom Navigation Bar Smooth Notch Curves (No Sharp Edges)
+- **User Issue:** "edge gula beshi sharp hoye geche" (with screenshot highlighting the sharp ~75° corners where the navbar top border clipped into the center circular cutout).
+- **Root Cause:**
+  - Previously, `.bottom-nav::before` had a circular mask `radial-gradient(circle 30px at 50% 8px, transparent 29.5px, #000 30px)` and `.bottom-nav::after` clipped a 60px circle using `clip-path: inset(22px 0 0 0)`.
+  - When a flat horizontal line is clipped by a steep circle at $y=0$, the intersection angle is $\approx 74.5^\circ$ without any fillet radius, resulting in sharp upward-pointing cusps/corners.
+- **Implementation & Solution:**
+  1. **Smooth Cubic Bezier Spline Architecture:**
+     - Replaced the sharp clipped circle with a mathematically smooth cubic bezier spline dock shape inside [index.html](file:///c:/xampp/htdocs/hisabtracker/index.html).
+     - Added `<div class="bnav-dock">` with `.bnav-wing-l`, `.bnav-notch-wrap` containing an SVG path, and `.bnav-wing-r`.
+     - The SVG path uses smooth continuous cubic beziers with generous 16px transition fillets (`M 0,0 C 16,0 26,2 34,9 C 40,15 45,34 52,34 C 59,34 64,15 70,9 C 78,2 88,0 104,0`):
+       - Tangents at both entry and exit points are completely horizontal ($0^\circ$), matching the horizontal top border with zero angle difference.
+       - Silky smooth, organic wave dipping gently under the center floating action button (`+`).
+  2. **Styling & Theme Support ([style.css](file:///c:/xampp/htdocs/hisabtracker/style.css)):**
+     - Left and right wings use `backdrop-filter: blur(20px) saturate(180%)`.
+     - Seamless stroke and fill integration for both Light Mode (`rgba(255, 255, 255, 0.88)` / `rgba(229, 231, 235, 0.9)`) and Dark Mode (`rgba(24, 24, 27, 0.88)` / `rgba(63, 63, 70, 0.8)`).
+     - Natural unified drop-shadow using `filter: drop-shadow(...)`.
+  3. **PWA & Cache Busting:**
+     - Bumped `style.css?v=4.8` and `script.js?v=4.8` in [index.html](file:///c:/xampp/htdocs/hisabtracker/index.html).
+     - Bumped Service Worker cache to `hisab-v26` in [sw.js](file:///c:/xampp/htdocs/hisabtracker/sw.js).
 
 ---
 
@@ -33,18 +34,16 @@
 - ✅ **Syntax Verification:** `node -c script.js` executed with 0 errors.
 - ✅ **Browser Subagent Test:**
   - Ran on local PHP server (`http://127.0.0.1:8080/`).
-  - Verified `#hisab-mini-wallets` renders right below the Net Balance card with the total balance and all 4 wallet cards.
-  - Verified clicking on the `বিকাশ` (bKash) pill instantly switches tabs to the Expense view with the bKash filter enabled (`wallet-card active`).
-  - Verified returning to Hisab tab renders smoothly without layout shift.
-  - Subagent recording: `hisab_mini_wallets_test_1793119722592.webp`.
+  - Captured close-up screenshots in both Light Mode (`light_theme_bottom_nav_1793124639036.png`) and Dark Mode (`dark_theme_bottom_nav_1793124655456.png`).
+  - Verified the transition corners are completely soft and rounded with zero sharp edges.
+  - Verified FAB hover, active, and modal open behaviors remain fully functional.
 
 ---
 
 ## 📁 Key Files Modified
-- `index.html` (Added `#hisab-mini-wallets` container, bumped to `v=4.7`)
-- `script.js` (Added `renderHisabMiniWallets()`, `goToCashWallet()`, wired render hooks)
-- `style.css` (Added styles for `.hisab-mini-wallets`, `.hmw-header`, `.hmw-grid`, `.hmw-pill`, dark/light themes)
-- `sw.js` (Bumped cache to `hisab-v25`)
+- `index.html` (Added `.bnav-dock` with smooth bezier SVG curve, bumped to `v=4.8`)
+- `style.css` (Replaced sharp clipped circle with smooth `.bnav-dock`, `.bnav-wing`, and `.bnav-notch-*` rules)
+- `sw.js` (Bumped cache to `hisab-v26`)
 - `project_recovery_state.md` (Updated state for disaster recovery)
 
 ---

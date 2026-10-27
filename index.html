@@ -11,7 +11,7 @@
 <title>হিসাব ট্র্যাকার PRO</title>
 <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;600;700&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="icon" type="image/png" href="icon.png">
-<link rel="stylesheet" href="style.css?v=4.7">
+<link rel="stylesheet" href="style.css?v=4.8">
 <style>
 /* ── SVG ICON SYSTEM ── */
 .ic{display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;}
@@ -610,8 +610,19 @@ function ic(name){return`<span class="ic">${ICONS[name]||''}</span>`;}
 </div>
 </div><!-- /#cash-content -->
 
-<!-- 4.1 BOTTOM NAVIGATION BAR (Mobile & Desktop) -->
 <nav class="bottom-nav" id="bottom-nav">
+  <!-- Smooth Organic Notched Dock Background -->
+  <div class="bnav-dock" aria-hidden="true">
+    <div class="bnav-wing bnav-wing-l"></div>
+    <div class="bnav-notch-wrap">
+      <svg class="bnav-notch-svg" viewBox="0 -1 104 65" preserveAspectRatio="none">
+        <path class="bnav-notch-fill" d="M 0,0 C 16,0 26,2 34,9 C 40,15 45,34 52,34 C 59,34 64,15 70,9 C 78,2 88,0 104,0 L 104,64 L 0,64 Z"/>
+        <path class="bnav-notch-line" d="M 0,0 C 16,0 26,2 34,9 C 40,15 45,34 52,34 C 59,34 64,15 70,9 C 78,2 88,0 104,0"/>
+      </svg>
+    </div>
+    <div class="bnav-wing bnav-wing-r"></div>
+  </div>
+
   <button class="bnav-btn on" id="bnav-hisab" onclick="setAppTab('hisab')">
     <span class="bnav-icon"><svg xmlns="http://www.w3.org/2000/svg" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1-2.5-2.5Z"/><path d="M6 6h10"/><path d="M6 10h10"/></svg></span>
     <span class="bnav-label"><span class="bn">দেনা-পাওনা</span><span class="en">Hisab</span></span>
@@ -1190,6 +1201,6 @@ function ic(name){return`<span class="ic">${ICONS[name]||''}</span>`;}
 
 <div class="toast" id="toast"></div>
 
-<script src="script.js?v=4.7"></script>
+<script src="script.js?v=4.8"></script>
 </body>
 </html>

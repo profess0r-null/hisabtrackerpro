@@ -1081,48 +1081,72 @@ input:focus{border-color:var(--primary);}
   pointer-events: auto;
 }
 
-/* Background layer with genuine transparent circular cutout notch */
-.bottom-nav::before {
-  content: '';
+/* ── Background dock container with smooth organic notch (No sharp edges) ── */
+.bnav-dock {
   position: absolute;
   inset: 0;
+  pointer-events: none;
+  z-index: -1;
+  filter: drop-shadow(0 -4px 18px rgba(0, 0, 0, 0.05));
+  transition: filter .3s;
+}
+[data-theme="dark"] .bnav-dock {
+  filter: drop-shadow(0 -4px 24px rgba(0, 0, 0, 0.45));
+}
+
+.bnav-wing {
+  position: absolute;
+  top: 0;
+  bottom: 0;
   background: rgba(255, 255, 255, 0.88);
   border-top: 1px solid rgba(229, 231, 235, 0.9);
-  box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.05);
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
   transition: background .3s, border-color .3s;
-  z-index: -1;
-  pointer-events: auto;
-  
-  /* Mask out the concave notch at (50%, 8px): 30px radius cutout */
-  -webkit-mask-image: radial-gradient(circle 30px at 50% 8px, transparent 29.5px, #000 30px);
-  mask-image: radial-gradient(circle 30px at 50% 8px, transparent 29.5px, #000 30px);
 }
-[data-theme="dark"] .bottom-nav::before {
+[data-theme="dark"] .bnav-wing {
   background: rgba(24, 24, 27, 0.88);
   border-top: 1px solid rgba(63, 63, 70, 0.8);
-  box-shadow: 0 -4px 30px rgba(0, 0, 0, 0.4);
+}
+.bnav-wing-l {
+  left: 0;
+  width: calc(50% - 50px);
+}
+.bnav-wing-r {
+  right: 0;
+  width: calc(50% - 50px);
 }
 
-/* Curved border line along the transparent notch cutout */
-.bottom-nav::after {
-  content: '';
+.bnav-notch-wrap {
   position: absolute;
-  top: -22px;
+  top: 0;
   left: 50%;
   transform: translateX(-50%);
-  width: 60px;
-  height: 60px;
-  border-radius: 50%;
-  border: 1px solid rgba(229, 231, 235, 0.9);
-  clip-path: inset(22px 0 0 0);
+  width: 104px;
+  height: 100%;
   pointer-events: none;
-  z-index: 0;
-  transition: border-color .3s;
 }
-[data-theme="dark"] .bottom-nav::after {
-  border-color: rgba(63, 63, 70, 0.8);
+.bnav-notch-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.bnav-notch-fill {
+  fill: rgba(255, 255, 255, 0.88);
+  transition: fill .3s;
+}
+[data-theme="dark"] .bnav-notch-fill {
+  fill: rgba(24, 24, 27, 0.88);
+}
+.bnav-notch-line {
+  fill: none;
+  stroke: rgba(229, 231, 235, 0.9);
+  stroke-width: 1px;
+  vector-effect: non-scaling-stroke;
+  transition: stroke .3s;
+}
+[data-theme="dark"] .bnav-notch-line {
+  stroke: rgba(63, 63, 70, 0.8);
 }
 
 .bnav-btn {
