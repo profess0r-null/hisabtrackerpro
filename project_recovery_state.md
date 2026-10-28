@@ -1,8 +1,8 @@
 # Project Recovery State
 
-**Last Updated:** 2026-10-28 09:46 AM (BST)
+**Last Updated:** 2026-10-28 10:05 AM (BST)
 **Current Git Branch:** `main`
-**Latest Fix:** মোবাইল অ্যাকশন বাটন স্লিম ও প্রিমিয়াম ফিনটেক ডিজাইন এবং ওয়েবসাইটে প্রবেশের ১-সেকেন্ড লগইন স্ক্রিন ফ্ল্যাশ (FOUC) দূরীকরণ
+**Latest Fix:** ইনকাম ক্যাটাগরি থেকে 'বেতন' (Salary) বাদ দিয়ে 'পরিবার' (Family) এবং 'পকেটমানি' (Pocket Money) প্রধান ক্যাটাগরি হিসেবে যুক্তকরণ
 
 ---
 
@@ -46,6 +46,17 @@
      - [script.js](file:///c:/xampp/htdocs/hisabtracker/script.js)-এ `restoreCachedSession()` ফাংশন যুক্ত করা হয়েছে, যা ব্রাউজার ক্যাশ থেকে সাথে সাথে লোকাল ডেটা রেন্ডার করে দেয় ক্লাউড চেক শেষ হওয়ার আগেই।
   4. **Proper Session Synchronization:**
      - `sb.auth.onAuthStateChange` এবং [signOut()](file:///c:/xampp/htdocs/hisabtracker/script.js)-এ `ht_has_session` ও `.has-session` ক্লাস ক্লিনআপ নিখুঁতভাবে সমন্বিত করা হয়েছে।
+
+---
+
+### 3. Income Category Customization (বেতন বাদ দিয়ে পরিবার ও পকেটমানি ডিফল্ট)
+- **User Request:** "accha category te salary ekta option ache. ami to job korina. so amr to salary asbena. family te taka dey... family, pocket money eii rokom . salary bad diye deo"
+- **Solution Applied:**
+  1. `INCOME_CATEGORIES` থেকে `salary` (বেতন) সম্পূর্ণ সরিয়ে দেওয়া হয়েছে।
+  2. এক নম্বরে যুক্ত করা হয়েছে `👨‍👩‍👧 পরিবার` (`Family`) এবং দুই নম্বরে `💵 পকেটমানি` (`Pocket Money`)।
+  3. এর ফলে টাকা যোগ করার সময় স্বয়ংক্রিয়ভাবে ডিফল্ট নোট হিসেবে `"পরিবার"` / `"Family"` সিলেক্ট হবে।
+  4. কুইক চিপস ও সেভ করা প্রোফাইল ক্যাটাগরি থেকেও `Salary` স্বয়ংক্রিয়ভাবে ক্লিন করে `Family` ও `Pocket Money` দিয়ে প্রতিস্থাপন করা হয়েছে।
+  5. পূর্বের কোনো পুরনো লেনদেনে যদি Salary থেকে থাকে, তা ক্র্যাশ না করে নিরাপদে রেন্ডার হওয়ার জন্য `LEGACY_CATS` ফলব্যাক রাখা হয়েছে।
 
 ---
 

@@ -89,11 +89,22 @@ function ensureProfilesStructure(){
   CASH_DB = ROOT_CASH_DB.profilesData[actId];
   if(!CASH_DB.history) CASH_DB.history = [];
   if(typeof ensureWallets === 'function') ensureWallets();
+
+  // Sanitize cached cashAdd quick tags (remove Salary, ensure Family & Pocket Money)
+  if(DB.categories && Array.isArray(DB.categories.cashAdd)){
+    DB.categories.cashAdd = DB.categories.cashAdd.filter(c => !c.l || (!c.l.includes('Salary') && !c.l.includes('বেতন')));
+    if(!DB.categories.cashAdd.some(c => c.l && (c.l.includes('Family') || c.l.includes('পরিবার')))){
+      DB.categories.cashAdd.unshift({e:'👨‍👩‍👧',l:'Family'});
+    }
+    if(!DB.categories.cashAdd.some(c => c.l && (c.l.includes('Pocket') || c.l.includes('পকেটমানি')))){
+      DB.categories.cashAdd.splice(1, 0, {e:'💵',l:'পকেটমানি / Pocket Money'});
+    }
+  }
 }
 
 // ── DEFAULT CATEGORIES ──
 const DEFAULT_CATS={
-  cashAdd:   [{e:'💰',l:'বেতন / Salary'},{e:'👨‍👩‍👧',l:'Family'},{e:'🛍️',l:'বিক্রয় / Sale'},{e:'✅',l:'পাওনা উসুল / Received'}],
+  cashAdd:   [{e:'👨‍👩‍👧',l:'Family'},{e:'💵',l:'পকেটমানি / Pocket Money'},{e:'🎁',l:'উপহার / Gift'},{e:'✅',l:'পাওনা উসুল / Received'}],
   cashSub:   [{e:'🍔',l:'খাওয়া / Food'},{e:'🚌',l:'যাতায়াত / Transport'},{e:'🛒',l:'কেনাকাটা / Shopping'},{e:'💡',l:'বিল / Bill'},{e:'📱',l:'Recharge'}],
   hisabReceive:[{e:'',l:'Hawlat'},{e:'',l:'Recharge'},{e:'',l:'Send Money'},{e:'🏦',l:'Loan'}],
   hisabGive:   [{e:'',l:'Borrowed'},{e:'',l:'Recharge'}],
@@ -1367,13 +1378,18 @@ const EXPENSE_CATEGORIES = [
 ];
 
 const INCOME_CATEGORIES = [
-  { id: 'salary', e: '💼', bn: 'বেতন', en: 'Salary', color: '#10b981' },
-  { id: 'business', e: '📈', bn: 'ব্যবসা', en: 'Business', color: '#06b6d4' },
-  { id: 'bonus', e: '🎁', bn: 'বোনাস', en: 'Bonus', color: '#f59e0b' },
+  { id: 'family_in', e: '👨‍👩‍👧', bn: 'পরিবার', en: 'Family', color: '#10b981' },
+  { id: 'pocket_money', e: '💵', bn: 'পকেটমানি', en: 'Pocket Money', color: '#06b6d4' },
+  { id: 'gift', e: '🎁', bn: 'উপহার', en: 'Gift', color: '#ec4899' },
   { id: 'freelance', e: '💻', bn: 'ফ্রিল্যান্সিং', en: 'Freelance', color: '#8b5cf6' },
-  { id: 'gift', e: '🤝', bn: 'উপহার / সাহায্য', en: 'Gift', color: '#ec4899' },
+  { id: 'business', e: '📈', bn: 'ব্যবসা', en: 'Business', color: '#f59e0b' },
   { id: 'debt_in', e: '📥', bn: 'পাওনা আদায়', en: 'Due Collected', color: '#10b981' },
-  { id: 'other_in', e: '💰', bn: 'অন্যান্য আয়', en: 'Other', color: '#3b82f6' }
+  { id: 'other_in', e: '💰', bn: 'অন্যান্য', en: 'Other', color: '#64748b' }
+];
+
+const LEGACY_CATS = [
+  { id: 'salary', e: '💼', bn: 'বেতন', en: 'Salary', color: '#10b981' },
+  { id: 'bonus', e: '🎁', bn: 'বোনাস', en: 'Bonus', color: '#f59e0b' }
 ];
 
 function formatTxnNote(h, precomputedCat){
@@ -1381,8 +1397,9 @@ function formatTxnNote(h, precomputedCat){
   const isAdd = h.type === 'add';
   const isSub = h.type === 'sub';
   const cats = isAdd ? INCOME_CATEGORIES : (isSub ? EXPENSE_CATEGORIES : []);
+  const allCats = [...INCOME_CATEGORIES, ...EXPENSE_CATEGORIES, ...LEGACY_CATS];
   const catObj = precomputedCat || (h.category ? cats.find(c => c.id === h.category) : null) || 
-                 (h.category ? [...INCOME_CATEGORIES, ...EXPENSE_CATEGORIES].find(c => c.id === h.category) : null);
+                 (h.category ? allCats.find(c => c.id === h.category) : null);
 
   const rawNote = (h.note || '').trim();
 
