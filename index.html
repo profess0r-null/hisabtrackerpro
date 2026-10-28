@@ -32,7 +32,7 @@
   } catch(e){}
 })();
 </script>
-<link rel="stylesheet" href="style.css?v=5.2">
+<link rel="stylesheet" href="style.css?v=5.3">
 <style>
 /* ── SVG ICON SYSTEM ── */
 .ic{display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;}
@@ -556,7 +556,7 @@ function ic(name){return`<span class="ic">${ICONS[name]||''}</span>`;}
         <div class="cf-icon" id="cash-form-icon"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg></div>
         <span class="cf-title" id="cash-form-title"><span class="bn">টাকা যোগ</span><span class="en">Add Money</span></span>
       </div>
-      <button class="cf-close" onclick="closeCashForm()"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+      <button class="cf-close" type="button" onclick="closeCashForm()" aria-label="Close" title="Close"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
     </div>
     <div class="cf-body">
       <!-- 2.1 Wallet Selector -->
@@ -566,16 +566,6 @@ function ic(name){return`<span class="ic">${ICONS[name]||''}</span>`;}
         <button type="button" class="wsel-btn" data-w="bkash" onclick="selectFormWallet('bkash',this)">📱 <span class="bn">বিকাশ</span><span class="en">bKash</span></button>
         <button type="button" class="wsel-btn" data-w="nagad" onclick="selectFormWallet('nagad',this)">📱 <span class="bn">নগদ (Nagad)</span><span class="en">Nagad</span></button>
         <button type="button" class="wsel-btn" data-w="bank" onclick="selectFormWallet('bank',this)">🏦 <span class="bn">ব্যাংক</span><span class="en">Bank</span></button>
-      </div>
-
-      <!-- 3.2 Quick Amount Chips -->
-      <div class="quick-amt-row">
-        <span class="qamt-lbl"><span class="bn">চিপস:</span><span class="en">Quick:</span></span>
-        <button type="button" class="qamt-chip" onclick="addQuickAmount(50)"><span class="bn">+৫০</span><span class="en">+50</span></button>
-        <button type="button" class="qamt-chip" onclick="addQuickAmount(100)"><span class="bn">+১০০</span><span class="en">+100</span></button>
-        <button type="button" class="qamt-chip" onclick="addQuickAmount(200)"><span class="bn">+২০০</span><span class="en">+200</span></button>
-        <button type="button" class="qamt-chip" onclick="addQuickAmount(500)"><span class="bn">+৫০০</span><span class="en">+500</span></button>
-        <button type="button" class="qamt-chip clear" onclick="addQuickAmount('clear')" title="মুছুন">C</button>
       </div>
 
       <div class="cf-row">
@@ -1222,6 +1212,6 @@ function ic(name){return`<span class="ic">${ICONS[name]||''}</span>`;}
 
 <div class="toast" id="toast"></div>
 
-<script src="script.js?v=5.3"></script>
+<script src="script.js?v=5.4"></script>
 </body>
 </html>

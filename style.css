@@ -837,6 +837,10 @@ input:focus{border-color:var(--primary);}
 .cf-header-left{display:flex;align-items:center;gap:10px;}
 .cf-icon{width:30px;height:30px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:rgba(16,185,129,.15);color:var(--green);transition:all .2s;}
 .cf-title{font-size:14px;font-weight:800;color:var(--text);transition:color .2s;}
+.cf-close{width:32px;height:32px;border-radius:50%;border:1px solid var(--border);background:var(--card);color:var(--muted);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:all .15s ease;-webkit-tap-highlight-color:transparent;flex-shrink:0;padding:0;outline:none;}
+.cf-close:hover{background:var(--bg2);color:var(--text);border-color:var(--muted);transform:scale(1.05);}
+.cf-close:active{transform:scale(.92);opacity:.85;}
+.cf-close svg{width:14px;height:14px;display:block;}
 .cf-body{padding:16px 18px 20px;display:flex;flex-direction:column;}
 .cf-btns{display:flex;gap:12px;margin-top:16px;align-items:stretch;}
 .cf-btns .btn-a{flex:1;height:48px;border-radius:14px;font-size:14px;font-weight:700;border:1.5px solid var(--border);color:var(--text);background:var(--card);transition:all .15s ease;}

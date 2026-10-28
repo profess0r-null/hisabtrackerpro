@@ -1,105 +1,86 @@
 # Project Recovery State
 
-**Last Updated:** 2026-10-28 10:28 AM (BST)
+**Last Updated:** 2026-10-28 11:35 AM (BST)
 **Current Git Branch:** `main`
-**Latest Fix:** ক্যাশ ফর্মের কনজেস্টেড বক্স ও বাটন টেক্সট মার্জিন ঠিক করে আধুনিক ফিনটেক লুক ও সঠিক স্পেসিং প্রদান
+**Latest Fix:** ক্যাশ ফর্মের আনস্টাইলড ক্রস বাটন [✕] আধুনিক গোলাকার ফিনটেক আইকন বাটনে রূপান্তর এবং অপ্রয়োজনীয় Quick অ্যামাউন্ট চিপস সারি অপসারণ
 
 ---
 
 ## 📌 Summary of Latest Work Done
 
-### 1. Mobile Action Buttons Sleek Redesign (মোবাইলে মোটা বাটন স্লিম করা হয়েছে)
-- **User Request:** "dekho first ss e mobile e button gula beshi mota mota lagteche. thik kore dio."
+### 1. Cash Form Close Button Modernization (ক্রস বাটন [✕] ফিক্স)
+- **User Request:** "cross ta thik koro and quick ta bad doe"
 - **Root Cause Identified:**
-  - [style.css](file:///c:/xampp/htdocs/hisabtracker/style.css)-এ `.cash-btn`-এ `padding: 16px; border-radius: 16px; font-size: 15px;` নির্ধারিত ছিল।
-  - মোবাইল স্ক্রিনে (৩৬০-৪০০ পিক্সেল) উইডথ সীমিত থাকায় "Deduct from Bank" টেক্সটটি ২টি লাইনে ভেঙে যাচ্ছিল। এর ফলে বাটনের উচ্চতা প্রায় ৭০-৭৫ পিক্সেল হয়ে একটি মোটা ও দৃষ্টিকটু ব্লক তৈরি করছিল।
+  - [index.html](file:///c:/xampp/htdocs/hisabtracker/index.html)-এ ক্যাশ ফর্ম হেডারে `<button class="cf-close" onclick="closeCashForm()">` ছিল, কিন্তু [style.css](file:///c:/xampp/htdocs/hisabtracker/style.css)-এ `.cf-close` ক্লাসের কোনো স্টাইল সংজ্ঞায়িত ছিল না।
+  - ফলস্বরূপ, ব্রাউজারের ডিফল্ট ইউজার-এজেন্ট স্টাইল (চারকোনা রাফ বর্ডার ও ছাইরঙা ব্যাকগ্রাউন্ড) দেখাচ্ছিল, যা ব্যবহারকারীর স্ক্রিনশটে হাইলাইট করা হয়েছিল।
 - **Solution Applied:**
-  1. `.cash-btn`-এর হাইট ও প্যাডিং স্লিম ফিনটেক স্টাইলে রূপান্তর:
-     - `height: 40px; min-height: 40px; padding: 0 12px; border-radius: 12px; font-size: 13px; font-weight: 700; gap: 6px;`
-     - মোবাইলের জন্য মিডিয়া কোয়েরি (`max-width: 420px`): `height: 38px; min-height: 38px; padding: 0 8px; border-radius: 10px; font-size: 12px; gap: 4px;`
-  2. টেক্সট র‍্যাপিং প্রতিরোধ: `white-space: nowrap; overflow: hidden; text-overflow: ellipsis;` যোগ করা হয়েছে, ফলে লেখা কখনো ২ লাইনে ভাঙবে না।
-  3. আইকন স্কেলিং: [index.html](file:///c:/xampp/htdocs/hisabtracker/index.html) এবং [style.css](file:///c:/xampp/htdocs/hisabtracker/style.css)-এ বাটনের SVG আইকন ১৮px থেকে কমিয়ে ১৪px করা হয়েছে।
-  4. প্রিমিয়াম গ্রেডিয়েন্ট ও শ্যাডো:
-     - Add Button: `linear-gradient(135deg, #059669 0%, #10b981 100%)` সঙ্গে সফ্ট এমারেল্ড গ্লো।
-     - Deduct Button: `linear-gradient(135deg, #dc2626 0%, #ef4444 100%)` সঙ্গে সফ্ট রেড গ্লো।
+  - [style.css](file:///c:/xampp/htdocs/hisabtracker/style.css)-এ `.cf-close` এর জন্য আধুনিক সার্কুলার ফিনটেক বাটন ডিজাইন যুক্ত করা হয়েছে:
+    ```css
+    .cf-close {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      border: 1px solid var(--border);
+      background: var(--card);
+      color: var(--muted);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: all .15s ease;
+      -webkit-tap-highlight-color: transparent;
+      flex-shrink: 0;
+      padding: 0;
+      outline: none;
+    }
+    .cf-close:hover {
+      background: var(--bg2);
+      color: var(--text);
+      border-color: var(--muted);
+      transform: scale(1.05);
+    }
+    .cf-close:active {
+      transform: scale(0.92);
+      opacity: 0.85;
+    }
+    .cf-close svg {
+      width: 14px;
+      height: 14px;
+      display: block;
+    }
+    ```
+  - [index.html](file:///c:/xampp/htdocs/hisabtracker/index.html)-এ `type="button"`, `aria-label="Close"`, `title="Close"` এবং SVG আইকন সাইজ ১৪px করা হয়েছে।
 
 ---
 
-### 2. Elimination of 1-Second Login Screen Flash (লগইন স্ক্রিনের ১ সেকেন্ডের ফ্ল্যাশ রিমুভ)
-- **User Request:** "and website e dhukle first e ei enter email password er eita 1 sec er jonno ashe eita bad dio. jate direct main page e niye jay oita koiro"
-- **Root Cause Identified:**
-  - [index.html](file:///c:/xampp/htdocs/hisabtracker/index.html)-এ `#auth-screen` ডিফল্টভাবে এইচটিএমএল-এ দৃশ্যমান ছিল এবং `#app` ছিল `style="display:none"`।
-  - পেজ লোড হওয়ার পর সুপাবেস ক্লায়েন্ট অ্যাসিনক্রোনাসভাবে সেশন যাচাই করতে ~১ সেকেন্ড সময় নিত। ওই সময় জুড়ে ব্যবহারকারী লগইন বক্সটি দেখতে পেতেন, এরপর `showApp()` কল হলে মূল অ্যাপ দৃশ্যমান হতো।
-- **Solution Applied:**
-  1. **Instant Session Detection in `<head>`:**
-     - [index.html](file:///c:/xampp/htdocs/hisabtracker/index.html)-এর `<head>` অংশে সম্পূর্ণ সিনক্রোনাস স্ক্রিপ্ট যুক্ত করা হয়েছে যা বডি রেন্ডার হওয়ার আগেই `localStorage`-এ সুপাবেস সেশন টোকেন বা `ht_has_session` চেক করে `document.documentElement`-এ `.has-session` ক্লাস বসিয়ে দেয়।
-  2. **Zero-Delay CSS Routing:**
-     - [style.css](file:///c:/xampp/htdocs/hisabtracker/style.css)-এ রুল যুক্ত করা হয়েছে:
-       ```css
-       #auth-screen { display: none; }
-       html:not(.has-session) #auth-screen { display: flex; }
-       html:not(.has-session) #app { display: none; }
-       ```
-     - এর ফলে লগইন করা ব্যবহারকারী পেজে প্রবেশ করা মাত্র ফ্রেম-০ (0ms)-তেই সরাসরি মূল পেইজ দেখতে পান, লগইন স্ক্রিনের কোনো ফ্ল্যাশ বা ঝলকানি ঘটে না।
-     - যারা লগইন ছাড়া প্রথমবার আসবেন, তাদের ক্ষেত্রে `:not(.has-session)` স্বয়ংক্রিয়ভাবে কোনো ল্যাগ ছাড়াই অথ স্ক্রিন দেখাবে।
-  3. **Fast Local Data Pre-hydration (`restoreCachedSession`):**
-     - [script.js](file:///c:/xampp/htdocs/hisabtracker/script.js)-এ `restoreCachedSession()` ফাংশন যুক্ত করা হয়েছে, যা ব্রাউজার ক্যাশ থেকে সাথে সাথে লোকাল ডেটা রেন্ডার করে দেয় ক্লাউড চেক শেষ হওয়ার আগেই।
-  4. **Proper Session Synchronization:**
-     - `sb.auth.onAuthStateChange` এবং [signOut()](file:///c:/xampp/htdocs/hisabtracker/script.js)-এ `ht_has_session` ও `.has-session` ক্লাস ক্লিনআপ নিখুঁতভাবে সমন্বিত করা হয়েছে।
+### 2. Removal of Quick Amount Chips Row (কুইক অ্যামাউন্ট চিপস সারি বাদ)
+- **User Request:** "and quick ta bad doe"
+- **Root Cause & Solution Applied:**
+  - [index.html](file:///c:/xampp/htdocs/hisabtracker/index.html)-এ ক্যাশ ফর্মের ভেতর ওয়ালেট সিলেক্টর ও অ্যামাউন্ট ইনপুট বক্সের মাঝখানে অবস্থিত `quick-amt-row` (`QUICK: +50 +100 +200 +500 C`) ব্লকটি সম্পূর্ণ অপসারন করা হয়েছে।
+  - এর ফলে ওয়ালেট সিলেক্টরের ঠিক নিচেই পরিষ্কারভাবে পরিমাণ (Amount) ও নোট (Note) ফিল্ড দৃশ্যমান হয়েছে এবং ফর্মটি আরও পরিচ্ছন্ন ও প্রফেশনাল দেখায়।
 
 ---
 
-### 3. Income Category Customization (বেতন বাদ দিয়ে পরিবার ও পকেটমানি ডিফল্ট)
-- **User Request:** "accha category te salary ekta option ache. ami to job korina. so amr to salary asbena. family te taka dey... family, pocket money eii rokom . salary bad diye deo"
-- **Solution Applied:**
-  1. `INCOME_CATEGORIES` থেকে `salary` (বেতন) সম্পূর্ণ সরিয়ে দেওয়া হয়েছে।
-  2. এক নম্বরে যুক্ত করা হয়েছে `👨‍👩‍👧 পরিবার` (`Family`) এবং দুই নম্বরে `💵 পকেটমানি` (`Pocket Money`)।
-  3. এর ফলে টাকা যোগ করার সময় স্বয়ংক্রিয়ভাবে ডিফল্ট নোট হিসেবে `"পরিবার"` / `"Family"` সিলেক্ট হবে।
-  4. কুইক চিপস ও সেভ করা প্রোফাইল ক্যাটাগরি থেকেও `Salary` স্বয়ংক্রিয়ভাবে ক্লিন করে `Family` ও `Pocket Money` দিয়ে প্রতিস্থাপন করা হয়েছে।
-  5. পূর্বের কোনো পুরনো লেনদেনে যদি Salary থেকে থাকে, তা ক্র্যাশ না করে নিরাপদে রেন্ডার হওয়ার জন্য `LEGACY_CATS` ফলব্যাক রাখা হয়েছে।
-
----
-
-### 4. Cash Form Spacious Layout & Box Margin Overhaul (বক্স ও বাটনের গা ঘেঁষা টেক্সট ফিক্স)
-- **User Request:** "dekho box er sathe button text lege jaache. onk close hoye geche jinish gula fix kibhabe korle professional hbe ?"
-- **Root Cause Identified:**
-  - `.cat-tile`-এ সাইড প্যাডিং ছিল মাত্র `4px` এবং `white-space: nowrap;` থাকায় "Pocket Money" এবং "Due Collected" লেখার অক্ষরগুলো সরাসরি বক্সের বর্ডারে লেগে যাচ্ছিল।
-  - `.cf-body`-এর কোনো প্যাডিং ছিল না, ফলে ভেতরের সব উপাদান বাইরের কার্ডের বর্ডারে ঠেকে ছিল।
-  - ইনপুট ফিল্ড `.cf-input`-এর প্যাডিং ছিল মাত্র ১৩px, ফলে কার্সর ও টেক্সট বাম পাশের বর্ডারের একেবারে গা ঘেঁষে থাকত।
-  - ওয়ালেট সিলেক্টর ও কুইক অ্যামাউন্ট চিপস অতিরিক্ত টাইট ও চাপা ছিল।
-- **Solution Applied:**
-  1. **ক্যাটাগরি টাইলস প্রফেশনাল স্পেসিং:**
-     - প্যাডিং বাড়ানো হয়েছে `10px 8px` এবং মিনিমাম হাইট `64px`।
-     - টেক্সটে `white-space: normal; line-clamp: 2; word-break: break-word;` দেওয়া হয়েছে। এর ফলে "Pocket Money" লেখাটি সুন্দরভাবে দুটি লাইনেCentered হয়ে ভেতরে ৮px পর্যাপ্ত জায়গা নিয়ে থাকবে, কখনো বর্ডারে ঠেকবে না।
-  2. **ওয়ালেট সিলেক্টর মডার্ন কার্ড স্টাইল:**
-     - মিনিমাম হাইট `42px`, প্যাডিং `10px 10px`, বর্ডার রেডিয়াস `12px`।
-     - অ্যাক্টিভ অবস্থায় কোহেসিভ সফট ব্যাকগ্রাউন্ড ও গ্রিন/রেড টিন্ট।
-  3. **ইনপুট ফিল্ড মার্জিন ও প্যাডিং:**
-     - `.cf-input`-এ প্যাডিং বাড়ানো হয়েছে `22px 16px 8px 16px` এবং ফ্লোটিং লেবেল `left: 16px` করা হয়েছে। ফলে কার্সর কখনোই বাম বর্ডারের সাথে লাগবে না।
-  4. **কার্ড বডি ও বাটন বাবল স্পেসিং:**
-     - `.cf-body`-তে `padding: 16px 18px 20px;` যোগ করে কার্ডের চারপাশকে পর্যাপ্ত স্পেস ও ব্রিদিং রুম দেওয়া হয়েছে।
-     - কুইক চিপস মডার্ন পিল শেইপ (`border-radius: 999px`) করা হয়েছে।
-     - নিচের Cancel ও Submit বাটনকে `height: 48px; border-radius: 14px;` দিয়ে দৃষ্টিনন্দন করা হয়েছে।
+### 3. Cache & Service Worker Update
+- [index.html](file:///c:/xampp/htdocs/hisabtracker/index.html)-এ `style.css?v=5.3` এবং `script.js?v=5.4` আপডেট।
+- [sw.js](file:///c:/xampp/htdocs/hisabtracker/sw.js)-এ সার্ভিস ওয়ার্কার ক্যাশ `hisab-v32` এ উন্নীত করা হয়েছে।
 
 ---
 
 ## 🧪 Verification & Testing
 - ✅ **Syntax Verification:** `node -c script.js` executed with 0 errors.
 - ✅ **Browser Subagent Test:**
-  - লোকাল টেস্ট সার্ভারে মোবাইল ভিউপোর্টে (৩৯০x৮৪৪) ব্রাউজার সাবএজেন্ট চালিয়ে যাচাই করা হয়েছে।
-  - টেস্টে প্রমাণিত হয়েছে:
-    1. সেশন থাকা অবস্থায় পেজ লোড দিলে লগইন স্ক্রিন আর ০.১ সেকেন্ডের জন্যও ফ্ল্যাশ করে না, সরাসরি মেইন পেজে নিয়ে যায়।
-    2. ব্যাংকে ক্লিক করার পর `+ Add to Bank` এবং `− Deduct from Bank` বাটন দুটি চমৎকারভাবে ৩৮-৪০px স্লিম পিল আকারে ১ লাইনে নিখুঁতভাবে প্রদর্শিত হয়েছে।
-  - স্ক্রিনশট সংরক্ষিত: `bank_action_buttons_1793159118376.png`।
-- ✅ **Cache & Service Worker Bump:**
-  - `style.css?v=5.1` এবং `script.js?v=5.1` ইন [index.html](file:///c:/xampp/htdocs/hisabtracker/index.html)।
-  - সার্ভিস ওয়ার্কার ক্যাশ নেম আপডেট: `hisab-v29` ইন [sw.js](file:///c:/xampp/htdocs/hisabtracker/sw.js)।
+  - ব্রাউজার সাবএজেন্টে সার্ভিস ওয়ার্কার ক্যাশ ক্লিয়ার করে পেজ রিলোড দিয়ে ক্যাশ ফর্ম ওপেন করা হয়েছে।
+  - স্ক্রিনশট সংরক্ষিত: `cash_form_verified_1793165697926.png`।
+  - যাচাইকৃত বিষয়সমূহ:
+    1. ক্রস বাটন [✕] এখন নিখুঁত সার্কুলার স্লিক ফিনটেক আইকন বাটনে রূপান্তরিত হয়েছে।
+    2. `QUICK: +50 +100...` সারিটি সম্পূর্ণ অদৃশ্য, ওয়ালেট বাটনের পরপরই অ্যামাউন্ট ও নোট বক্স সুন্দর স্পেসিংসহ এসেছে।
+    3. ক্রস বাটনে ক্লিক করলে ক্যাশ ফর্ম মসৃণভাবে বন্ধ হয়ে যায়।
 
 ---
 
 ## 📁 Key Files Modified
-- [index.html](file:///c:/xampp/htdocs/hisabtracker/index.html) (যুক্ত করা হয়েছে ইনলাইন সেশন ডিটেকশন স্ক্রিপ্ট, স্কেল করা হয়েছে অ্যাকশন বাটন আইকন, ক্যাশ বাস্টার `v=5.1`)
-- [style.css](file:///c:/xampp/htdocs/hisabtracker/style.css) (যুক্ত করা হয়েছে জিরো-ডিলে সেশন সিএসএস রুলস এবং স্লিম রেসপন্সিভ `.cash-btn` স্টাইলিং)
-- [script.js](file:///c:/xampp/htdocs/hisabtracker/script.js) (যুক্ত করা হয়েছে `restoreCachedSession()`, আপডেট করা হয়েছে `onAuthStateChange` ও `signOut`)
-- [sw.js](file:///c:/xampp/htdocs/hisabtracker/sw.js) (ক্যাশ আপডেট করা হয়েছে `hisab-v29`)
-- [project_recovery_state.md](file:///c:/xampp/htdocs/hisabtracker/project_recovery_state.md) (রিকাভারি স্টেট আপডেট করা হয়েছে)
+1. [style.css](file:///c:/xampp/htdocs/hisabtracker/style.css): `.cf-close` মডার্ন সার্কুলার আইকন বাটন স্টাইলিং।
+2. [index.html](file:///c:/xampp/htdocs/hisabtracker/index.html): ক্যাশ ফর্মের `quick-amt-row` অপসারণ, `.cf-close` অ্যাট্রিবিউট আপডেট এবং ক্যাশ ভার্সন বাম্প (`style.css?v=5.3`, `script.js?v=5.4`)।
+3. [sw.js](file:///c:/xampp/htdocs/hisabtracker/sw.js): ক্যাশ ভার্সন `hisab-v32`।
+4. [project_recovery_state.md](file:///c:/xampp/htdocs/hisabtracker/project_recovery_state.md): প্রজেক্ট স্টেট ও রিকভারি আপডেট।
