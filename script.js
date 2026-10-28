@@ -334,7 +334,26 @@ function renderSettlement(){
 
 
 // init
+function updateDynamicPlaceholders(){
+  const cs = document.getElementById('cash-srch');
+  if(cs) cs.placeholder = LANG === 'bn' ? 'খরচ বা নোট খুঁজুন...' : 'Search transactions...';
+  const hs = document.getElementById('srch');
+  if(hs) hs.placeholder = LANG === 'bn' ? 'নাম দিয়ে খুঁজুন...' : 'Search by name...';
+  const qaAmt = document.getElementById('qa-amt');
+  if(qaAmt) qaAmt.placeholder = LANG === 'bn' ? 'পরিমাণ ৳' : 'Amount ৳';
+  const qaNote = document.getElementById('qa-note');
+  if(qaNote) qaNote.placeholder = LANG === 'bn' ? 'নোট / বিবরণ' : 'Note / Description';
+  const qaName = document.getElementById('qa-name');
+  if(qaName) qaName.placeholder = LANG === 'bn' ? 'ব্যক্তির নাম' : 'Party Name';
+  const tfAmt = document.getElementById('tf-amt');
+  if(tfAmt) tfAmt.placeholder = LANG === 'bn' ? 'ট্রান্সফারের পরিমাণ ৳' : 'Transfer Amount ৳';
+  const tfNote = document.getElementById('tf-note');
+  if(tfNote) tfNote.placeholder = LANG === 'bn' ? 'নোট (যেমন: এটিএম ক্যাশ, বিকাশ ইন)' : 'Note (e.g., ATM Cash, bKash In)';
+  const bAmt = document.getElementById('budget-modal-amt');
+  if(bAmt) bAmt.placeholder = LANG === 'bn' ? 'বাজেটের পরিমাণ ৳' : 'Target Amount ৳';
+}
 document.documentElement.setAttribute('data-lang',LANG);
+updateDynamicPlaceholders();
 applyThemeSilent(THEME);
 
 // PWA
@@ -403,7 +422,7 @@ function applyMode(){
   const logoSub=document.getElementById('hdr-logo-sub');
   const badge=document.getElementById('mode-badge');
   if(logoText){
-    logoText.textContent='হিসাব ট্র্যাকার';
+    logoText.innerHTML='<span class="bn">হিসাব ট্র্যাকার</span><span class="en">Hisab Tracker</span>';
     logoText.className='logo-main';
   }
   if(isHisab){
@@ -696,6 +715,8 @@ async function authForgot(){
 async function signOut(){
   logActivity('Logout');
   if(CUR_USER)await saveData();
+  localStorage.removeItem('ht_has_session');
+  document.documentElement.classList.remove('has-session');
   await sb.auth.signOut();
   if(CUR_USER)localStorage.removeItem('ht_tr_'+CUR_USER.id);
   CUR_USER=null;
@@ -710,10 +731,57 @@ async function signOut(){
   setAuthMsg('','');
 }
 
+// Synchronously restore session from Supabase localStorage cache to eliminate 1s login flash
+function restoreCachedSession(){
+  try {
+    let cachedUser = null;
+    for(let i = 0; i < localStorage.length; i++){
+      const k = localStorage.key(i);
+      if(k && k.startsWith('sb-') && k.endsWith('-auth-token')){
+        const item = JSON.parse(localStorage.getItem(k));
+        if(item && item.user){
+          cachedUser = item.user;
+          break;
+        }
+      }
+    }
+    if(cachedUser){
+      CUR_USER = cachedUser;
+      localStorage.setItem('ht_has_session', '1');
+      document.documentElement.classList.add('has-session');
+      const email = CUR_USER.email || '';
+      const av = document.getElementById('drw-av');
+      if(av) av.textContent = email.charAt(0).toUpperCase();
+      const drwName = document.getElementById('drw-name');
+      if(drwName) drwName.innerHTML = '<a href="https://profess0r-null.xyz" target="_blank" class="dev-link">profess0r.null ↗</a>';
+      const em = document.getElementById('drw-email');
+      if(em) em.textContent = email;
+
+      // Hydrate local data immediately so UI renders in 0ms
+      loadCashData();
+      const raw = localStorage.getItem('ht_' + CUR_USER.id);
+      if(raw){
+        try { ROOT_DB = JSON.parse(raw); ensureProfilesStructure(); } catch(e){}
+      }
+      if(isTrusted()){
+        document.getElementById('auth-screen').style.display = 'none';
+        document.getElementById('app').style.display = 'block';
+        applyMode();
+        render();
+        renderCash();
+        updateProfileHeaderUI();
+      }
+    }
+  } catch(e){}
+}
+restoreCachedSession();
+
 let _appInitialized=false;
 sb.auth.onAuthStateChange(async(event,session)=>{
   if(sessionStorage.getItem('ht_verify_flow')==='1'){
     sessionStorage.removeItem('ht_verify_flow');
+    localStorage.removeItem('ht_has_session');
+    document.documentElement.classList.remove('has-session');
     document.getElementById('app').style.display='none';
     document.getElementById('pin-screen').style.display='none';
     document.getElementById('auth-screen').style.display='flex';
@@ -723,18 +791,25 @@ sb.auth.onAuthStateChange(async(event,session)=>{
   }
   if(session&&session.user){
     CUR_USER=session.user;
+    localStorage.setItem('ht_has_session', '1');
+    document.documentElement.classList.add('has-session');
     document.getElementById('auth-screen').style.display='none';
     const email=CUR_USER.email||'';
-    document.getElementById('drw-av').textContent=email.charAt(0).toUpperCase();
-    document.getElementById('drw-name').innerHTML =
+    const av = document.getElementById('drw-av');
+    if(av) av.textContent=email.charAt(0).toUpperCase();
+    const drwName = document.getElementById('drw-name');
+    if(drwName) drwName.innerHTML =
   '<a href="https://profess0r-null.xyz" target="_blank" class="dev-link">profess0r.null ↗</a>';
-    document.getElementById('drw-email').textContent=email;
+    const em = document.getElementById('drw-email');
+    if(em) em.textContent=email;
     if(!_appInitialized){
       _appInitialized=true;
       await checkPin();
     }
   } else {
     _appInitialized=false;
+    localStorage.removeItem('ht_has_session');
+    document.documentElement.classList.remove('has-session');
     CUR_USER=null;
     ROOT_DB=null; ROOT_CASH_DB=null;
     DB={receive:[],give:[],activityLog:[]};
@@ -1042,14 +1117,17 @@ function updateProfileHeaderUI(){
   if(!p) return;
   const pillIcon = document.getElementById('hdr-profile-icon');
   const pillName = document.getElementById('hdr-profile-name');
+  const isDefault = (!p.id || p.id === 'default' || p.name === 'ব্যক্তিগত' || p.name === 'Personal');
+  const displayName = isDefault ? (LANG === 'bn' ? 'ব্যক্তিগত' : 'Personal') : (p.name || (LANG === 'bn' ? 'ব্যক্তিগত' : 'Personal'));
+
   if(pillIcon) pillIcon.textContent = p.icon || '📁';
-  if(pillName) pillName.textContent = p.name || 'ব্যক্তিগত';
+  if(pillName) pillName.textContent = displayName;
 
   // Drawer profile info
   const drwIcon = document.getElementById('drw-profile-icon');
   const drwName = document.getElementById('drw-profile-name');
   if(drwIcon) drwIcon.textContent = p.icon || '📁';
-  if(drwName) drwName.textContent = p.name || 'ব্যক্তিগত';
+  if(drwName) drwName.textContent = displayName;
 }
 
 function switchProfile(profileId, showToast = true){
@@ -1297,6 +1375,43 @@ const INCOME_CATEGORIES = [
   { id: 'debt_in', e: '📥', bn: 'পাওনা আদায়', en: 'Due Collected', color: '#10b981' },
   { id: 'other_in', e: '💰', bn: 'অন্যান্য আয়', en: 'Other', color: '#3b82f6' }
 ];
+
+function formatTxnNote(h, precomputedCat){
+  if(!h) return '';
+  const isAdd = h.type === 'add';
+  const isSub = h.type === 'sub';
+  const cats = isAdd ? INCOME_CATEGORIES : (isSub ? EXPENSE_CATEGORIES : []);
+  const catObj = precomputedCat || (h.category ? cats.find(c => c.id === h.category) : null) || 
+                 (h.category ? [...INCOME_CATEGORIES, ...EXPENSE_CATEGORIES].find(c => c.id === h.category) : null);
+
+  const rawNote = (h.note || '').trim();
+
+  // If note was default "টাকা যোগ" or "খরচ" or "Add Money" or "Expense"
+  const isDefaultNote = !rawNote || 
+    rawNote === 'টাকা যোগ' || rawNote === 'টাকা যোগ (আয়)' || rawNote === 'Add Money' || rawNote === 'Add Income' ||
+    rawNote === 'খরচ' || rawNote === 'খরচ করুন (ব্যয়)' || rawNote === 'Expense' || rawNote === 'Add Expense';
+
+  if(isDefaultNote){
+    if(catObj && catObj.en && catObj.bn) return LANG === 'bn' ? catObj.bn : catObj.en;
+    if(isAdd) return LANG === 'bn' ? 'টাকা যোগ' : 'Add Money';
+    if(isSub) return LANG === 'bn' ? 'খরচ' : 'Expense';
+    return LANG === 'bn' ? 'ট্রান্সফার' : 'Transfer';
+  }
+
+  // If note matches any category bn or en name (e.g. "বেতন", "Salary", "খাবার", "Food")
+  const matchedCat = [...INCOME_CATEGORIES, ...EXPENSE_CATEGORIES].find(c => c.bn === rawNote || c.en.toLowerCase() === rawNote.toLowerCase());
+  if(matchedCat){
+    return LANG === 'bn' ? matchedCat.bn : matchedCat.en;
+  }
+
+  // If note is formatted like "খাওয়া / Food" or "বিল / Bill"
+  if(rawNote.includes(' / ')){
+    const parts = rawNote.split(' / ');
+    return LANG === 'bn' ? parts[0].trim() : parts[1].trim();
+  }
+
+  return rawNote;
+}
 
 function ensureWallets(){
   if(!CASH_DB.wallets){
@@ -1579,7 +1694,10 @@ function submitQuickAdd(){
   const w = SELECTED_QA_WALLET;
   const cats = QA_MODE === 'add' ? INCOME_CATEGORIES : EXPENSE_CATEGORIES;
   const catObj = cats.find(x => x.id === (SELECTED_QA_CAT || (cats[0] && cats[0].id)));
-  const note = document.getElementById('qa-note').value.trim() || (catObj ? (LANG === 'bn' ? catObj.bn : catObj.en) : (QA_MODE === 'add' ? 'টাকা যোগ' : 'খরচ'));
+  const note = document.getElementById('qa-note').value.trim() || (catObj ? (LANG === 'bn' ? catObj.bn : catObj.en) : (QA_MODE === 'add' ? (LANG === 'bn' ? 'টাকা যোগ' : 'Add Money') : (LANG === 'bn' ? 'খরচ' : 'Expense')));
+
+  const wMeta = WALLET_META[w] || { name: w, en: w };
+  const wName = LANG === 'bn' ? wMeta.name : wMeta.en;
 
   if(QA_MODE === 'add'){
     CASH_DB.wallets[w] = (CASH_DB.wallets[w] || 0) + amt;
@@ -1593,7 +1711,7 @@ function submitQuickAdd(){
       wallet: w,
       date: ts
     });
-    toast(`✅ ৳${fmt(amt)} আয় যোগ হয়েছে! (${WALLET_META[w]?.name || w})`);
+    toast(LANG === 'bn' ? `✅ ৳${fmt(amt)} আয় যোগ হয়েছে! (${wName})` : `✅ Added ৳${fmt(amt)} income! (${wName})`);
   } else {
     CASH_DB.wallets[w] = (CASH_DB.wallets[w] || 0) - amt;
     CASH_DB.balance -= amt;
@@ -1606,7 +1724,7 @@ function submitQuickAdd(){
       wallet: w,
       date: ts
     });
-    toast(`💸 ৳${fmt(amt)} খরচ হয়েছে! (${WALLET_META[w]?.name || w})`);
+    toast(LANG === 'bn' ? `💸 ৳${fmt(amt)} খরচ হয়েছে! (${wName})` : `💸 Deducted ৳${fmt(amt)} expense! (${wName})`);
   }
 
   saveCashData();
@@ -1773,7 +1891,9 @@ function renderMicroInsights(allHistory){
   if(todayTot > 0){
     if(yestTot > 0){
       const diff = Math.round(((todayTot - yestTot) / yestTot) * 100);
-      const comp = diff <= 0 ? `${Math.abs(diff)}% কম খরচ` : `${diff}% বেশি খরচ`;
+      const comp = LANG === 'bn' 
+        ? (diff <= 0 ? `${Math.abs(diff)}% কম খরচ` : `${diff}% বেশি খরচ`)
+        : (diff <= 0 ? `${Math.abs(diff)}% less` : `${diff}% more`);
       insightMsg = LANG === 'bn' 
         ? `আজকের মোট খরচ <b>৳${fmt(todayTot)}</b> (গতকালের চেয়ে ${comp})। ${topCatName ? 'শীর্ষ খাত: <b>' + topCatName + '</b>' : ''}`
         : `Today's spend <b>৳${fmt(todayTot)}</b> (${comp} vs yesterday). ${topCatName ? 'Top: <b>' + topCatName + '</b>' : ''}`;
@@ -1818,13 +1938,17 @@ function openCashForm(mode, targetWallet){
   }
 
   document.getElementById('cash-amt').value = '';
-  document.getElementById('cash-note').value = '';
+  const noteInput = document.getElementById('cash-note');
+  const cats = mode === 'add' ? INCOME_CATEGORIES : EXPENSE_CATEGORIES;
+  const firstCat = cats.find(c => c.id === SELECTED_FORM_CAT) || cats[0];
+  noteInput.value = firstCat ? (LANG === 'bn' ? firstCat.bn : firstCat.en) : '';
   const todayStr = localDateStr();
   const dateEl = document.getElementById('cash-date');
   dateEl.value = todayStr;
   dateEl.classList.add('has-val');
   document.getElementById('cash-amt').classList.remove('has-val');
-  document.getElementById('cash-note').classList.remove('has-val');
+  if(noteInput.value) noteInput.classList.add('has-val');
+  else noteInput.classList.remove('has-val');
 
   selectFormWallet(activeW);
   form.classList.remove('hidden');
@@ -1837,9 +1961,8 @@ function closeCashForm(){
 
 function submitCash(){
   const amt = parseFloat(document.getElementById('cash-amt').value);
-  const note = document.getElementById('cash-note').value.trim() || (cashFormMode === 'add' ? 'টাকা যোগ' : 'খরচ');
   if(isNaN(amt) || amt <= 0){
-    toast('❌ সঠিক পরিমাণ দিন!');
+    toast(LANG === 'bn' ? '❌ সঠিক পরিমাণ দিন!' : '❌ Enter a valid amount!');
     return;
   }
   ensureWallets();
@@ -1848,6 +1971,12 @@ function submitCash(){
   const entryDate = dateVal ? new Date(dateVal + 'T12:00:00').getTime() : ts;
   const w = SELECTED_FORM_WALLET || 'cash';
   const cat = SELECTED_FORM_CAT || (cashFormMode === 'add' ? 'other_in' : 'other');
+  const cats = cashFormMode === 'add' ? INCOME_CATEGORIES : EXPENSE_CATEGORIES;
+  const catObj = cats.find(c => c.id === cat);
+  const note = document.getElementById('cash-note').value.trim() || (catObj ? (LANG === 'bn' ? catObj.bn : catObj.en) : (cashFormMode === 'add' ? (LANG === 'bn' ? 'টাকা যোগ' : 'Add Money') : (LANG === 'bn' ? 'খরচ' : 'Expense')));
+
+  const wMeta = WALLET_META[w] || { name: w, en: w };
+  const wName = LANG === 'bn' ? wMeta.name : wMeta.en;
 
   if(cashFormMode === 'add'){
     CASH_DB.wallets[w] = (CASH_DB.wallets[w] || 0) + amt;
@@ -1861,7 +1990,7 @@ function submitCash(){
       wallet: w,
       date: entryDate
     });
-    toast(`✅ ৳${fmt(amt)} যোগ হয়েছে! (${WALLET_META[w]?.name || w})`);
+    toast(LANG === 'bn' ? `✅ ৳${fmt(amt)} যোগ হয়েছে! (${wName})` : `✅ Added ৳${fmt(amt)}! (${wName})`);
   } else {
     CASH_DB.wallets[w] = (CASH_DB.wallets[w] || 0) - amt;
     CASH_DB.balance -= amt;
@@ -1874,7 +2003,7 @@ function submitCash(){
       wallet: w,
       date: entryDate
     });
-    toast(`💸 ৳${fmt(amt)} খরচ হয়েছে! (${WALLET_META[w]?.name || w})`);
+    toast(LANG === 'bn' ? `💸 ৳${fmt(amt)} খরচ হয়েছে! (${wName})` : `💸 Deducted ৳${fmt(amt)}! (${wName})`);
   }
   saveCashData();
   closeCashForm();
@@ -2073,9 +2202,9 @@ function renderCash(){
     const last = allHist[0];
     const prefix = last.type === 'add' ? '↑ ' : last.type === 'sub' ? '↓ ' : '⇄ ';
     const label = last.type === 'add' ? (LANG === 'bn' ? 'শেষ যোগ: ' : 'Last in: ') : last.type === 'sub' ? (LANG === 'bn' ? 'শেষ খরচ: ' : 'Last out: ') : (LANG === 'bn' ? 'ট্রান্সফার: ' : 'Transfer: ');
-    sub.textContent = prefix + label + '৳' + fmt(last.amt) + ' — ' + last.note;
+    sub.textContent = prefix + label + '৳' + fmt(last.amt) + ' — ' + formatTxnNote(last);
   } else {
-    sub.innerHTML = '<span class="bn">কোনো লেনদেন নেই</span><span class="en" style="display:none">No transactions yet</span>';
+    sub.innerHTML = '<span class="bn">কোনো লেনদেন নেই</span><span class="en">No transactions yet</span>';
   }
 
   // Dynamic button labels based on active wallet & conditional display
@@ -2168,10 +2297,11 @@ function renderCash(){
       const isTf = h.type === 'transfer';
       const wMeta = WALLET_META[h.wallet] || { icon: '💵', name: 'নগদ', en: 'Cash' };
       let catObj = null;
-      if(isSub) catObj = EXPENSE_CATEGORIES.find(c => c.id === h.category) || (EXPENSE_CATEGORIES.find(c => h.note && h.note.includes(c.bn)) || { e: '💸', color: '#ef4444' });
-      else if(isAdd) catObj = INCOME_CATEGORIES.find(c => c.id === h.category) || (INCOME_CATEGORIES.find(c => h.note && h.note.includes(c.bn)) || { e: '💰', color: '#10b981' });
+      if(isSub) catObj = EXPENSE_CATEGORIES.find(c => c.id === h.category) || (EXPENSE_CATEGORIES.find(c => h.note && (h.note.includes(c.bn) || h.note.includes(c.en))) || { e: '💸', color: '#ef4444' });
+      else if(isAdd) catObj = INCOME_CATEGORIES.find(c => c.id === h.category) || (INCOME_CATEGORIES.find(c => h.note && (h.note.includes(c.bn) || h.note.includes(c.en))) || { e: '💰', color: '#10b981' });
       else catObj = { e: '⇄', color: '#3b82f6' };
 
+      const displayNote = formatTxnNote(h, catObj);
       const iconChar = catObj.e || (isAdd ? '⬆️' : isSub ? '⬇️' : '⇄');
       const sign = isAdd ? '+' : isSub ? '-' : '';
       const amtColor = isAdd ? 'var(--green)' : isSub ? 'var(--red)' : 'var(--primary)';
@@ -2181,7 +2311,7 @@ function renderCash(){
         <div class="cash-entry">
           <div class="cash-entry-icon" style="background:${catObj.color}1f;font-size:18px;">${iconChar}</div>
           <div class="cash-entry-info">
-            <div class="cash-entry-note">${h.note}</div>
+            <div class="cash-entry-note">${displayNote}</div>
             <div class="cash-entry-date" style="display:flex;align-items:center;gap:6px;">
               <span class="wallet-badge">${wMeta.icon} ${LANG === 'bn' ? wMeta.name : wMeta.en}</span>
               <span>${timeStr}</span>
@@ -2323,7 +2453,17 @@ function processToastQueue(){
   },undoFn?6000:3000);
 }
 function cm(id){document.getElementById(id).classList.remove('on');}
-function toggleLang(){LANG=LANG==='bn'?'en':'bn';localStorage.setItem('ht_lang',LANG);document.documentElement.setAttribute('data-lang',LANG);render();}
+function toggleLang(){
+  LANG = LANG === 'bn' ? 'en' : 'bn';
+  localStorage.setItem('ht_lang', LANG);
+  document.documentElement.setAttribute('data-lang', LANG);
+  applyMode();
+  updateProfileHeaderUI();
+  updateDynamicPlaceholders();
+  render();
+  if(typeof renderCash === 'function') renderCash();
+  if(typeof updateMonthNavUI === 'function') updateMonthNavUI();
+}
 function switchTab(t,ev){
   TAB=t;
   document.querySelectorAll('.tab').forEach(b=>b.classList.remove('on'));

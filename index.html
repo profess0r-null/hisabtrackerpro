@@ -11,7 +11,28 @@
 <title>হিসাব ট্র্যাকার PRO</title>
 <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;600;700&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="icon" type="image/png" href="icon.png">
-<link rel="stylesheet" href="style.css?v=4.9">
+<script>
+// Instant zero-delay session detection (eliminates 1s login screen flash)
+(function(){
+  try {
+    var hasSb = false;
+    for (var i = 0; i < localStorage.length; i++) {
+      var k = localStorage.key(i);
+      if (k && k.indexOf('sb-') === 0 && k.indexOf('-auth-token') !== -1) {
+        var raw = localStorage.getItem(k);
+        if (raw && raw.indexOf('access_token') !== -1) {
+          hasSb = true;
+          break;
+        }
+      }
+    }
+    if (hasSb || localStorage.getItem('ht_has_session') === '1') {
+      document.documentElement.classList.add('has-session');
+    }
+  } catch(e){}
+})();
+</script>
+<link rel="stylesheet" href="style.css?v=5.1">
 <style>
 /* ── SVG ICON SYSTEM ── */
 .ic{display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;}
@@ -136,13 +157,13 @@ function ic(name){return`<span class="ic">${ICONS[name]||''}</span>`;}
 </div>
 
 <!-- ══ HISAB APP ══ -->
-<div id="app" style="display:none">
+<div id="app">
 
 <header class="hdr">
   <div class="logo">
     <span class="logo-icon">📒</span>
     <div class="logo-text">
-      <span class="logo-main" id="hdr-logo-text">হিসাব ট্র্যাকার</span>
+      <span class="logo-main" id="hdr-logo-text"><span class="bn">হিসাব ট্র্যাকার</span><span class="en">Hisab Tracker</span></span>
       <span class="logo-sub" id="hdr-logo-sub"><span class="bn">দেনা-পাওনা • PRO</span><span class="en">HISAB • PRO</span></span>
     </div>
   </div>
@@ -171,7 +192,7 @@ function ic(name){return`<span class="ic">${ICONS[name]||''}</span>`;}
     <div class="drw-user-top">
       <div class="drw-avatar" id="drw-av">?</div>
       <div class="drw-user-info">
-        <div class="drw-app-name">হিসাব PRO</div>
+        <div class="drw-app-name"><span class="bn">হিসাব PRO</span><span class="en">Hisab PRO</span></div>
         <div class="drw-username" id="drw-name">User</div>
       </div>
       <button class="drw-close" onclick="closeDrawer()"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
@@ -182,32 +203,32 @@ function ic(name){return`<span class="ic">${ICONS[name]||''}</span>`;}
     </div>
   </div>
   <div class="drawer-body">
-    <div class="drw-sec">খাতা / প্রোফাইল (Profiles)</div>
+    <div class="drw-sec"><span class="bn">খাতা / প্রোফাইল</span><span class="en">Books / Profiles</span></div>
     <div class="drw-profile-card" onclick="openProfileSwitcher(); closeDrawer();">
       <div class="drw-profile-card-left">
         <span class="drw-profile-icon" id="drw-profile-icon">👤</span>
         <div style="min-width:0;">
           <div class="drw-profile-title" id="drw-profile-name">ব্যক্তিগত</div>
-          <div class="drw-profile-meta">খাতা পরিবর্তন / যোগ করুন</div>
+          <div class="drw-profile-meta"><span class="bn">খাতা পরিবর্তন / যোগ করুন</span><span class="en">Switch or create book</span></div>
         </div>
       </div>
       <span class="drw-profile-switch-btn">Switch ⇄</span>
     </div>
     <div class="drw-divider"></div>
 
-    <div class="drw-sec">থিম / Theme</div>
+    <div class="drw-sec"><span class="bn">থিম</span><span class="en">Theme</span></div>
     <div class="theme-row">
       <button class="theme-opt" id="th-dark" onclick="setTheme('dark')">🌙 Dark</button>
       <button class="theme-opt" id="th-light" onclick="setTheme('light')">☀️ Light</button>
     </div>
-    <div class="drw-sec">ভাষা / Language</div>
+    <div class="drw-sec"><span class="bn">ভাষা</span><span class="en">Language</span></div>
     <button class="drw-item" onclick="toggleLang();closeDrawer()">
       <span class="drw-icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20A14.5 14.5 0 0 0 12 2"/><path d="M2 12h20"/></svg></span>
       <span class="bn">English-এ পরিবর্তন</span>
       <span class="en">Switch to বাংলা</span>
     </button>
     <div class="drw-divider"></div>
-    <div class="drw-sec">অ্যাকাউন্ট</div>
+    <div class="drw-sec"><span class="bn">অ্যাকাউন্ট</span><span class="en">Account</span></div>
     <button class="drw-item" onclick="openProfile()">
       <span class="drw-icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.5" cy="15.5" r="5.5"/><path d="m21 2-9.6 9.6"/><path d="m15.5 7.5 3 3L22 7l-3-3"/></svg></span>
       <span class="bn">পাসওয়ার্ড পরিবর্তন</span>
@@ -238,7 +259,7 @@ function ic(name){return`<span class="ic">${ICONS[name]||''}</span>`;}
       <span class="en">Lock App</span>
     </button>
     <div class="drw-divider"></div>
-    <div class="drw-sec">ডেটা</div>
+    <div class="drw-sec"><span class="bn">ডেটা</span><span class="en">Data & Backup</span></div>
     <button class="drw-item" onclick="exportData();closeDrawer()">
       <span class="drw-icon"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg></span>
       <span class="bn">ব্যাকআপ ডাউনলোড</span>
@@ -513,10 +534,10 @@ function ic(name){return`<span class="ic">${ICONS[name]||''}</span>`;}
   <!-- Quick action buttons -->
   <div class="cash-actions" id="cash-actions-wrap" style="display:none;">
     <button class="cash-btn cash-btn-add" id="main-btn-add" onclick="openCashForm('add')">
-      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right:6px;vertical-align:middle"><path d="M5 12h14"/><path d="M12 5v14"/></svg><span id="btn-add-label"><span class="bn">টাকা যোগ (আয়)</span><span class="en">Add Income</span></span>
+      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right:2px;vertical-align:middle"><path d="M5 12h14"/><path d="M12 5v14"/></svg><span id="btn-add-label"><span class="bn">টাকা যোগ (আয়)</span><span class="en">Add Income</span></span>
     </button>
     <button class="cash-btn cash-btn-sub" id="main-btn-sub" onclick="openCashForm('sub')">
-      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right:6px;vertical-align:middle"><path d="M5 12h14"/></svg><span id="btn-sub-label"><span class="bn">খরচ করুন (ব্যয়)</span><span class="en">Add Expense</span></span>
+      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-right:2px;vertical-align:middle"><path d="M5 12h14"/></svg><span id="btn-sub-label"><span class="bn">খরচ করুন (ব্যয়)</span><span class="en">Add Expense</span></span>
     </button>
   </div>
 
@@ -541,19 +562,19 @@ function ic(name){return`<span class="ic">${ICONS[name]||''}</span>`;}
       <!-- 2.1 Wallet Selector -->
       <div class="form-sec-lbl"><span class="bn">টাকা যে অ্যাকাউন্টে / ওয়ালেটে</span><span class="en">Select Wallet / Account</span></div>
       <div class="wallet-select-row" id="form-wallet-row">
-        <button type="button" class="wsel-btn on" data-w="cash" onclick="selectFormWallet('cash',this)">💵 নগদ / Cash</button>
-        <button type="button" class="wsel-btn" data-w="bkash" onclick="selectFormWallet('bkash',this)">📱 বিকাশ / bKash</button>
-        <button type="button" class="wsel-btn" data-w="nagad" onclick="selectFormWallet('nagad',this)">📱 নগদ / Nagad</button>
-        <button type="button" class="wsel-btn" data-w="bank" onclick="selectFormWallet('bank',this)">🏦 ব্যাংক / Bank</button>
+        <button type="button" class="wsel-btn on" data-w="cash" onclick="selectFormWallet('cash',this)">💵 <span class="bn">নগদ</span><span class="en">Cash</span></button>
+        <button type="button" class="wsel-btn" data-w="bkash" onclick="selectFormWallet('bkash',this)">📱 <span class="bn">বিকাশ</span><span class="en">bKash</span></button>
+        <button type="button" class="wsel-btn" data-w="nagad" onclick="selectFormWallet('nagad',this)">📱 <span class="bn">নগদ (Nagad)</span><span class="en">Nagad</span></button>
+        <button type="button" class="wsel-btn" data-w="bank" onclick="selectFormWallet('bank',this)">🏦 <span class="bn">ব্যাংক</span><span class="en">Bank</span></button>
       </div>
 
       <!-- 3.2 Quick Amount Chips -->
       <div class="quick-amt-row">
         <span class="qamt-lbl"><span class="bn">চিপস:</span><span class="en">Quick:</span></span>
-        <button type="button" class="qamt-chip" onclick="addQuickAmount(50)">+৫০</button>
-        <button type="button" class="qamt-chip" onclick="addQuickAmount(100)">+১০০</button>
-        <button type="button" class="qamt-chip" onclick="addQuickAmount(500)">+৫০০</button>
-        <button type="button" class="qamt-chip" onclick="addQuickAmount(1000)">+১০০০</button>
+        <button type="button" class="qamt-chip" onclick="addQuickAmount(50)"><span class="bn">+৫০</span><span class="en">+50</span></button>
+        <button type="button" class="qamt-chip" onclick="addQuickAmount(100)"><span class="bn">+১০০</span><span class="en">+100</span></button>
+        <button type="button" class="qamt-chip" onclick="addQuickAmount(200)"><span class="bn">+২০০</span><span class="en">+200</span></button>
+        <button type="button" class="qamt-chip" onclick="addQuickAmount(500)"><span class="bn">+৫০০</span><span class="en">+500</span></button>
         <button type="button" class="qamt-chip clear" onclick="addQuickAmount('clear')" title="মুছুন">C</button>
       </div>
 
@@ -580,7 +601,7 @@ function ic(name){return`<span class="ic">${ICONS[name]||''}</span>`;}
       </div>
       <div class="qtags" id="cash-qtags"></div>
       <div class="cf-btns">
-        <button class="sbtn" onclick="closeCashForm()" style="flex:1;background:transparent;border:1.5px solid var(--border);color:var(--muted);"><span class="bn">বাতিল</span><span class="en">Cancel</span></button>
+        <button type="button" class="btn-a" onclick="closeCashForm()"><span class="bn">বাতিল</span><span class="en">Cancel</span></button>
         <button class="sbtn sbtn-g" id="cash-submit-btn" onclick="submitCash()" style="flex:2"><span class="bn">যোগ করুন ✓</span><span class="en">Add ✓</span></button>
       </div>
     </div>
@@ -597,7 +618,7 @@ function ic(name){return`<span class="ic">${ICONS[name]||''}</span>`;}
   <!-- Search in expenses -->
   <div class="search-wrap" style="margin-bottom:14px;">
     <span class="si"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></span>
-    <input type="text" id="cash-srch" placeholder="খরচ বা নোট খুঁজুন... / Search transactions" oninput="renderCash()">
+    <input type="text" id="cash-srch" placeholder="Search transactions..." oninput="renderCash()">
   </div>
 
   <!-- 4.2 Date-Grouped History -->
@@ -1025,10 +1046,10 @@ function ic(name){return`<span class="ic">${ICONS[name]||''}</span>`;}
     <!-- Quick Amount Chips (3.2) -->
     <div class="quick-amt-row">
       <span class="qamt-lbl"><span class="bn">চিপস:</span><span class="en">Quick:</span></span>
-      <button type="button" class="qamt-chip" onclick="addQuickAmount(50,'qa-amt')">+৫০</button>
-      <button type="button" class="qamt-chip" onclick="addQuickAmount(100,'qa-amt')">+১০০</button>
-      <button type="button" class="qamt-chip" onclick="addQuickAmount(500,'qa-amt')">+৫০০</button>
-      <button type="button" class="qamt-chip" onclick="addQuickAmount(1000,'qa-amt')">+১০০০</button>
+      <button type="button" class="qamt-chip" onclick="addQuickAmount(50,'qa-amt')"><span class="bn">+৫০</span><span class="en">+50</span></button>
+      <button type="button" class="qamt-chip" onclick="addQuickAmount(100,'qa-amt')"><span class="bn">+১০০</span><span class="en">+100</span></button>
+      <button type="button" class="qamt-chip" onclick="addQuickAmount(500,'qa-amt')"><span class="bn">+৫০০</span><span class="en">+500</span></button>
+      <button type="button" class="qamt-chip" onclick="addQuickAmount(1000,'qa-amt')"><span class="bn">+১০০০</span><span class="en">+1000</span></button>
       <button type="button" class="qamt-chip clear" onclick="addQuickAmount('clear','qa-amt')">C</button>
     </div>
 
@@ -1048,10 +1069,10 @@ function ic(name){return`<span class="ic">${ICONS[name]||''}</span>`;}
     <div id="qa-wallet-sec">
       <div class="form-sec-lbl"><span class="bn">ওয়ালেট নির্বাচন</span><span class="en">Wallet</span></div>
       <div class="wallet-select-row" id="qa-wallet-row">
-        <button type="button" class="wsel-btn on" data-w="cash" onclick="selectQAWallet('cash',this)">💵 নগদ</button>
-        <button type="button" class="wsel-btn" data-w="bkash" onclick="selectQAWallet('bkash',this)">📱 বিকাশ</button>
-        <button type="button" class="wsel-btn" data-w="nagad" onclick="selectQAWallet('nagad',this)">📱 নগদ</button>
-        <button type="button" class="wsel-btn" data-w="bank" onclick="selectQAWallet('bank',this)">🏦 ব্যাংক</button>
+        <button type="button" class="wsel-btn on" data-w="cash" onclick="selectQAWallet('cash',this)">💵 <span class="bn">নগদ</span><span class="en">Cash</span></button>
+        <button type="button" class="wsel-btn" data-w="bkash" onclick="selectQAWallet('bkash',this)">📱 <span class="bn">বিকাশ</span><span class="en">bKash</span></button>
+        <button type="button" class="wsel-btn" data-w="nagad" onclick="selectQAWallet('nagad',this)">📱 <span class="bn">নগদ (Nagad)</span><span class="en">Nagad</span></button>
+        <button type="button" class="wsel-btn" data-w="bank" onclick="selectQAWallet('bank',this)">🏦 <span class="bn">ব্যাংক</span><span class="en">Bank</span></button>
       </div>
     </div>
 
@@ -1084,30 +1105,30 @@ function ic(name){return`<span class="ic">${ICONS[name]||''}</span>`;}
     <div style="margin-bottom:12px;">
       <div class="form-sec-lbl"><span class="bn">যেখান থেকে পাঠাবেন (From)</span><span class="en">From Account</span></div>
       <div class="wallet-select-row" id="tf-from-row">
-        <button type="button" class="wsel-btn on" data-w="bank" onclick="selectTransferWallet('from','bank',this)">🏦 ব্যাংক</button>
-        <button type="button" class="wsel-btn" data-w="cash" onclick="selectTransferWallet('from','cash',this)">💵 নগদ</button>
-        <button type="button" class="wsel-btn" data-w="bkash" onclick="selectTransferWallet('from','bkash',this)">📱 বিকাশ</button>
-        <button type="button" class="wsel-btn" data-w="nagad" onclick="selectTransferWallet('from','nagad',this)">📱 নগদ</button>
+        <button type="button" class="wsel-btn on" data-w="bank" onclick="selectTransferWallet('from','bank',this)">🏦 <span class="bn">ব্যাংক</span><span class="en">Bank</span></button>
+        <button type="button" class="wsel-btn" data-w="cash" onclick="selectTransferWallet('from','cash',this)">💵 <span class="bn">নগদ</span><span class="en">Cash</span></button>
+        <button type="button" class="wsel-btn" data-w="bkash" onclick="selectTransferWallet('from','bkash',this)">📱 <span class="bn">বিকাশ</span><span class="en">bKash</span></button>
+        <button type="button" class="wsel-btn" data-w="nagad" onclick="selectTransferWallet('from','nagad',this)">📱 <span class="bn">নগদ (Nagad)</span><span class="en">Nagad</span></button>
       </div>
     </div>
 
     <div style="margin-bottom:12px;">
       <div class="form-sec-lbl"><span class="bn">যেখানে জমা হবে (To)</span><span class="en">To Account</span></div>
       <div class="wallet-select-row" id="tf-to-row">
-        <button type="button" class="wsel-btn on" data-w="bkash" onclick="selectTransferWallet('to','bkash',this)">📱 বিকাশ</button>
-        <button type="button" class="wsel-btn" data-w="cash" onclick="selectTransferWallet('to','cash',this)">💵 নগদ</button>
-        <button type="button" class="wsel-btn" data-w="bank" onclick="selectTransferWallet('to','bank',this)">🏦 ব্যাংক</button>
-        <button type="button" class="wsel-btn" data-w="nagad" onclick="selectTransferWallet('to','nagad',this)">📱 নগদ</button>
+        <button type="button" class="wsel-btn on" data-w="bkash" onclick="selectTransferWallet('to','bkash',this)">📱 <span class="bn">বিকাশ</span><span class="en">bKash</span></button>
+        <button type="button" class="wsel-btn" data-w="cash" onclick="selectTransferWallet('to','cash',this)">💵 <span class="bn">নগদ</span><span class="en">Cash</span></button>
+        <button type="button" class="wsel-btn" data-w="bank" onclick="selectTransferWallet('to','bank',this)">🏦 <span class="bn">ব্যাংক</span><span class="en">Bank</span></button>
+        <button type="button" class="wsel-btn" data-w="nagad" onclick="selectTransferWallet('to','nagad',this)">📱 <span class="bn">নগদ (Nagad)</span><span class="en">Nagad</span></button>
       </div>
     </div>
 
     <!-- Quick Chips for transfer -->
     <div class="quick-amt-row">
       <span class="qamt-lbl"><span class="bn">চিপস:</span><span class="en">Quick:</span></span>
-      <button type="button" class="qamt-chip" onclick="addQuickAmount(500,'tf-amt')">+৫০০</button>
-      <button type="button" class="qamt-chip" onclick="addQuickAmount(1000,'tf-amt')">+১০০০</button>
-      <button type="button" class="qamt-chip" onclick="addQuickAmount(2000,'tf-amt')">+২০০০</button>
-      <button type="button" class="qamt-chip" onclick="addQuickAmount(5000,'tf-amt')">+৫০০০</button>
+      <button type="button" class="qamt-chip" onclick="addQuickAmount(500,'tf-amt')"><span class="bn">+৫০০</span><span class="en">+500</span></button>
+      <button type="button" class="qamt-chip" onclick="addQuickAmount(1000,'tf-amt')"><span class="bn">+১০০০</span><span class="en">+1000</span></button>
+      <button type="button" class="qamt-chip" onclick="addQuickAmount(2000,'tf-amt')"><span class="bn">+২০০০</span><span class="en">+2000</span></button>
+      <button type="button" class="qamt-chip" onclick="addQuickAmount(5000,'tf-amt')"><span class="bn">+৫০০০</span><span class="en">+5000</span></button>
       <button type="button" class="qamt-chip clear" onclick="addQuickAmount('clear','tf-amt')">C</button>
     </div>
 
@@ -1201,6 +1222,6 @@ function ic(name){return`<span class="ic">${ICONS[name]||''}</span>`;}
 
 <div class="toast" id="toast"></div>
 
-<script src="script.js?v=4.9"></script>
+<script src="script.js?v=5.1"></script>
 </body>
 </html>
