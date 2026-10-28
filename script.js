@@ -1939,6 +1939,8 @@ function openCashForm(mode, targetWallet){
   const activeW = targetWallet || (WALLET_FILTER && WALLET_FILTER !== 'all' ? WALLET_FILTER : 'cash');
 
   if(mode === 'add'){
+    form.classList.remove('cf-sub');
+    form.classList.add('cf-add');
     icon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>`;
     icon.style.background = 'rgba(16,185,129,.15)';
     icon.style.color = 'var(--green)';
@@ -1946,6 +1948,8 @@ function openCashForm(mode, targetWallet){
     submitBtn.className = 'sbtn sbtn-g';
     renderFormCategories('add');
   } else {
+    form.classList.remove('cf-add');
+    form.classList.add('cf-sub');
     icon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/></svg>`;
     icon.style.background = 'rgba(239,68,68,.12)';
     icon.style.color = 'var(--red)';

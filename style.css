@@ -818,9 +818,9 @@ input:focus{border-color:var(--primary);}
 
 /* ══ FLOATING LABEL FORM SYSTEM ══ */
 .cf-field{position:relative;margin-bottom:12px;}
-.cf-input{width:100%;padding:22px 13px 8px;border-radius:12px;border:1.5px solid var(--border);background:var(--card);color:var(--text);font-size:15px;font-family:inherit;box-sizing:border-box;outline:none;transition:border-color .2s,box-shadow .2s;-webkit-appearance:none;min-height:56px;}
+.cf-input{width:100%;padding:22px 16px 8px 16px;border-radius:14px;border:1.5px solid var(--border);background:var(--card);color:var(--text);font-size:15px;font-family:inherit;box-sizing:border-box;outline:none;transition:border-color .2s,box-shadow .2s;-webkit-appearance:none;min-height:56px;}
 .cf-input:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(56,189,248,.1);}
-.cf-label{position:absolute;left:13px;top:50%;transform:translateY(-50%);font-size:14px;color:var(--muted);pointer-events:none;transition:all .18s;font-weight:500;}
+.cf-label{position:absolute;left:16px;top:50%;transform:translateY(-50%);font-size:14px;color:var(--muted);pointer-events:none;transition:all .18s;font-weight:500;}
 .cf-input:focus~.cf-label,
 .cf-input.has-val~.cf-label,
 .cf-input:not(:placeholder-shown)~.cf-label{top:7px;transform:none;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--primary);}
@@ -828,20 +828,26 @@ input:focus{border-color:var(--primary);}
 .cf-label-date{top:7px;transform:none;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);}
 .cf-input.cf-date~.cf-label-date{color:var(--muted);}
 .cf-date::-webkit-calendar-picker-indicator{opacity:.5;cursor:pointer;margin-top:6px;}
-.cf-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.cf-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
 
 /* ══ CASH FORM (CF) ══ */
-.cf{background:var(--surface);border:1px solid var(--border);border-radius:18px;overflow:hidden;margin-bottom:18px;transition:all .2s;}
+.cf{background:var(--surface);border:1.5px solid var(--border);border-radius:20px;overflow:hidden;margin-bottom:20px;box-shadow:0 4px 20px rgba(0,0,0,0.08);transition:all .2s ease;}
 .cf.hidden,.cash-form.hidden{display:none!important;}
-.cf-header{display:flex;align-items:center;justify-content:space-between;padding:12px 14px 10px;border-bottom:1px solid var(--border);}
-.cf-header-left{display:flex;align-items:center;gap:9px;}
-.cf-icon{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:rgba(16,185,129,.15);color:var(--green);transition:all .2s;}
-.cf-title{font-size:13px;font-weight:800;color:var(--text);transition:color .2s;}
-.cf-btns{display:flex;gap:10px;margin-top:12px;align-items:stretch;}
-.cf-btns .btn-a{height:44px;border-radius:12px;font-size:14px;font-weight:700;border:1.5px solid var(--border);color:var(--text);background:var(--card);transition:all .15s;}
+.cf-header{display:flex;align-items:center;justify-content:space-between;padding:14px 18px 12px;border-bottom:1px solid var(--border);}
+.cf-header-left{display:flex;align-items:center;gap:10px;}
+.cf-icon{width:30px;height:30px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:rgba(16,185,129,.15);color:var(--green);transition:all .2s;}
+.cf-title{font-size:14px;font-weight:800;color:var(--text);transition:color .2s;}
+.cf-body{padding:16px 18px 20px;display:flex;flex-direction:column;}
+.cf-btns{display:flex;gap:12px;margin-top:16px;align-items:stretch;}
+.cf-btns .btn-a{flex:1;height:48px;border-radius:14px;font-size:14px;font-weight:700;border:1.5px solid var(--border);color:var(--text);background:var(--card);transition:all .15s ease;}
 .cf-btns .btn-a:hover{background:var(--bg2);border-color:var(--muted);}
 .cf-btns .btn-a:active{transform:scale(.98);opacity:.85;}
-.cf-btns .sbtn{height:44px;border-radius:12px;}
+.cf-btns .sbtn{flex:2;height:48px;border-radius:14px;font-size:15px;font-weight:800;letter-spacing:.01em;box-shadow:0 3px 12px rgba(16,185,129,.28);}
+
+/* Sub/Expense Mode Theme */
+.cf-sub .wsel-btn.on{border-color:var(--red);color:var(--red);background:rgba(239,68,68,.12);box-shadow:0 2px 8px rgba(239,68,68,.15);}
+.cf-sub .cat-tile.on{border-color:var(--red);background:rgba(239,68,68,.12);box-shadow:0 2px 8px rgba(239,68,68,.18);}
+.cf-sub .cf-btns .sbtn{box-shadow:0 3px 12px rgba(239,68,68,.28);}
 
 /* ══ HISAB FORM (HF) ══ */
 .hf{border-radius:18px;overflow:hidden;margin-bottom:20px;border:1.5px solid var(--border);background:var(--surface);}
@@ -1572,49 +1578,56 @@ input:focus{border-color:var(--primary);}
 .quick-amt-row {
   display: flex;
   align-items: center;
-  gap: 6px;
-  margin-bottom: 12px;
+  gap: 8px;
+  margin-bottom: 14px;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
-  padding-bottom: 2px;
+  padding: 2px 0 4px;
 }
 .qamt-lbl {
-  font-size: 10.5px;
-  font-weight: 700;
+  font-size: 11px;
+  font-weight: 800;
   color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: .05em;
   white-space: nowrap;
   margin-right: 2px;
 }
 .qamt-chip {
   background: var(--card);
-  border: 1px solid var(--border);
+  border: 1.5px solid var(--border);
   color: var(--text);
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 700;
-  padding: 5px 10px;
-  border-radius: 8px;
+  padding: 6px 13px;
+  border-radius: 999px;
   cursor: pointer;
-  transition: all .15s;
+  transition: all .15s ease;
   white-space: nowrap;
   -webkit-tap-highlight-color: transparent;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 .qamt-chip:hover, .qamt-chip:active {
-  background: var(--primary);
+  background: var(--green);
   color: #fff;
-  border-color: var(--primary);
+  border-color: var(--green);
+  transform: scale(0.97);
 }
 .qamt-chip.clear {
   color: var(--red);
-  border-color: rgba(239, 68, 68, 0.3);
+  border-color: rgba(239, 68, 68, 0.35);
   background: rgba(239, 68, 68, 0.08);
+  font-weight: 800;
 }
 
 /* ── 2.1 WALLET SELECTOR IN FORM ── */
 .wallet-select-row {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 6px;
-  margin-bottom: 12px;
+  gap: 8px;
+  margin-bottom: 14px;
 }
 @media(min-width: 480px) {
   .wallet-select-row {
@@ -1622,32 +1635,42 @@ input:focus{border-color:var(--primary);}
   }
 }
 .wsel-btn {
-  padding: 8px 6px;
-  border-radius: 10px;
+  padding: 10px 10px;
+  min-height: 42px;
+  border-radius: 12px;
   border: 1.5px solid var(--border);
   background: var(--card);
-  color: var(--text2);
-  font-size: 12px;
+  color: var(--text);
+  font-size: 12.5px;
   font-weight: 700;
   cursor: pointer;
-  transition: all .15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all .15s ease;
   text-align: center;
   white-space: nowrap;
   -webkit-tap-highlight-color: transparent;
 }
+.wsel-btn:hover {
+  border-color: rgba(16, 185, 129, 0.4);
+  transform: translateY(-1px);
+}
 .wsel-btn.on {
-  border-color: var(--primary);
-  color: var(--primary);
-  background: rgba(59, 130, 246, 0.12);
+  border-color: var(--green);
+  color: var(--green);
+  background: rgba(16, 185, 129, 0.12);
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.15);
 }
 
 /* ── 2.2 RICH VISUAL CATEGORY GRID ── */
 .cat-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 6px;
-  margin-bottom: 12px;
-  max-height: 180px;
+  gap: 8px;
+  margin-bottom: 14px;
+  max-height: 220px;
   overflow-y: auto;
   padding: 2px;
 }
@@ -1661,44 +1684,55 @@ input:focus{border-color:var(--primary);}
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 8px 4px;
-  border-radius: 10px;
+  padding: 10px 8px;
+  min-height: 64px;
+  border-radius: 12px;
   border: 1.5px solid var(--border);
   background: var(--card);
   cursor: pointer;
-  transition: all .15s;
-  gap: 3px;
+  transition: all .15s ease;
+  gap: 5px;
   text-align: center;
   -webkit-tap-highlight-color: transparent;
+  position: relative;
 }
 .cat-tile:hover {
-  border-color: var(--primary);
+  border-color: rgba(16, 185, 129, 0.4);
+  transform: translateY(-1px);
 }
 .cat-tile.on {
-  border-color: var(--primary);
-  background: rgba(59, 130, 246, 0.14);
+  border-color: var(--green);
+  background: rgba(16, 185, 129, 0.12);
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.18);
   transform: scale(1.02);
 }
 .cat-tile-icon {
-  font-size: 18px;
+  font-size: 20px;
   line-height: 1;
+  margin-bottom: 2px;
 }
 .cat-tile-name {
-  font-size: 10.5px;
+  font-size: 11px;
   font-weight: 700;
   color: var(--text);
-  white-space: nowrap;
+  line-height: 1.25;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: normal;
+  word-break: break-word;
   max-width: 100%;
+  padding: 0 2px;
 }
 .form-sec-lbl {
-  font-size: 10.5px;
+  font-size: 11px;
   font-weight: 800;
   color: var(--muted);
   text-transform: uppercase;
-  letter-spacing: .05em;
-  margin-bottom: 6px;
+  letter-spacing: .06em;
+  margin-bottom: 8px;
 }
 
 /* ── 4.2 DATE GROUPING IN HISTORY ── */
