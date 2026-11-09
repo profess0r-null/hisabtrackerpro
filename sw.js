@@ -1,21 +1,10 @@
-const CACHE = 'hisab-v32';
-const FILES = ['/', '/index.html'];
-
-self.addEventListener('install', e => {
-  self.skipWaiting();
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES)));
-});
-
-self.addEventListener('activate', e => {
-  e.waitUntil(
-    caches.keys().then(keys => Promise.all(
-      keys.filter(k => k !== CACHE).map(k => caches.delete(k))
-    )).then(() => self.clients.claim())
-  );
-});
-
-self.addEventListener('fetch', e => {
-  e.respondWith(
-    fetch(e.request).catch(() => caches.match(e.request))
-  );
+const PREFIX='hisabtracker:'+self.registration.scope+':';
+const CACHE=PREFIX+'v85';
+const FILES=['./','index.html','style.css?v=6.13.1','script.js?v=6.13.1','sync.js?v=6.13.1','safety.js?v=6.13.1','expense.css?v=6.13.1','icon.png','manifest.json','vendor/supabase.min.js'];
+self.addEventListener('install',event=>{event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(FILES)).then(()=>self.skipWaiting()));});
+self.addEventListener('activate',event=>{event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k.startsWith(PREFIX)&&k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});
+self.addEventListener('fetch',event=>{
+ const req=event.request,url=new URL(req.url),base=new URL('./',self.location.href);
+ if(req.method!=='GET'||url.origin!==base.origin||!url.pathname.startsWith(base.pathname)||url.pathname.includes('/api/')||url.pathname.endsWith('.php'))return;
+ event.respondWith(fetch(req).then(response=>{if(response.ok){const cloned=response.clone();caches.open(CACHE).then(cache=>cache.put(req,cloned));}return response;}).catch(async()=>{const cache=await caches.open(CACHE);const cached=await cache.match(req);if(cached)return cached;if(req.mode==='navigate'){const shell=await cache.match(new URL('index.html',base).href);if(shell)return shell;}return new Response('Offline asset unavailable',{status:503,headers:{'Content-Type':'text/plain'}});}));
 });

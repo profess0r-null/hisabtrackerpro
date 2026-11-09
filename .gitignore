@@ -1,0 +1,21 @@
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Local exports, archives and generated previews
+*.csv
+*.zip
+*.bak
+*.log
+mobile-cash-online.png
+mobile-hisab-online.png
+
+# Dependencies and local-only directories
+node_modules/
+**/node_modules/
+hisabtrackerpro-main/
+playwright-report/
+test-results/

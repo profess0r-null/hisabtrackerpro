@@ -1,19 +1,52 @@
 (function(){
-  const h=window.location.hash;
-  const p=new URLSearchParams(window.location.search);
-  const t=p.get('type')||new URLSearchParams(h.replace('#','?')).get('type');
-  if(t==='signup'||t==='email_change'||h.includes('access_token')){
-    sessionStorage.setItem('ht_verify_flow','1');
-    window.history.replaceState(null,'',window.location.pathname);
-  }
+  const params=new URLSearchParams(location.hash.slice(1));
+  if(params.get('type')==='signup'||params.get('type')==='email_change') sessionStorage.setItem('ht_verify_flow','1');
 })();
 
 const SB_URL='https://hmqckyecenigcjikfjob.supabase.co';
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhtcWNreWVjZW5pZ2NqaWtmam9iIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY5MzUzMDMsImV4cCI6MjA5MjUxMTMwM30.1pyoIp6-GegOVERyroNm0MlkPe4VOAiBL-bU-iJP2gU';
 const sb=supabase.createClient(SB_URL,SB_KEY);
+const escapeHTML=HisabSafety.escapeHTML;
+const money=n=>Math.round((Number(n)+Number.EPSILON)*100)/100;
+const validAmount=n=>Number.isFinite(n)&&n>0&&n<=1e12;
+let _lastId=0;
+function nextId(){_lastId=Math.max(_lastId+1,Date.now()*1000+Math.floor(Math.random()*1000));return _lastId;}
+let accountSync=null, appLoading=false;
+function canonical(input){
+  const out=JSON.parse(JSON.stringify(input||{}));
+  if(out.profilesData){
+    if(!out.pinHash){for(const p of Object.values(out.profilesData)){if(p.pinHash){out.pinHash=p.pinHash;break;}}}
+    for(const k of ['receive','give','activityLog','categories','activeProfileId'])delete out[k];
+    for(const p of Object.values(out.profilesData))delete p.pinHash;
+  }
+  if(out._cash?.profilesData){for(const k of ['balance','history','wallets','budget','monthlyBudgets'])delete out._cash[k];}
+  if(out.profilesData||Array.isArray(out.receive))HisabSafety.validate(out,out._cash||{balance:0,history:[]});
+  return out;
+}
+function makeSnapshot(){
+  ensureProfilesStructure();
+  for(const p of Object.values(ROOT_DB.profilesData)){for(const kind of ['receive','give'])for(const x of p[kind]){x.original=money(x.original);x.remaining=money(x.remaining);for(const h of x.history)h.amt=money(h.amt);}}
+  for(const p of Object.values(ROOT_CASH_DB.profilesData)){if(p.wallets){for(const k of Object.keys(p.wallets))p.wallets[k]=money(p.wallets[k]);p.balance=money(Object.values(p.wallets).reduce((s,v)=>s+v,0));}for(const h of p.history||[])h.amt=money(h.amt);}
+  ROOT_DB._cash=ROOT_CASH_DB;return canonical(ROOT_DB);
+}
+function applySnapshot(data){
+  ROOT_DB=JSON.parse(JSON.stringify(data||{}));
+  if(ROOT_DB._cash)ROOT_CASH_DB=ROOT_DB._cash;
+  ensureProfilesStructure();
 
+}
+function showAccountState(state,error){
+  setSyncState('synced');
+  document.body.dataset.saveState=state;
+  if(error)console.warn('HisabTracker save:',error.message||String(error));
+}
+function getAccountSync(){
+  if(!CUR_USER)throw new Error('Please sign in');
+  if(!accountSync||accountSync.userId!==CUR_USER.id){accountSync?.stop();accountSync=new HisabSync.Store({client:sb,storage:localStorage,userId:CUR_USER.id,normalize:canonical,onState:showAccountState});}
+  return accountSync;
+}
+function downloadJSON(value,name){const url=URL.createObjectURL(new Blob([JSON.stringify(value,null,2)],{type:'application/json'}));const a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
 // Track anonymous visit
-(async()=>{try{await sb.from('visits').insert({user_agent:navigator.userAgent,logged_in:false});}catch(e){}})();
 
 let ROOT_DB = null;
 let ROOT_CASH_DB = null;
@@ -32,6 +65,7 @@ function ensureProfilesStructure(){
   if(!ROOT_DB.profilesData || typeof ROOT_DB.profilesData !== 'object'){
     ROOT_DB.profilesData = {};
   }
+  if(!ROOT_DB.pinHash&&DB.pinHash)ROOT_DB.pinHash=DB.pinHash;
   if(!ROOT_DB.profilesData['default']){
     ROOT_DB.profilesData['default'] = {
       receive: Array.isArray(ROOT_DB.receive) ? ROOT_DB.receive : (DB.receive || []),
@@ -126,7 +160,7 @@ function renderQtags(containerId, catKey, targetInputId){
   el.innerHTML=cats.map(c=>{
     const label=c.l.split('/')[0].trim();
     const val=c.e?(c.e+' '+label):label;
-    return `<span class="qtag" data-val="${esc(val)}" data-target="${esc(targetInputId)}">${c.e?c.e+' ':''}<span>${c.l}</span></span>`;
+    return `<span class="qtag" data-val="${esc(val)}" data-target="${esc(targetInputId)}">${c.e?escapeHTML(c.e)+' ':''}<span>${escapeHTML(c.l)}</span></span>`;
   }).join('');
   el.querySelectorAll('.qtag').forEach(t=>{
     t.addEventListener('click',()=>setQ(t.dataset.val,t.dataset.target));
@@ -169,13 +203,24 @@ function sliderSwitch(type){
   if(type==='a')renderAll();
 }
 
+function searchText(value){
+  return String(value ?? '').normalize('NFKC').toLowerCase().replace(/[০-৯]/g,d=>String('০১২৩৪৫৬৭৮৯'.indexOf(d))).replace(/,/g,'');
+}
+function matchesSearch(values,query){
+  const text=searchText(values.filter(v=>v!==undefined&&v!==null).join(' '));
+  return searchText(query).trim().split(/\s+/).every(word=>text.includes(word));
+}
+function matchesPerson(person,query){
+  return matchesSearch([person.name,person.note,person.original,person.remaining,person.date,fmtD(person.date),...(person.history||[]).flatMap(h=>[h.note,h.amt,h.date,fmtD(h.date)])],query);
+}
+
 function renderAll(){
   const q=document.getElementById('srch').value.toLowerCase().trim();
-  const fl=list=>q?list.filter(p=>p.name.toLowerCase().includes(q)):list;
+  const fl=list=>q?list.filter(p=>matchesPerson(p,q)):list;
   const all=fl([...DB.receive.map(p=>({...p,_type:'receive'})),...DB.give.map(p=>({...p,_type:'give'}))]).sort((a,b)=>b.id-a.id);
   document.getElementById('lst-a').innerHTML=all.length
     ?all.map(p=>renderCard(p,p._type)).filter(Boolean).join('')
-    :emptyS('কোনো রেকর্ড নেই','No records','<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>');
+    :emptyS(q?'খুঁজে পাওয়া যায়নি — অন্য নাম, নোট বা পরিমাণ দিয়ে দেখুন':'কোনো রেকর্ড নেই',q?'No matches — try another name, note or amount':'No records','<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>');
   all.filter(p=>p.remaining>0).forEach(p=>{const el=document.getElementById('card-'+p.id);if(el)initSwipe(el,p._type,p.id);});
 }
 
@@ -270,8 +315,9 @@ function initSwipe(el,type,id){
 }
 
 // ── BUDGET (IN-APP MODAL) ──
+function getMonthlyBudget(){return CASH_DB.monthlyBudgets?.[CASH_SELECTED_MONTH]??CASH_DB.budget??0;}
 function setBudget(){
-  const cur = CASH_DB.budget || 0;
+  const cur = getMonthlyBudget();
   const inp = document.getElementById('budget-modal-amt');
   if(inp){
     inp.value = cur > 0 ? cur : '';
@@ -285,6 +331,7 @@ function setBudget(){
 }
 
 function confirmBudget(){
+  const {saveData,saveCashData,saveCats,render,renderCash,renderHisabMiniWallets,renderAllQtags,renderCatMgrSections,updateProfileHeaderUI,cm,closeCashForm,openProfileSwitcher,switchProfile,toast}=confirmedEffects;
   const inp = document.getElementById('budget-modal-amt');
   if(!inp) return;
   const val = inp.value.trim();
@@ -293,11 +340,11 @@ function confirmBudget(){
     return;
   }
   const num = parseFloat(val);
-  if(isNaN(num) || num <= 0){
+  if(!validAmount(money(num))){
     toast('⚠️ ' + (LANG === 'bn' ? 'সঠিক পরিমাণ দিন' : 'Enter valid amount'));
     return;
   }
-  CASH_DB.budget = num;
+  if(!CASH_DB.monthlyBudgets)CASH_DB.monthlyBudgets={};CASH_DB.monthlyBudgets[CASH_SELECTED_MONTH]=money(num);
   saveCashData();
   renderCash();
   cm('m-budget');
@@ -305,8 +352,9 @@ function confirmBudget(){
 }
 
 function removeBudget(){
+  const {saveData,saveCashData,saveCats,render,renderCash,renderHisabMiniWallets,renderAllQtags,renderCatMgrSections,updateProfileHeaderUI,cm,closeCashForm,openProfileSwitcher,switchProfile,toast}=confirmedEffects;
   cm('m-budget');
-  CASH_DB.budget = 0;
+  if(!CASH_DB.monthlyBudgets)CASH_DB.monthlyBudgets={};CASH_DB.monthlyBudgets[CASH_SELECTED_MONTH]=0;
   saveCashData();
   renderCash();
   toast(LANG === 'bn' ? 'বাজেট সরানো হয়েছে' : 'Budget removed');
@@ -335,7 +383,7 @@ function renderSettlement(){
   if(topG){
     html+=`<div class="settle-suggest">
       <span class="settle-icon">💡</span>
-      <span class="settle-text"><span class="bn">${topG.name} কে দিলে বড় দেনা শেষ হবে</span><span class="en">Pay ${topG.name} to clear biggest debt</span></span>
+      <span class="settle-text"><span class="bn">${escapeHTML(topG.name)} কে দিলে বড় দেনা শেষ হবে</span><span class="en">Pay ${escapeHTML(topG.name)} to clear biggest debt</span></span>
       <span class="settle-amt">৳${fmt(topG.remaining)}</span>
     </div>`;
   }
@@ -347,9 +395,9 @@ function renderSettlement(){
 // init
 function updateDynamicPlaceholders(){
   const cs = document.getElementById('cash-srch');
-  if(cs) cs.placeholder = LANG === 'bn' ? 'খরচ বা নোট খুঁজুন...' : 'Search transactions...';
+  if(cs) cs.placeholder = LANG === 'bn' ? 'নোট, টাকা, তারিখ বা ওয়ালেট খুঁজুন' : 'Search note, amount, date or wallet';
   const hs = document.getElementById('srch');
-  if(hs) hs.placeholder = LANG === 'bn' ? 'নাম দিয়ে খুঁজুন...' : 'Search by name...';
+  if(hs) hs.placeholder = LANG === 'bn' ? 'নাম, নোট, টাকা বা তারিখ খুঁজুন' : 'Search name, note, amount or date';
   const qaAmt = document.getElementById('qa-amt');
   if(qaAmt) qaAmt.placeholder = LANG === 'bn' ? 'পরিমাণ ৳' : 'Amount ৳';
   const qaNote = document.getElementById('qa-note');
@@ -409,6 +457,7 @@ function setAppTab(tab){
     openAnalytics();
     return;
   }
+  window.scrollTo({top:0,behavior:'instant'});
   APP_MODE=tab;
   localStorage.setItem('ht_mode',APP_MODE);
   applyMode();
@@ -484,14 +533,14 @@ function setSyncState(state,txt){
 // ── ACTIVITY LOG ──
 function logActivity(action,detail=''){
   if(!DB.activityLog)DB.activityLog=[];
-  DB.activityLog.unshift({ts:Date.now(),action,detail});
+  DB.activityLog.unshift({id:nextId(),ts:Date.now(),action,detail});
   if(DB.activityLog.length>100)DB.activityLog=DB.activityLog.slice(0,100);
 }
 function openActivityLog(){
   closeDrawer();
   const logs=(DB.activityLog||[]).slice(0,30);
   document.getElementById('log-list').innerHTML=logs.length
-    ?logs.map(l=>`<div class="alog-item"><div class="alog-action">${l.action}</div>${l.detail?`<div class="alog-meta">${l.detail}</div>`:''}<div class="alog-meta">${fmtD(l.ts)}</div></div>`).join('')
+    ?logs.map(l=>`<div class="alog-item"><div class="alog-action">${escapeHTML(l.action)}</div>${l.detail?`<div class="alog-meta">${escapeHTML(l.detail)}</div>`:''}<div class="alog-meta">${fmtD(l.ts)}</div></div>`).join('')
     :'<div class="empty"><div class="empty-i" style="color:var(--muted)"><svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg></div><div class="empty-t">কোনো log নেই</div></div>';
   document.getElementById('m-log').classList.add('on');
 }
@@ -500,6 +549,7 @@ function openActivityLog(){
 // ── ANALYTICS ──
 function openAnalytics(){
   closeDrawer();
+  const reportText=(bn,en)=>LANG==='bn'?bn:en;
   const hist=CASH_DB.history||[];
   const now=new Date();
   
@@ -508,7 +558,7 @@ function openAnalytics(){
   for(let i=5;i>=0;i--){
     const d=new Date(now.getFullYear(),now.getMonth()-i,1);
     months.push({
-      label:d.toLocaleDateString('en-GB',{month:'short',year:'2-digit'}),
+      label:d.toLocaleDateString(LANG==='bn'?'bn-BD':'en-GB',{month:'short',year:'2-digit'}),
       year:d.getFullYear(),month:d.getMonth(),
       income:0,expense:0
     });
@@ -518,7 +568,7 @@ function openAnalytics(){
     const m=months.find(x=>x.year===d.getFullYear()&&x.month===d.getMonth());
     if(!m)return;
     if(h.type==='add')m.income+=h.amt;
-    else m.expense+=h.amt;
+    else if(h.type==='sub')m.expense+=h.amt;
   });
 
   // Category breakdown this month
@@ -528,7 +578,7 @@ function openAnalytics(){
   });
   const catMap={};
   thisMonthHist.filter(h=>h.type==='sub').forEach(h=>{
-    const key=h.note||'Other';
+    const key=formatTxnNote(h)||reportText('অন্যান্য','Other');
     catMap[key]=(catMap[key]||0)+h.amt;
   });
   const cats=Object.entries(catMap).sort((a,b)=>b[1]-a[1]).slice(0,6);
@@ -554,14 +604,14 @@ function openAnalytics(){
   const catHTML=cats.length?cats.map(([name,amt])=>`
     <div style="margin-bottom:10px;">
       <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
-        <span style="font-size:12px;font-weight:600;color:var(--text);">${name}</span>
+        <span style="font-size:12px;font-weight:600;color:var(--text);">${escapeHTML(name)}</span>
         <span style="font-size:12px;font-weight:700;color:var(--red);">৳${fmt(amt)}</span>
       </div>
       <div style="height:6px;background:var(--border);border-radius:99px;overflow:hidden;">
         <div style="height:100%;width:${Math.round((amt/catTotal)*100)}%;background:var(--red);border-radius:99px;opacity:.8;"></div>
       </div>
     </div>`).join('')
-    :'<div style="color:var(--muted);font-size:13px;text-align:center;padding:16px;">এই মাসে কোনো খরচ নেই</div>';
+    :'<div style="color:var(--muted);font-size:13px;text-align:center;padding:16px;"><span class="bn">এই মাসে কোনো খরচ নেই</span><span class="en">No expenses this month</span></div>';
 
   const thisM=months[months.length-1];
   const savings=thisM.income-thisM.expense;
@@ -570,45 +620,45 @@ function openAnalytics(){
     <!-- This month summary -->
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">
       <div style="background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);border-radius:12px;padding:12px;">
-        <div style="font-size:10px;font-weight:700;color:var(--green);text-transform:uppercase;margin-bottom:4px;">এই মাসে আয়</div>
+        <div style="font-size:10px;font-weight:700;color:var(--green);text-transform:uppercase;margin-bottom:4px;">${reportText('এই মাসে আয়','Income this month')}</div>
         <div style="font-size:18px;font-weight:900;color:var(--green);">৳${fmt(thisM.income)}</div>
       </div>
       <div style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:12px;padding:12px;">
-        <div style="font-size:10px;font-weight:700;color:var(--red);text-transform:uppercase;margin-bottom:4px;">এই মাসে খরচ</div>
+        <div style="font-size:10px;font-weight:700;color:var(--red);text-transform:uppercase;margin-bottom:4px;">${reportText('এই মাসে খরচ','Expenses this month')}</div>
         <div style="font-size:18px;font-weight:900;color:var(--red);">৳${fmt(thisM.expense)}</div>
       </div>
     </div>
     <div style="background:${savings>=0?'rgba(16,185,129,.08)':'rgba(239,68,68,.08)'};border:1px solid ${savings>=0?'rgba(16,185,129,.3)':'rgba(239,68,68,.3)'};border-radius:12px;padding:12px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;">
-      <div style="font-size:13px;font-weight:700;color:var(--text);">এই মাসে সেভিংস</div>
+      <div style="font-size:13px;font-weight:700;color:var(--text);">${reportText('এই মাসে সেভিংস','Net savings this month')}</div>
       <div style="font-size:20px;font-weight:900;color:${savings>=0?'var(--green)':'var(--red)'};">${savings>=0?'+':'-'}৳${fmt(Math.abs(savings))}</div>
     </div>
 
     <!-- Bar chart -->
     <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:16px;">
-      <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:10px;">গত ৬ মাস</div>
+      <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:10px;">${reportText('গত ৬ মাস','Last 6 months')}</div>
       <div style="display:flex;gap:4px;align-items:flex-end;">${barHTML}</div>
       <div style="display:flex;gap:12px;margin-top:8px;justify-content:center;">
-        <span style="font-size:10px;color:var(--green);font-weight:700;display:flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;background:var(--green);border-radius:2px;display:inline-block;"></span>আয়</span>
-        <span style="font-size:10px;color:var(--red);font-weight:700;display:flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;background:var(--red);border-radius:2px;display:inline-block;"></span>খরচ</span>
+        <span style="font-size:10px;color:var(--green);font-weight:700;display:flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;background:var(--green);border-radius:2px;display:inline-block;"></span>${reportText('আয়','Income')}</span>
+        <span style="font-size:10px;color:var(--red);font-weight:700;display:flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;background:var(--red);border-radius:2px;display:inline-block;"></span>${reportText('খরচ','Expense')}</span>
       </div>
     </div>
 
     <!-- Category breakdown -->
     <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:16px;">
-      <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:12px;">এই মাসের খরচ — Category অনুযায়ী</div>
+      <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:12px;">${reportText('এই মাসের খরচ — Category অনুযায়ী','Spending by category this month')}</div>
       ${catHTML}
     </div>
 
     <!-- Hisab summary -->
     <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px;">
-      <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:12px;">হিসাব সারসংক্ষেপ</div>
+      <div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:12px;">${reportText('হিসাব সারসংক্ষেপ','Account summary')}</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
         <div style="background:rgba(16,185,129,.08);border-radius:10px;padding:10px;">
-          <div style="font-size:10px;color:var(--green);font-weight:700;text-transform:uppercase;margin-bottom:3px;">মোট পাওনা</div>
+          <div style="font-size:10px;color:var(--green);font-weight:700;text-transform:uppercase;margin-bottom:3px;">${reportText('মোট পাওনা','Total receivables')}</div>
           <div style="font-size:16px;font-weight:900;color:var(--green);">৳${fmt(totalReceive)}</div>
         </div>
         <div style="background:rgba(239,68,68,.08);border-radius:10px;padding:10px;">
-          <div style="font-size:10px;color:var(--red);font-weight:700;text-transform:uppercase;margin-bottom:3px;">মোট দেনা</div>
+          <div style="font-size:10px;color:var(--red);font-weight:700;text-transform:uppercase;margin-bottom:3px;">${reportText('মোট দেনা','Total payables')}</div>
           <div style="font-size:16px;font-weight:900;color:var(--red);">৳${fmt(totalGive)}</div>
         </div>
       </div>
@@ -646,8 +696,8 @@ function renderCatMgrSections(){
       <div class="catmgr-tags" id="catmgr-tags-${key}">
         ${cats.map((c,i)=>`
           <div class="catmgr-tag-row" id="catrow-${key}-${i}">
-            <input class="catmgr-emoji" type="text" maxlength="4" value="${c.e||''}" placeholder="🏷" oninput="updateCat('${key}',${i},'e',this.value)">
-            <input class="catmgr-label" type="text" value="${c.l||''}" placeholder="Label" oninput="updateCat('${key}',${i},'l',this.value)">
+            <input class="catmgr-emoji" type="text" maxlength="4" value="${escapeHTML(c.e||'')}" placeholder="🏷" onchange="updateCat('${key}',${i},'e',this.value)">
+            <input class="catmgr-label" type="text" value="${escapeHTML(c.l||'')}" placeholder="Label" onchange="updateCat('${key}',${i},'l',this.value)">
             <button class="catmgr-del" onclick="deleteCat('${key}',${i})">✕</button>
           </div>`).join('')}
       </div>
@@ -657,17 +707,20 @@ function renderCatMgrSections(){
   cont.innerHTML=html;
 }
 function updateCat(key,idx,field,val){
+  const {saveData,saveCashData,saveCats,render,renderCash,renderHisabMiniWallets,renderAllQtags,renderCatMgrSections,updateProfileHeaderUI,cm,closeCashForm,openProfileSwitcher,switchProfile,toast}=confirmedEffects;
   if(!DB.categories[key])return;
   DB.categories[key][idx][field]=val;
   saveCats();
 }
 function addCat(key){
+  const {saveData,saveCashData,saveCats,render,renderCash,renderHisabMiniWallets,renderAllQtags,renderCatMgrSections,updateProfileHeaderUI,cm,closeCashForm,openProfileSwitcher,switchProfile,toast}=confirmedEffects;
   if(!DB.categories[key])DB.categories[key]=[];
   DB.categories[key].push({e:'',l:'New Tag'});
   saveCats();
   renderCatMgrSections();
 }
 function deleteCat(key,idx){
+  const {saveData,saveCashData,saveCats,render,renderCash,renderHisabMiniWallets,renderAllQtags,renderCatMgrSections,updateProfileHeaderUI,cm,closeCashForm,openProfileSwitcher,switchProfile,toast}=confirmedEffects;
   if(!DB.categories[key])return;
   DB.categories[key].splice(idx,1);
   saveCats();
@@ -678,6 +731,7 @@ function deleteCat(key,idx){
 // ── AUTH ──
 let authMode='login';
 function switchAuthTab(mode,el){
+  if(authBusy)return;
   authMode=mode;
   document.querySelectorAll('.auth-tab').forEach(t=>t.classList.remove('on'));
   el.classList.add('on');
@@ -692,44 +746,65 @@ function setAuthMsg(msg,type){
   const el=document.getElementById('au-msg');
   el.textContent=msg; el.className='auth-msg '+(type||'');
 }
+let authBusy=false;
+function lockAuthControls(locked){
+  document.querySelectorAll('#auth-screen input,#auth-screen button').forEach(el=>el.disabled=locked);
+}
 async function authSubmit(){
+  if(authBusy)return;
   const email=document.getElementById('au-email').value.trim();
   const pass=document.getElementById('au-pass').value;
-  if(!email||!pass){setAuthMsg(LANG==='bn'?'Email ও Password দিন!':'Enter email and password!','err');return;}
+  if(!email||!pass){setAuthMsg(LANG==='bn'?'ইমেইল ও পাসওয়ার্ড দিন।':'Enter email and password.','err');return;}
+  const mode=authMode;
   const btn=document.getElementById('au-btn');
-  btn.querySelector('.bn').textContent='⏳ অপেক্ষা করুন...';
-  btn.querySelector('.en').textContent='⏳ Please wait...';
-  btn.disabled=true;
-  const{data,error}=await(authMode==='login'
-    ?sb.auth.signInWithPassword({email,password:pass})
-    :sb.auth.signUp({email,password:pass}));
-  btn.disabled=false;
-  btn.querySelector('.bn').textContent=authMode==='login'?'লগইন করুন →':'রেজিস্টার করুন →';
-  btn.querySelector('.en').textContent=authMode==='login'?'Login →':'Register →';
-  if(error){
-    const m=error.message;
-    const msg=m.includes('Invalid login')?'❌ Email বা Password ভুল!':
-      m.includes('already')?'❌ এই email-এ account আছে!':
-      m.includes('Password')?'❌ Password কমপক্ষে ৬ অক্ষর!':'❌ '+m;
-    setAuthMsg(msg,'err'); return;
-  }
-  if(authMode==='register'&&!data.session){
-    setAuthMsg('✅ Registered! Email verify করে login করুন।','ok'); return;
+  authBusy=true;lockAuthControls(true);setAuthMsg('','');
+  btn.querySelector('.bn').textContent='অপেক্ষা করুন…';
+  btn.querySelector('.en').textContent='Please wait…';
+  try{
+    const {data,error}=await(mode==='login'
+      ?sb.auth.signInWithPassword({email,password:pass})
+      :sb.auth.signUp({email,password:pass,options:{data:{display_name:document.getElementById('au-name').value.trim().slice(0,100)}}}));
+    if(error){
+      const message=error.message||'';
+      const pair=message.includes('Invalid login')?['ইমেইল বা পাসওয়ার্ড ভুল।','Incorrect email or password.']:
+        message.includes('already')?['এই ইমেইলে অ্যাকাউন্ট আছে। লগইন করুন।','An account already exists. Please sign in.']:
+        /password/i.test(message)?['পাসওয়ার্ড কমপক্ষে ৬ অক্ষরের দিন।','Use a password with at least 6 characters.']:
+        /confirm/i.test(message)?['আগে ইমেইলের লিংক দিয়ে অ্যাকাউন্ট নিশ্চিত করুন।','Confirm your account using the email link first.']:
+        ['এখন লগইন বা নিবন্ধন করা যায়নি। সংযোগ দেখে আবার চেষ্টা করুন।','Could not sign in or register. Check your connection and try again.'];
+      setAuthMsg(pair[LANG==='bn'?0:1],'err');return;
+    }
+    if(mode==='register'&&!data.session)setAuthMsg(LANG==='bn'?'নিবন্ধন হয়েছে। ইমেইল নিশ্চিত করে লগইন করুন।':'Registered. Verify your email, then sign in.','ok');
+  }catch(error){
+    setAuthMsg(LANG==='bn'?'সংযোগে সমস্যা হয়েছে। আবার চেষ্টা করুন।':'Connection failed. Please try again.','err');
+  }finally{
+    authBusy=false;lockAuthControls(false);
+    btn.querySelector('.bn').textContent=authMode==='login'?'লগইন করুন →':'রেজিস্টার করুন →';
+    btn.querySelector('.en').textContent=authMode==='login'?'Login →':'Register →';
   }
 }
 async function authForgot(){
+  if(authBusy)return;
   const email=document.getElementById('au-email').value.trim();
-  if(!email){setAuthMsg('আগে email দিন!','err');return;}
-  await sb.auth.resetPasswordForEmail(email);
-  setAuthMsg('✅ Reset link পাঠানো হয়েছে!','ok');
+  if(!email){setAuthMsg(LANG==='bn'?'আগে ইমেইল দিন।':'Enter your email first.','err');return;}
+  authBusy=true;lockAuthControls(true);
+  try{
+    const {error}=await sb.auth.resetPasswordForEmail(email,{redirectTo:location.origin+location.pathname});
+    if(error)throw error;
+    setAuthMsg(LANG==='bn'?'আপনার অ্যাকাউন্ট থাকলে ইমেইলে রিসেট নির্দেশনা পাবেন।':'If an account exists, check your email for reset instructions.','ok');
+  }catch(error){setAuthMsg(LANG==='bn'?'রিসেট নির্দেশনা পাঠানো যায়নি। আবার চেষ্টা করুন।':'Could not send reset instructions. Please try again.','err');}
+  finally{authBusy=false;lockAuthControls(false);}
 }
 async function signOut(){
-  logActivity('Logout');
-  if(CUR_USER)await saveData();
+  if(savingChange)return;
+  const leavingUser=CUR_USER?.id;
+  try{
+    const {error}=await sb.auth.signOut();
+    if(error)throw error;
+  }catch(error){toast(LANG==='bn'?'লগআউট হয়নি। আবার চেষ্টা করুন।':'Sign out failed. Please try again.');return;}
+  accountSync?.stop();accountSync=null;_dataLoaded=false;
   localStorage.removeItem('ht_has_session');
   document.documentElement.classList.remove('has-session');
-  await sb.auth.signOut();
-  if(CUR_USER)localStorage.removeItem('ht_tr_'+CUR_USER.id);
+  if(leavingUser)localStorage.removeItem('ht_tr_'+leavingUser);
   CUR_USER=null;
   ROOT_DB=null; ROOT_CASH_DB=null;
   DB={receive:[],give:[],activityLog:[]};
@@ -748,7 +823,7 @@ function restoreCachedSession(){
     let cachedUser = null;
     for(let i = 0; i < localStorage.length; i++){
       const k = localStorage.key(i);
-      if(k && k.startsWith('sb-') && k.endsWith('-auth-token')){
+      if(k && k==='sb-hmqckyecenigcjikfjob-auth-token'){
         const item = JSON.parse(localStorage.getItem(k));
         if(item && item.user){
           cachedUser = item.user;
@@ -764,7 +839,7 @@ function restoreCachedSession(){
       const av = document.getElementById('drw-av');
       if(av) av.textContent = email.charAt(0).toUpperCase();
       const drwName = document.getElementById('drw-name');
-      if(drwName) drwName.innerHTML = '<a href="https://profess0r-null.xyz" target="_blank" class="dev-link">profess0r.null ↗</a>';
+      if(drwName)drwName.textContent='profess0r.null';
       const em = document.getElementById('drw-email');
       if(em) em.textContent = email;
 
@@ -774,21 +849,14 @@ function restoreCachedSession(){
       if(raw){
         try { ROOT_DB = JSON.parse(raw); ensureProfilesStructure(); } catch(e){}
       }
-      if(isTrusted()){
-        document.getElementById('auth-screen').style.display = 'none';
-        document.getElementById('app').style.display = 'block';
-        applyMode();
-        render();
-        renderCash();
-        updateProfileHeaderUI();
-      }
+
     }
   } catch(e){}
 }
 restoreCachedSession();
 
 let _appInitialized=false;
-sb.auth.onAuthStateChange(async(event,session)=>{
+sb.auth.onAuthStateChange((event,session)=>{setTimeout(async()=>{
   if(sessionStorage.getItem('ht_verify_flow')==='1'){
     sessionStorage.removeItem('ht_verify_flow');
     localStorage.removeItem('ht_has_session');
@@ -800,6 +868,7 @@ sb.auth.onAuthStateChange(async(event,session)=>{
     await sb.auth.signOut();
     return;
   }
+  if(event==='PASSWORD_RECOVERY'){sessionStorage.setItem('ht_recovery_flow','1');}
   if(session&&session.user){
     CUR_USER=session.user;
     localStorage.setItem('ht_has_session', '1');
@@ -809,18 +878,18 @@ sb.auth.onAuthStateChange(async(event,session)=>{
     const av = document.getElementById('drw-av');
     if(av) av.textContent=email.charAt(0).toUpperCase();
     const drwName = document.getElementById('drw-name');
-    if(drwName) drwName.innerHTML =
-  '<a href="https://profess0r-null.xyz" target="_blank" class="dev-link">profess0r.null ↗</a>';
+    if(drwName)drwName.textContent='profess0r.null';
     const em = document.getElementById('drw-email');
     if(em) em.textContent=email;
     if(!_appInitialized){
       _appInitialized=true;
-      await checkPin();
+      try{if(sessionStorage.getItem('ht_recovery_flow')==='1'){sessionStorage.removeItem('ht_recovery_flow');await loadData();if(!getPin()){sessionStorage.setItem('ht_open_password_after_pin','1');await checkPin();}else{await showApp();openProfile();}}else await checkPin();}catch(error){_appInitialized=false;setAuthMsg(LANG==='bn'?'হিসাব খুলতে সমস্যা হয়েছে। আবার চেষ্টা করুন।':'Unable to load account. Please retry.','err');document.getElementById('auth-screen').style.display='flex';console.error(error);}
     }
   } else {
     _appInitialized=false;
     localStorage.removeItem('ht_has_session');
     document.documentElement.classList.remove('has-session');
+    accountSync?.stop();accountSync=null;_dataLoaded=false;
     CUR_USER=null;
     ROOT_DB=null; ROOT_CASH_DB=null;
     DB={receive:[],give:[],activityLog:[]};
@@ -829,7 +898,7 @@ sb.auth.onAuthStateChange(async(event,session)=>{
     document.getElementById('pin-screen').style.display='none';
     document.getElementById('auth-screen').style.display='flex';
   }
-});
+},0);});
 
 // ── PROFILE ──
 function openProfile(){
@@ -841,44 +910,43 @@ function openProfile(){
   document.getElementById('pr-msg').className='modal-msg';
   document.getElementById('m-profile').classList.add('on');
 }
+let passwordChangeBusy=false;
 async function changePassword(){
+  if(passwordChangeBusy)return;
   const np=document.getElementById('pr-new').value;
   const cf=document.getElementById('pr-cf').value;
   const msg=document.getElementById('pr-msg');
-  if(np.length<6){msg.className='modal-msg err';msg.textContent='কমপক্ষে ৬ অক্ষর!';return;}
-  if(np!==cf){msg.className='modal-msg err';msg.textContent='Password মিলছে না!';return;}
-  const{error}=await sb.auth.updateUser({password:np});
-  if(error){msg.className='modal-msg err';msg.textContent='❌ '+error.message;return;}
-  logActivity('Password পরিবর্তন করা হয়েছে');
-  await saveData();
-  msg.className='modal-msg ok';msg.textContent='✅ পাসওয়ার্ড পরিবর্তন হয়েছে!';
-  setTimeout(()=>cm('m-profile'),1500);
+  if(np.length<6){msg.className='modal-msg err';msg.textContent=LANG==='bn'?'কমপক্ষে ৬ অক্ষর দিন।':'Use at least 6 characters.';return;}
+  if(np!==cf){msg.className='modal-msg err';msg.textContent=LANG==='bn'?'দুটি পাসওয়ার্ড মেলেনি।':'Passwords do not match.';return;}
+  const controls=[...document.querySelectorAll('#m-profile input,#m-profile button')].map(el=>({el,disabled:el.disabled}));
+  passwordChangeBusy=true;controls.forEach(({el})=>el.disabled=true);
+  msg.className='modal-msg';msg.textContent=LANG==='bn'?'অপেক্ষা করুন…':'Please wait…';
+  try{
+    const {error}=await sb.auth.updateUser({password:np});
+    if(error)throw error;
+    document.getElementById('pr-new').value='';document.getElementById('pr-cf').value='';
+    msg.className='modal-msg ok';msg.textContent=LANG==='bn'?'পাসওয়ার্ড পরিবর্তন হয়েছে।':'Password changed.';
+  }catch(error){msg.className='modal-msg err';msg.textContent=LANG==='bn'?'পাসওয়ার্ড বদলানো যায়নি। সংযোগ দেখে আবার চেষ্টা করুন।':'Could not change password. Check your connection and try again.';}
+  finally{passwordChangeBusy=false;controls.forEach(({el,disabled})=>el.disabled=disabled);}
 }
 
 // ── PIN ──
 function ph(p){let h=5381;for(let i=0;i<p.length;i++)h=(h*33)^p.charCodeAt(i);return(h>>>0).toString(36);}
 function pk(){return'ht_pin_'+CUR_USER.id;}
 function tk(){return'ht_tr_'+CUR_USER.id;}
-function getPin(){return DB.pinHash||ph('1234');}
+function getPin(){return ROOT_DB?.pinHash||null;}
 function isTrusted(){return localStorage.getItem(tk())==='1';}
 function setTrusted(){localStorage.setItem(tk(),'1');}
 
 async function checkPin(){
-  if(isTrusted()){showApp();return;}
-  try{
-    const{data}=await sb.from('hisab_users').select('data').eq('id',CUR_USER.id).maybeSingle();
-    if(data&&data.data&&data.data.pinHash){
-      DB.pinHash=data.data.pinHash;
-      localStorage.setItem(pk(),data.data.pinHash);
-    }
-  }catch(e){}
-  document.getElementById('auth-screen').style.display='none';
-  document.getElementById('app').style.display='none';
-  pinMode='unlock';pinBuf='';updDots('');
-  document.getElementById('pin-err').textContent='';
+  await loadData();
+  await loadCashDataCloud();
+  if(!getPin()){beginFirstPin();return;}
+  if(isTrusted()){await showApp();return;}
+  document.getElementById('auth-screen').style.display='none';document.getElementById('app').style.display='none';
+  pinMode='unlock';pinBuf='';updDots('');document.getElementById('pin-err').textContent='';
   document.getElementById('pin-title').textContent=LANG==='bn'?'PIN দিন':'Enter PIN';
-  document.getElementById('pin-sub').textContent=LANG==='bn'?'আপনার ৪ সংখ্যার PIN লিখুন':'Enter your 4-digit PIN';
-  document.getElementById('pin-screen').style.display='flex';
+  document.getElementById('pin-sub').textContent=LANG==='bn'?'আপনার ৪ সংখ্যার PIN লিখুন':'Enter your 4-digit PIN';document.getElementById('pin-screen').style.display='flex';
 }
 function openPinChange(){
   closeDrawer();
@@ -890,11 +958,10 @@ function openPinChange(){
   document.getElementById('pin-screen').style.display='flex';
 }
 function lockApp(){
+  if(!getPin()){beginFirstPin();return;}
   closeDrawer();
-  logActivity('App লক করা হয়েছে');
-  saveData();
+
   localStorage.removeItem(tk());
-  _appInitialized=false;
   document.getElementById('app').style.display='none';
   document.getElementById('auth-screen').style.display='none';
   document.body.style.overflow='';
@@ -908,21 +975,22 @@ function updDots(buf,cls){
   for(let i=0;i<4;i++){const d=document.getElementById('pd'+i);d.className='pin-dot'+(i<buf.length?' '+(cls||'filled'):'');}
 }
 function pinKey(k){
-  if(pinBuf.length>=4)return;
+  if(savingChange||!/^\d$/.test(k)||pinBuf.length>=4)return;
   pinBuf+=k;updDots(pinBuf);
   document.getElementById('pin-err').textContent='';
   if(pinBuf.length===4)setTimeout(handlePin,120);
 }
-function pinDel(){pinBuf=pinBuf.slice(0,-1);updDots(pinBuf);}
+function pinDel(){if(savingChange)return;pinBuf=pinBuf.slice(0,-1);updDots(pinBuf);}
 function handlePin(){
+  const {saveData,saveCashData,saveCats,render,renderCash,renderHisabMiniWallets,renderAllQtags,renderCatMgrSections,updateProfileHeaderUI,cm,closeCashForm,openProfileSwitcher,switchProfile,toast}=confirmedEffects;
   const box=document.querySelector('.pin-box');
   if(pinMode==='unlock'){
-    if(ph(pinBuf)===getPin()){
+    if(getPin()&&ph(pinBuf)===getPin()){
       setTrusted();
       document.getElementById('pin-screen').style.display='none';
       showApp();
     }else{
-      updDots('1234','err');
+      updDots('0000','err');
       document.getElementById('pin-err').textContent=LANG==='bn'?'❌ ভুল PIN!':'❌ Wrong PIN!';
       box.classList.add('shake');
       setTimeout(()=>{box.classList.remove('shake');pinBuf='';updDots('');},500);
@@ -935,16 +1003,22 @@ function handlePin(){
   }else if(pinMode==='set-new2'){
     if(pinBuf===pinTmp){
       const hash=ph(pinBuf);
-      localStorage.setItem(pk(),hash);
-      DB.pinHash=hash;
-      logActivity('PIN পরিবর্তন করা হয়েছে');
+
+      const firstPin=!getPin();
+      ROOT_DB.pinHash=hash;
+      logActivity(firstPin?'PIN তৈরি করা হয়েছে':'PIN পরিবর্তন করা হয়েছে');
       saveData();
       pinBuf='';pinTmp='';pinMode='unlock';
       document.getElementById('pin-screen').style.display='none';
       document.getElementById('app').style.display='block';
-      toast('✅ PIN পরিবর্তন হয়েছে!');
+      toast(LANG==='bn'?(firstPin?'PIN তৈরি হয়েছে।':'PIN পরিবর্তন হয়েছে.'):(firstPin?'PIN created.':'PIN changed.'));
+      if(firstPin)activeDraft.effects.push(()=>{
+        setTrusted();showApp().then(()=>{
+          if(sessionStorage.getItem('ht_open_password_after_pin')==='1'){sessionStorage.removeItem('ht_open_password_after_pin');openProfile();}
+        }).catch(()=>toast(LANG==='bn'?'অ্যাপ খুলতে সমস্যা হয়েছে। পেজ রিফ্রেশ করুন।':'Unable to open the app. Refresh the page.'));
+      });
     }else{
-      updDots('1234','err');
+      updDots('0000','err');
       document.getElementById('pin-err').textContent=LANG==='bn'?'❌ মিলেনি! আবার চেষ্টা করুন।':'❌ Mismatch! Try again.';
       box.classList.add('shake');
       setTimeout(()=>{
@@ -966,21 +1040,17 @@ function showSkeleton(){
 }
 let _dataLoaded = false;
 async function showApp(){
+  if(!getPin()){await checkPin();return;}
   document.getElementById('app').style.display='block';
   setSyncState('saving','Loading...');
-  (async()=>{try{await sb.from('visits').insert({user_agent:navigator.userAgent,logged_in:true});}catch(e){}})();
-  await loadData();
+    appLoading=true;document.getElementById('app').inert=true;
+  if(!_dataLoaded)await loadData();
   await loadCashDataCloud();
+  appLoading=false;document.getElementById('app').inert=false;
+
   updateProfileHeaderUI();
-  logActivity('Login সফল',CUR_USER.email);
-  
-  if (_dataLoaded) {
-    await saveData(true); // true = login toast
-  } else {
-    toast('⚠️ Offline / Error: Using local data');
-    setSyncState('fail', 'Offline');
-  }
-  
+
+
   applyMode();
   render();
   renderAllQtags();
@@ -995,57 +1065,19 @@ async function showApp(){
   });
 }
 async function loadData(){
-  try {
-    const{data,error}=await sb.from('hisab_users').select('data').eq('id',CUR_USER.id).maybeSingle();
-    if(data&&data.data){
-      ROOT_DB=data.data;
-      ensureProfilesStructure();
-      // PIN cloud থেকে localStorage এ sync
-      if(ROOT_DB.pinHash) localStorage.setItem(pk(),ROOT_DB.pinHash);
-      _dataLoaded = true;
-    }else if(!error){
-      ensureProfilesStructure();
-      await sb.from('hisab_users').insert({id:CUR_USER.id,data:ROOT_DB});
-      _dataLoaded = true;
-    } else {
-      throw error;
-    }
-  } catch(e) {
-    // fallback to local storage
-    const raw = localStorage.getItem('ht_'+CUR_USER.id);
-    if(raw) {
-      try { ROOT_DB = JSON.parse(raw); } catch(e2) {}
-    }
-    ensureProfilesStructure();
-    _dataLoaded = false;
-  }
+  if(!CUR_USER)return;
+  let fallback;try{const raw=localStorage.getItem('ht_'+CUR_USER.id);if(raw)fallback=canonical(JSON.parse(raw));}catch(error){}
+  const sync=getAccountSync();
+  const data=await sync.load(fallback);
+  if(data&&Object.keys(data).length)HisabSafety.validate(data,data._cash||{balance:0,history:[]});
+  applySnapshot(data);_dataLoaded=true;
 }
 let _retrySyncTimeout=null;
-async function saveData(showLoginToast=false){
-  if(_retrySyncTimeout) { clearTimeout(_retrySyncTimeout); _retrySyncTimeout=null; }
-  setSyncState('saving','Saving...');
-  ensureProfilesStructure();
-
-  // Keep legacy top-level fields synced if active profile is default
-  if(ROOT_DB.activeProfileId === 'default'){
-    ROOT_DB.receive = DB.receive;
-    ROOT_DB.give = DB.give;
-    ROOT_DB.activityLog = DB.activityLog;
-    ROOT_DB.categories = DB.categories;
-  }
-
-  localStorage.setItem('ht_'+CUR_USER.id,JSON.stringify(ROOT_DB));
-  try{
-    const { error } = await sb.from('hisab_users').upsert({id:CUR_USER.id,data:ROOT_DB,updated_at:new Date().toISOString()});
-    if(error) throw error;
-    if(showLoginToast){
-      toast(LANG==='bn'?'👋 স্বাগতম!':'👋 Welcome!');
-    }
-    setSyncState('synced');
-  }catch(e){
-    setSyncState('fail','Sync failed ✕');
-    _retrySyncTimeout = setTimeout(()=>saveData(), 5000);
-  }
+async function saveData(){
+  if(!CUR_USER)return false;
+  const sync=getAccountSync(),ok=await sync.save(makeSnapshot(),String(nextId()));
+  if(ok)applySnapshot(sync.current);
+  return ok;
 }
 
 // ── CASH DATA ──
@@ -1056,64 +1088,20 @@ function loadCashData(){
   ensureProfilesStructure();
 }
 async function loadCashDataCloud(){
-  try{
-    const{data,error}=await sb.from('hisab_cash').select('data').eq('id',CUR_USER.id).maybeSingle();
-    if(data&&data.data){
-      ROOT_CASH_DB=data.data;
-      ensureProfilesStructure();
-      localStorage.setItem(cashKey(),JSON.stringify(ROOT_CASH_DB));
-    } else if(!error){
-      // first time — check localStorage backup
-      const raw=localStorage.getItem(cashKey());
-      if(raw)try{ROOT_CASH_DB=JSON.parse(raw);}catch(e){}
-      ensureProfilesStructure();
-      // save to cloud
-      await sb.from('hisab_cash').insert({id:CUR_USER.id,data:ROOT_CASH_DB});
-    }
-  }catch(e){
-    // fallback to localStorage
-    const raw=localStorage.getItem(cashKey());
-    if(raw)try{ROOT_CASH_DB=JSON.parse(raw);}catch(e2){}
-    ensureProfilesStructure();
-  }
+  if(ROOT_DB?._cash){ROOT_CASH_DB=ROOT_DB._cash;ensureProfilesStructure();return;}
+  const {data,error}=await sb.from('hisab_cash').select('data').eq('id',CUR_USER.id).maybeSingle();
+  if(error)throw error;
+  // The database is authoritative. Old local cash copies are not auto-uploaded.
+  ROOT_CASH_DB=data?.data||{balance:0,history:[]};
+  HisabSafety.validate(ROOT_DB,ROOT_CASH_DB);ensureProfilesStructure();ROOT_DB._cash=ROOT_CASH_DB;
 }
+
 function saveCashData(){
-  if(window._retryCashSync) { clearTimeout(window._retryCashSync); window._retryCashSync=null; }
-  
-  const actId = (ROOT_DB && ROOT_DB.activeProfileId) || 'default';
-  if(!ROOT_CASH_DB || typeof ROOT_CASH_DB !== 'object') ROOT_CASH_DB = {};
-  if(!ROOT_CASH_DB.profilesData || typeof ROOT_CASH_DB.profilesData !== 'object') ROOT_CASH_DB.profilesData = {};
-
-  ROOT_CASH_DB.profilesData[actId] = {
-    balance: CASH_DB.balance || 0,
-    history: CASH_DB.history || [],
-    wallets: CASH_DB.wallets || { cash: 0, bkash: 0, nagad: 0, bank: 0 },
-    budget: CASH_DB.budget || 0,
-    monthlyBudgets: CASH_DB.monthlyBudgets || {}
-  };
-  CASH_DB = ROOT_CASH_DB.profilesData[actId];
-
-  if(actId === 'default'){
-    ROOT_CASH_DB.balance = CASH_DB.balance;
-    ROOT_CASH_DB.history = CASH_DB.history;
-    ROOT_CASH_DB.wallets = CASH_DB.wallets;
-    ROOT_CASH_DB.budget = CASH_DB.budget;
-  }
-
-  localStorage.setItem(cashKey(),JSON.stringify(ROOT_CASH_DB));
-  if(typeof renderHisabMiniWallets === 'function') renderHisabMiniWallets();
-  // cloud sync async
-  if(CUR_USER){
-    setSyncState('saving','Saving...');
-    sb.from('hisab_cash').upsert({id:CUR_USER.id,data:ROOT_CASH_DB,updated_at:new Date().toISOString()}).then(({error})=>{
-      if(error){
-        setSyncState('fail','Sync failed ✕');
-        window._retryCashSync = setTimeout(()=>saveCashData(), 5000);
-      } else {
-        setSyncState('synced');
-      }
-    });
-  }
+  if(!CUR_USER)return Promise.resolve(false);
+  ensureWallets();CASH_DB.balance=money(Object.values(CASH_DB.wallets).reduce((s,v)=>s+v,0));
+  ROOT_CASH_DB.profilesData[ROOT_DB.activeProfileId||'default']=CASH_DB;
+  if(typeof renderHisabMiniWallets==='function')renderHisabMiniWallets();
+  return saveData();
 }
 
 // ── MULTI-PROFILE (KHATA / BOOKS) SYSTEM ──
@@ -1159,8 +1147,7 @@ function switchProfile(profileId, showToast = true){
   renderAllQtags();
 
   // Sync to storage
-  saveData();
-  saveCashData();
+
 
   cm('m-profiles');
   if(showToast){
@@ -1183,11 +1170,11 @@ function openProfileSwitcher(){
     const cData = (ROOT_CASH_DB && ROOT_CASH_DB.profilesData && ROOT_CASH_DB.profilesData[p.id]) || { balance: 0 };
     const cBal = cData.balance || 0;
 
-    const esc = s => String(s).replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    const esc = escapeHTML;
 
     return `
       <div class="profile-card ${isActive ? 'active' : ''}" onclick="switchProfile('${p.id}')">
-        <div class="pcard-icon">${p.icon || '📁'}</div>
+        <div class="pcard-icon">${escapeHTML(p.icon || '📁')}</div>
         <div class="pcard-info">
           <div class="pcard-title-row">
             <span class="pcard-name">${esc(p.name)}</span>
@@ -1263,6 +1250,7 @@ function renderEmojiPicker(){
 }
 
 function saveProfileSubmit(){
+  const {saveData,saveCashData,saveCats,render,renderCash,renderHisabMiniWallets,renderAllQtags,renderCatMgrSections,updateProfileHeaderUI,cm,closeCashForm,openProfileSwitcher,switchProfile,toast}=confirmedEffects;
   const nameInput = document.getElementById('pe-name');
   const name = nameInput.value.trim();
   if(!name){
@@ -1290,7 +1278,7 @@ function saveProfileSubmit(){
       renderCash();
     }
   } else {
-    const newId = 'prof_' + Date.now();
+    const newId = 'prof_' + nextId();
     ROOT_DB.profiles.push({
       id: newId,
       name: name,
@@ -1300,7 +1288,7 @@ function saveProfileSubmit(){
     ROOT_DB.profilesData[newId] = {
       receive: [],
       give: [],
-      activityLog: [{ action: `খাতা তৈরি করা হয়েছে: ${name}`, time: Date.now() }],
+      activityLog: [{ action: `খাতা তৈরি করা হয়েছে: ${name}`, ts: Date.now() }],
       categories: {}
     };
     ROOT_CASH_DB.profilesData[newId] = {
@@ -1317,6 +1305,7 @@ function saveProfileSubmit(){
 }
 
 function confirmDeleteProfile(id){
+  const {saveData,saveCashData,saveCats,render,renderCash,renderHisabMiniWallets,renderAllQtags,renderCatMgrSections,updateProfileHeaderUI,cm,closeCashForm,openProfileSwitcher,switchProfile,toast}=confirmedEffects;
   ensureProfilesStructure();
   const p = ROOT_DB.profiles.find(x => x.id === id);
   if(!p) return;
@@ -1345,7 +1334,7 @@ function confirmDeleteProfile(id){
 }
 
 // ── EXPENSE TRACKER PRO METADATA & DATA STRUCTURES ──
-let CASH_SELECTED_MONTH = new Date().toISOString().slice(0, 7);
+let CASH_SELECTED_MONTH = localDateStr().slice(0, 7);
 let CASH_TIME_FILTER = 'month'; // 'month' | 'last_month' | 'all'
 let WALLET_FILTER = 'all';
 let SELECTED_FORM_WALLET = 'cash';
@@ -1356,12 +1345,16 @@ let QA_MODE = 'sub';
 let TF_FROM_WALLET = 'bank';
 let TF_TO_WALLET = 'bkash';
 
-const WALLET_META = {
+const WALLET_META = new Proxy({
   cash:  { name: 'নগদ', en: 'Cash', icon: '💵', color: '#10b981' },
   bkash: { name: 'বিকাশ', en: 'bKash', icon: '📱', color: '#e11d48' },
   nagad: { name: 'নগদ (Nagad)', en: 'Nagad', icon: '📱', color: '#f97316' },
   bank:  { name: 'ব্যাংক', en: 'Bank', icon: '🏦', color: '#3b82f6' }
-};
+},{get(base,key){
+  if(Object.prototype.hasOwnProperty.call(base,key))return base[key];
+  const custom=CASH_DB.customWallets?.[key];
+  return custom?{name:custom.name,en:custom.name,icon:'▣',iconKind:custom.iconKind||'wallet',color:'#647bbb'}:undefined;
+}});
 
 const EXPENSE_CATEGORIES = [
   { id: 'food', e: '🍔', bn: 'খাবার', en: 'Food', color: '#f97316' },
@@ -1447,19 +1440,21 @@ function renderWallets(){
   const grid = document.getElementById('wallets-grid');
   if(!grid) return;
   const w = CASH_DB.wallets;
-  const keys = ['cash', 'bkash', 'nagad', 'bank'];
+  const keys = enabledWalletKeys();
   grid.innerHTML = keys.map(k => {
     const meta = WALLET_META[k];
     const isAct = WALLET_FILTER === k;
     const amt = w[k] || 0;
+    const glyph=k.startsWith('wallet_')?customWalletIconPath(WALLET_META[k]?.iconKind):k==='cash'?'<rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="12" cy="12" r="3"/><path d="M6 9h1m10 6h1"/>':k==='bank'?'<path d="m3 9 9-6 9 6H3Zm2 3v6m5-6v6m4-6v6m5-6v6M3 21h18"/>':'<rect x="6" y="2" width="12" height="20" rx="3"/><path d="M10 5h4m-3 14h2"/>';
+
     return `
-      <div class="wallet-card ${isAct ? 'active' : ''}" onclick="toggleWalletFilter('${k}')">
+      <button type="button" data-wallet="${k}" class="wallet-card ${isAct ? 'active' : ''}" aria-pressed="${isAct}" onclick="toggleWalletFilter('${k}')">
         <div class="wcard-top">
-          <span class="wcard-icon">${meta.icon}</span>
-          <span class="wcard-name">${LANG==='bn'?meta.name:meta.en}</span>
+          <span class="wcard-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${glyph}</svg></span>
+          <span class="wcard-name">${escapeHTML(LANG==='bn'?meta.name:meta.en)}</span>
         </div>
         <div class="wcard-amt">৳${fmt(amt)}</div>
-      </div>
+      </button>
     `;
   }).join('');
 }
@@ -1477,8 +1472,10 @@ function openTransferModal(){
   ensureWallets();
   document.getElementById('tf-amt').value = '';
   document.getElementById('tf-note').value = '';
-  selectTransferWallet('from', 'bank');
-  selectTransferWallet('to', 'bkash');
+  const wallets=enabledWalletKeys();
+  if(wallets.length<2){toast(LANG==='bn'?'ট্রান্সফার করতে মেনু থেকে আরেকটি ওয়ালেট যোগ করুন।':'Add another wallet from the menu to transfer money.');return;}
+  selectTransferWallet('from', wallets[0]);
+  selectTransferWallet('to', wallets[1]);
   document.getElementById('m-transfer').classList.add('on');
 }
 
@@ -1493,12 +1490,14 @@ function selectTransferWallet(type, w, btn){
 }
 
 function confirmTransfer(){
-  const amt = parseFloat(document.getElementById('tf-amt').value);
+  const {saveData,saveCashData,saveCats,render,renderCash,renderHisabMiniWallets,renderAllQtags,renderCatMgrSections,updateProfileHeaderUI,cm,closeCashForm,openProfileSwitcher,switchProfile,toast}=confirmedEffects;
+  const amt = money(parseFloat(document.getElementById('tf-amt').value));
   const note = document.getElementById('tf-note').value.trim() || (LANG==='bn'?'ওয়ালেট ফান্ড ট্রান্সফার':'Wallet Fund Transfer');
-  if(!amt || amt <= 0){
+  if(!validAmount(amt)){
     toast('❌ সঠিক পরিমাণ দিন!');
     return;
   }
+  if(!walletEnabled(TF_FROM_WALLET)||!walletEnabled(TF_TO_WALLET)){toast(LANG==='bn'?'চালু ওয়ালেট বাছুন।':'Choose an enabled wallet.');return;}
   if(TF_FROM_WALLET === TF_TO_WALLET){
     toast('❌ প্রেরক ও প্রাপক অ্যাকাউন্ট একই হতে পারে না!');
     return;
@@ -1510,12 +1509,12 @@ function confirmTransfer(){
   }
   CASH_DB.wallets[TF_FROM_WALLET] -= amt;
   CASH_DB.wallets[TF_TO_WALLET] = (CASH_DB.wallets[TF_TO_WALLET] || 0) + amt;
-  const ts = Date.now();
+  const ts = Date.now(), txnId=nextId();
   const fromMeta = WALLET_META[TF_FROM_WALLET];
   const toMeta = WALLET_META[TF_TO_WALLET];
   const transferDesc = `${fromMeta.icon} ${fromMeta.name} → ${toMeta.icon} ${toMeta.name} (${note})`;
   CASH_DB.history.unshift({
-    id: ts,
+    id: txnId,
     type: 'transfer',
     amt: amt,
     fromWallet: TF_FROM_WALLET,
@@ -1550,16 +1549,16 @@ function selectFormWallet(w, btn){
   document.querySelectorAll('#form-wallet-row .wsel-btn').forEach(b => b.classList.toggle('on', b.dataset.w === w));
   
   const meta = WALLET_META[w] || { name: 'ক্যাশ', en: 'Cash' };
-  const wLabel = LANG === 'bn' ? meta.name : meta.en;
+  const wLabel = escapeHTML(LANG === 'bn' ? meta.name : meta.en);
   const submitBtn = document.getElementById('cash-submit-btn');
   const titleEl = document.getElementById('cash-form-title');
 
   if(cashFormMode === 'add'){
-    if(titleEl) titleEl.innerHTML = `<span class="bn">${wLabel}-এ টাকা যোগ</span><span class="en">Add to ${meta.en}</span>`;
-    if(submitBtn) submitBtn.innerHTML = `<span class="bn">${wLabel}-এ যোগ করুন ✓</span><span class="en">Add to ${meta.en} ✓</span>`;
+    if(titleEl) titleEl.innerHTML = `<span class="bn">${wLabel}-এ টাকা যোগ</span><span class="en">Add to ${escapeHTML(meta.en)}</span>`;
+    if(submitBtn) submitBtn.innerHTML = `<span class="bn">${wLabel}-এ যোগ করুন ✓</span><span class="en">Add to ${escapeHTML(meta.en)} ✓</span>`;
   } else {
-    if(titleEl) titleEl.innerHTML = `<span class="bn">${wLabel} থেকে খরচ</span><span class="en">Deduct from ${meta.en}</span>`;
-    if(submitBtn) submitBtn.innerHTML = `<span class="bn">${wLabel} থেকে রেকর্ড করুন ✓</span><span class="en">Deduct from ${meta.en} ✓</span>`;
+    if(titleEl) titleEl.innerHTML = `<span class="bn">${wLabel} থেকে খরচ</span><span class="en">Deduct from ${escapeHTML(meta.en)}</span>`;
+    if(submitBtn) submitBtn.innerHTML = `<span class="bn">${wLabel} থেকে রেকর্ড করুন ✓</span><span class="en">Deduct from ${escapeHTML(meta.en)} ✓</span>`;
   }
 }
 
@@ -1608,17 +1607,16 @@ function selectCategoryTile(catId, containerId){
 
 // ── 3.1 QUICK ADD BOTTOM SHEET ──
 function openQuickAddSheet(){
-  setQuickAddType('sub');
-  document.getElementById('qa-amt').value = '';
-  document.getElementById('qa-note').value = '';
-  document.getElementById('qa-name').value = '';
-  const activeW = (WALLET_FILTER && WALLET_FILTER !== 'all') ? WALLET_FILTER : 'cash';
-  selectQAWallet(activeW);
+  if(savingChange)return;
   document.getElementById('m-quickadd').classList.add('on');
-  setTimeout(() => {
-    const el = document.getElementById('qa-amt');
-    if(el) el.focus();
-  }, 180);
+  if(document.querySelector('#m-quickadd .form-save-notice')){
+    document.getElementById('qa-chooser').hidden=true;document.getElementById('qa-editor').hidden=false;return;
+  }
+  resetQuickPerson();document.getElementById('qa-person-new').value='0';
+  document.getElementById('qa-amt').value='';document.getElementById('qa-note').value='';
+  document.getElementById('qa-note-details').open=false;
+  selectQAWallet(WALLET_FILTER&&WALLET_FILTER!=='all'?WALLET_FILTER:'cash');
+  backQuickTask();
 }
 
 function setQuickAddType(t){
@@ -1642,7 +1640,7 @@ function setQuickAddType(t){
     walletSec.style.display = 'none';
     catSec.style.display = 'none';
     subBtn.className = 'sbtn sbtn-g';
-    subBtn.innerHTML = '<span class="bn">পাওনা হিসেবে যোগ ✓</span><span class="en">Add Receivable ✓</span>';
+    updateQuickHisab();
   } else {
     nameWrap.style.display = 'none';
     noteWrap.style.display = 'block';
@@ -1650,14 +1648,14 @@ function setQuickAddType(t){
     catSec.style.display = 'block';
     const w = SELECTED_QA_WALLET || 'cash';
     const meta = WALLET_META[w] || { name: 'ক্যাশ', en: 'Cash' };
-    const wLabel = LANG === 'bn' ? meta.name : meta.en;
+    const wLabel = escapeHTML(LANG === 'bn' ? meta.name : meta.en);
     if(t === 'sub'){
       subBtn.className = 'sbtn sbtn-r';
-      subBtn.innerHTML = `<span class="bn">${wLabel} থেকে খরচ রেকর্ড করুন ✓</span><span class="en">Deduct from ${meta.en} ✓</span>`;
+      subBtn.innerHTML = `<span class="bn">${wLabel} থেকে খরচ রেকর্ড করুন ✓</span><span class="en">Deduct from ${escapeHTML(meta.en)} ✓</span>`;
       renderFormCategories('sub', 'qa-cat-grid');
     } else {
       subBtn.className = 'sbtn sbtn-g';
-      subBtn.innerHTML = `<span class="bn">${wLabel}-এ আয় যোগ করুন ✓</span><span class="en">Add to ${meta.en} ✓</span>`;
+      subBtn.innerHTML = `<span class="bn">${wLabel}-এ আয় যোগ করুন ✓</span><span class="en">Add to ${escapeHTML(meta.en)} ✓</span>`;
       renderFormCategories('add', 'qa-cat-grid');
     }
   }
@@ -1669,46 +1667,65 @@ function selectQAWallet(w, btn){
   const subBtn = document.getElementById('qa-submit-btn');
   if(!subBtn || QA_MODE === 'hisab') return;
   const meta = WALLET_META[w] || { name: 'ক্যাশ', en: 'Cash' };
-  const wLabel = LANG === 'bn' ? meta.name : meta.en;
+  const wLabel = escapeHTML(LANG === 'bn' ? meta.name : meta.en);
   if(QA_MODE === 'add'){
-    subBtn.innerHTML = `<span class="bn">${wLabel}-এ আয় যোগ করুন ✓</span><span class="en">Add to ${meta.en} ✓</span>`;
+    subBtn.innerHTML = `<span class="bn">${wLabel}-এ আয় যোগ করুন ✓</span><span class="en">Add to ${escapeHTML(meta.en)} ✓</span>`;
   } else {
-    subBtn.innerHTML = `<span class="bn">${wLabel} থেকে খরচ রেকর্ড করুন ✓</span><span class="en">Deduct from ${meta.en} ✓</span>`;
+    subBtn.innerHTML = `<span class="bn">${wLabel} থেকে খরচ রেকর্ড করুন ✓</span><span class="en">Deduct from ${escapeHTML(meta.en)} ✓</span>`;
   }
 }
 
 function submitQuickAdd(){
-  const amt = parseFloat(document.getElementById('qa-amt').value);
-  if(!amt || amt <= 0){
+  const {saveData,saveCashData,saveCats,render,renderCash,renderHisabMiniWallets,renderAllQtags,renderCatMgrSections,updateProfileHeaderUI,cm,closeCashForm,openProfileSwitcher,switchProfile,toast}=confirmedEffects;
+  const amt = money(parseFloat(document.getElementById('qa-amt').value));
+  if(!validAmount(amt)){
     toast('❌ সঠিক পরিমাণ দিন!');
     return;
   }
   if(QA_MODE === 'hisab'){
-    const name = document.getElementById('qa-name').value.trim();
-    if(!name){
-      toast('❌ ব্যক্তির নাম লিখুন!');
+    const kind=document.getElementById('qa-hisab-kind').value;
+    if(!['receive','give'].includes(kind))return;
+    const paying=document.getElementById('qa-hisab-action').value==='pay';
+    if(paying){
+      const id=document.getElementById('qa-person-id').value;
+      const person=DB[kind].find(p=>String(p.id)===id);
+      if(!person){toast(LANG==='bn'?'তালিকা থেকে ব্যক্তিকে বাছুন।':'Select a person.');return;}
+      if(applyHisabPayment(kind,person.id,amt,document.getElementById('qa-note').value,true,SELECTED_QA_WALLET||'cash')){
+        cm('m-quickadd');renderCash();
+      }
       return;
     }
-    const note = document.getElementById('qa-note').value.trim() || (LANG==='bn'?'পাওনা হিসাব':'Receivable');
-    const ts = Date.now();
-    const newEntry = {
-      id: ts,
-      name: name,
-      original: amt,
-      remaining: amt,
-      history: [{ t: 'add', amt: amt, note: note, date: ts }]
-    };
-    DB.receive.unshift(newEntry);
-    saveData();
-    render();
-    cm('m-quickadd');
-    toast(LANG === 'bn' ? `✅ "${name}" এর কাছে ৳${fmt(amt)} পাওনা যোগ হয়েছে!` : `✅ Added ৳${fmt(amt)} receivable!`);
-    return;
+
+    const name=document.getElementById('qa-name').value.trim();
+    const selected=document.getElementById('qa-person-id').value;
+    if(!name){toast(LANG==='bn'?'ব্যক্তির নাম লিখুন।':'Enter a name.');return;}
+    if(!selected&&document.getElementById('qa-person-new').value!=='1'){toast(LANG==='bn'?'আগের ব্যক্তি বাছুন অথবা নতুন ব্যক্তি চাপুন।':'Select an existing person or choose New person.');return;}
+    const person=selected?DB[kind].find(p=>String(p.id)===selected):null;
+    if(selected&&!person){toast(LANG==='bn'?'এই হিসাব পাওয়া যায়নি। আবার বাছুন।':'Account not found. Select again.');return;}
+    if(!person&&DB[kind].some(p=>searchText(p.name).trim()===searchText(name).trim())){
+      toast(LANG==='bn'?'এই নামে হিসাব আছে। নিচের তালিকা থেকে সঠিক ব্যক্তিকে বাছুন।':'This name already exists. Select the correct person from the list.');return;
+    }
+    const note=document.getElementById('qa-note').value.trim()||(LANG==='bn'?'হিসাব যোগ':'Added');
+    const ts=Date.now(),txnId=nextId();
+    const history={id:txnId,t:'add',amt,note,date:ts};
+    if(person){
+      if(person.remaining<=0){
+        person.original=amt;person.remaining=amt;person.clearedAt=ts;person.cycleStartedAt=ts;
+        if(person.loanData)person.loanData.loanDate=localDateStr();
+      }else{person.original=money(person.original+amt);person.remaining=money(person.remaining+amt);}
+      person.history.unshift(history);
+    }else{
+      DB[kind].unshift({id:txnId,name,original:amt,remaining:amt,history:[history]});
+    }
+    logActivity('পরিমাণ যোগ',`${person?person.name:name} — ৳${fmt(amt)}`);
+    saveData();render();cm('m-quickadd');
+    toast(LANG==='bn'?'হিসাব সেভ হয়েছে।':'Account saved.');return;
   }
 
   ensureWallets();
-  const ts = Date.now();
+  const ts = Date.now(), txnId=nextId();
   const w = SELECTED_QA_WALLET;
+  if(!walletEnabled(w)){toast(LANG==='bn'?'চালু ওয়ালেট বাছুন।':'Choose an enabled wallet.');return;}
   const cats = QA_MODE === 'add' ? INCOME_CATEGORIES : EXPENSE_CATEGORIES;
   const catObj = cats.find(x => x.id === (SELECTED_QA_CAT || (cats[0] && cats[0].id)));
   const note = document.getElementById('qa-note').value.trim() || (catObj ? (LANG === 'bn' ? catObj.bn : catObj.en) : (QA_MODE === 'add' ? (LANG === 'bn' ? 'টাকা যোগ' : 'Add Money') : (LANG === 'bn' ? 'খরচ' : 'Expense')));
@@ -1720,7 +1737,7 @@ function submitQuickAdd(){
     CASH_DB.wallets[w] = (CASH_DB.wallets[w] || 0) + amt;
     CASH_DB.balance += amt;
     CASH_DB.history.unshift({
-      id: ts,
+      id: txnId,
       type: 'add',
       amt: amt,
       note: note,
@@ -1733,7 +1750,7 @@ function submitQuickAdd(){
     CASH_DB.wallets[w] = (CASH_DB.wallets[w] || 0) - amt;
     CASH_DB.balance -= amt;
     CASH_DB.history.unshift({
-      id: ts,
+      id: txnId,
       type: 'sub',
       amt: amt,
       note: note,
@@ -1921,8 +1938,8 @@ function renderMicroInsights(allHistory){
     }
   } else {
     insightMsg = LANG === 'bn'
-      ? `আজকে এখনো কোনো খরচ রেকর্ড হয়নি! 🎉 ${topCatName ? 'এই মাসের শীর্ষ খাত: <b>' + topCatName + '</b>' : ''}`
-      : `No expenses logged today! 🎉 ${topCatName ? 'Top category this month: <b>' + topCatName + '</b>' : ''}`;
+      ? `আজ এখনও কোনো খরচ রেকর্ড হয়নি। ${topCatName ? 'এই মাসের শীর্ষ খাত: <b>' + topCatName + '</b>' : ''}`
+      : `No expenses recorded today. ${topCatName ? 'Top category this month: <b>' + topCatName + '</b>' : ''}`;
   }
 
   txt.innerHTML = insightMsg;
@@ -1981,16 +1998,18 @@ function closeCashForm(){
 }
 
 function submitCash(){
-  const amt = parseFloat(document.getElementById('cash-amt').value);
-  if(isNaN(amt) || amt <= 0){
+  const {saveData,saveCashData,saveCats,render,renderCash,renderHisabMiniWallets,renderAllQtags,renderCatMgrSections,updateProfileHeaderUI,cm,closeCashForm,openProfileSwitcher,switchProfile,toast}=confirmedEffects;
+  const amt = money(parseFloat(document.getElementById('cash-amt').value));
+  if(!validAmount(amt)){
     toast(LANG === 'bn' ? '❌ সঠিক পরিমাণ দিন!' : '❌ Enter a valid amount!');
     return;
   }
   ensureWallets();
-  const ts = Date.now();
+  const ts = Date.now(), txnId=nextId();
   const dateVal = document.getElementById('cash-date').value;
   const entryDate = dateVal ? new Date(dateVal + 'T12:00:00').getTime() : ts;
   const w = SELECTED_FORM_WALLET || 'cash';
+  if(!walletEnabled(w)){toast(LANG==='bn'?'চালু ওয়ালেট বাছুন।':'Choose an enabled wallet.');return;}
   const cat = SELECTED_FORM_CAT || (cashFormMode === 'add' ? 'other_in' : 'other');
   const cats = cashFormMode === 'add' ? INCOME_CATEGORIES : EXPENSE_CATEGORIES;
   const catObj = cats.find(c => c.id === cat);
@@ -2003,7 +2022,7 @@ function submitCash(){
     CASH_DB.wallets[w] = (CASH_DB.wallets[w] || 0) + amt;
     CASH_DB.balance += amt;
     CASH_DB.history.unshift({
-      id: ts,
+      id: txnId,
       type: 'add',
       amt: amt,
       note: note,
@@ -2016,7 +2035,7 @@ function submitCash(){
     CASH_DB.wallets[w] = (CASH_DB.wallets[w] || 0) - amt;
     CASH_DB.balance -= amt;
     CASH_DB.history.unshift({
-      id: ts,
+      id: txnId,
       type: 'sub',
       amt: amt,
       note: note,
@@ -2032,39 +2051,13 @@ function submitCash(){
 }
 
 function deleteCashEntry(id){
-  const entry = CASH_DB.history.find(h => h.id === id);
-  if(!entry) return;
-  const idx = CASH_DB.history.findIndex(h => h.id === id);
-  const snap = JSON.parse(JSON.stringify(entry));
-  ensureWallets();
-  const w = entry.wallet || 'cash';
-  const balBefore = CASH_DB.balance;
-  const walletBefore = CASH_DB.wallets[w] || 0;
-
-  if(entry.type === 'add'){
-    CASH_DB.balance -= entry.amt;
-    CASH_DB.wallets[w] = (CASH_DB.wallets[w] || 0) - entry.amt;
-  } else if(entry.type === 'sub'){
-    CASH_DB.balance += entry.amt;
-    CASH_DB.wallets[w] = (CASH_DB.wallets[w] || 0) + entry.amt;
-  } else if(entry.type === 'transfer'){
-    if(entry.fromWallet && entry.toWallet){
-      CASH_DB.wallets[entry.fromWallet] = (CASH_DB.wallets[entry.fromWallet] || 0) + entry.amt;
-      CASH_DB.wallets[entry.toWallet] = (CASH_DB.wallets[entry.toWallet] || 0) - entry.amt;
-    }
-  }
-
-  CASH_DB.history = CASH_DB.history.filter(h => h.id !== id);
-  saveCashData();
-  renderCash();
-  toast(LANG === 'bn' ? `🗑️ "${snap.note}" মুছে গেছে` : `🗑️ "${snap.note}" deleted`, () => {
-    CASH_DB.history.splice(Math.min(idx, CASH_DB.history.length), 0, snap);
-    CASH_DB.balance = balBefore;
-    CASH_DB.wallets[w] = walletBefore;
-    saveCashData();
-    renderCash();
-    toast(LANG === 'bn' ? '↩️ ফিরিয়ে আনা হয়েছে' : '↩️ Restored');
-  });
+  const {saveData,saveCashData,saveCats,render,renderCash,renderHisabMiniWallets,renderAllQtags,renderCatMgrSections,updateProfileHeaderUI,cm,closeCashForm,openProfileSwitcher,switchProfile,toast}=confirmedEffects;
+  let book=CASH_DB;const profileId=ROOT_DB.activeProfileId,owner=CUR_USER.id,entry=book.history.find(h=>h.id===id);if(!entry)return;
+  if(entry.refHisabId){toast(LANG==='bn'?'❌ এটি দেনা-পাওনার পরিশোধের সঙ্গে যুক্ত। সরাসরি মুছবেন না।':'❌ Linked settlement cannot be deleted independently.');return;}
+  const idx=book.history.indexOf(entry),snap=JSON.parse(JSON.stringify(entry));ensureWallets();
+  const apply=direction=>{if(entry.type==='transfer'){book.wallets[entry.fromWallet]=money((book.wallets[entry.fromWallet]||0)-direction*entry.amt);book.wallets[entry.toWallet]=money((book.wallets[entry.toWallet]||0)+direction*entry.amt);}else{const delta=(entry.type==='add'?1:-1)*direction*entry.amt,w=entry.wallet||'cash';book.wallets[w]=money((book.wallets[w]||0)+delta);}book.balance=money(Object.values(book.wallets).reduce((s,v)=>s+v,0));};
+  apply(-1);book.history.splice(idx,1);saveCashData();renderCash();
+  toast(LANG==='bn'?'🗑️ লেনদেন মুছে গেছে':'🗑️ Transaction deleted',()=>{if(CUR_USER?.id!==owner||!ROOT_CASH_DB.profilesData[profileId])return;book=ROOT_CASH_DB.profilesData[profileId];if(book.history.some(h=>h.id===snap.id))return;apply(1);book.history.splice(Math.min(idx,book.history.length),0,snap);saveData();renderCash();});
 }
 
 function clearCashHistory(){
@@ -2072,17 +2065,23 @@ function clearCashHistory(){
 }
 
 function confirmClearCashExecution(){
+  const {saveData,saveCashData,saveCats,render,renderCash,renderHisabMiniWallets,renderAllQtags,renderCatMgrSections,updateProfileHeaderUI,cm,closeCashForm,openProfileSwitcher,switchProfile,toast}=confirmedEffects;
+  if(CASH_DB.history.some(h=>h.refHisabId)){cm('m-clearcash');toast(LANG==='bn'?'❌ পরিশোধের সঙ্গে যুক্ত লেনদেন আছে। পুরো ইতিহাস মুছবেন না।':'❌ History contains linked settlements. It cannot be cleared independently.');return;}
   cm('m-clearcash');
   const actId = (ROOT_DB && ROOT_DB.activeProfileId) || 'default';
 
+  const clearProfileId=ROOT_DB.activeProfileId;
   // 1. Snapshot for Undo
   const snapHistory = [...(CASH_DB.history || [])];
-  const snapWallets = { ...(CASH_DB.wallets || { cash: 0, bkash: 0, nagad: 0, bank: 0 }) };
+  const snapWallets = { ...(CASH_DB.wallets || { cash:0 }) };
   const snapBalance = CASH_DB.balance || 0;
+  const snapEnabledWallets=enabledWalletKeys();
+  const snapCustomWallets=JSON.parse(JSON.stringify(CASH_DB.customWallets||{}));
+  const zeroWallets=Object.fromEntries(Object.keys(snapWallets).map(key=>[key,0]));
 
   // 2. Clear current CASH_DB properties in-place
   CASH_DB.balance = 0;
-  CASH_DB.wallets = { cash: 0, bkash: 0, nagad: 0, bank: 0 };
+  CASH_DB.wallets = { ...zeroWallets };
   CASH_DB.history = [];
 
   // 3. Clear in ROOT_CASH_DB.profilesData
@@ -2091,8 +2090,10 @@ function confirmClearCashExecution(){
   ROOT_CASH_DB.profilesData[actId] = {
     balance: 0,
     history: [],
-    wallets: { cash: 0, bkash: 0, nagad: 0, bank: 0 },
+    wallets: { ...zeroWallets },
     budget: CASH_DB.budget || 0,
+    enabledWallets: snapEnabledWallets,
+    customWallets: snapCustomWallets,
     monthlyBudgets: CASH_DB.monthlyBudgets || {}
   };
   CASH_DB = ROOT_CASH_DB.profilesData[actId];
@@ -2100,7 +2101,7 @@ function confirmClearCashExecution(){
   // 4. Clear legacy top-level if default profile
   if(actId === 'default'){
     ROOT_CASH_DB.balance = 0;
-    ROOT_CASH_DB.wallets = { cash: 0, bkash: 0, nagad: 0, bank: 0 };
+    ROOT_CASH_DB.wallets = { ...zeroWallets };
     ROOT_CASH_DB.history = [];
   }
 
@@ -2108,6 +2109,7 @@ function confirmClearCashExecution(){
   renderCash();
 
   toast(LANG === 'bn' ? '🗑️ সব ইতিহাস মুছে ফেলা হয়েছে' : '🗑️ All history cleared', () => {
+    if(ROOT_DB.activeProfileId!==clearProfileId||CASH_DB.history.length){toast(LANG==='bn'?'❌ খাতা বা হিসাব বদলানোর পরে এই Undo করা যাবে না।':'❌ Cannot undo after changing books or adding transactions.');return;}
     CASH_DB.history = snapHistory;
     CASH_DB.wallets = snapWallets;
     CASH_DB.balance = snapBalance;
@@ -2136,15 +2138,17 @@ function openCashEdit(id){
 }
 
 function confirmCashEdit(){
+  const {saveData,saveCashData,saveCats,render,renderCash,renderHisabMiniWallets,renderAllQtags,renderCatMgrSections,updateProfileHeaderUI,cm,closeCashForm,openProfileSwitcher,switchProfile,toast}=confirmedEffects;
   const id = Number(document.getElementById('cedit-id').value);
-  const amt = parseFloat(document.getElementById('cedit-amt').value);
+  const amt = money(parseFloat(document.getElementById('cedit-amt').value));
   const note = document.getElementById('cedit-note').value.trim();
-  if(!amt || amt <= 0){
+  if(!validAmount(amt)){
     toast('❌ সঠিক পরিমাণ দিন');
     return;
   }
   const h = CASH_DB.history.find(x => x.id === id);
-  if(!h) return;
+  if(!h)return;
+  if(h.refHisabId){toast(LANG==='bn'?'❌ যুক্ত পরিশোধ আলাদাভাবে বদলানো যাবে না।':'❌ Linked settlements cannot be edited independently.');return;}
   ensureWallets();
   const w = h.wallet || 'cash';
   const oldAmt = h.amt;
@@ -2156,9 +2160,17 @@ function confirmCashEdit(){
   } else if(h.type === 'sub'){
     CASH_DB.balance -= diff;
     CASH_DB.wallets[w] = (CASH_DB.wallets[w] || 0) - diff;
+  } else if(h.type === 'transfer'){
+    if(!h.fromWallet||!h.toWallet||h.fromWallet===h.toWallet||!WALLET_META[h.fromWallet]||!WALLET_META[h.toWallet]){
+      toast(LANG==='bn'?'ট্রান্সফারের ওয়ালেটের তথ্য সঠিক নয়।':'Transfer wallet details are invalid.');return;
+    }
+    CASH_DB.wallets[h.fromWallet]=money((CASH_DB.wallets[h.fromWallet]||0)-diff);
+    CASH_DB.wallets[h.toWallet]=money((CASH_DB.wallets[h.toWallet]||0)+diff);
+  } else {
+    toast(LANG==='bn'?'এই লেনদেন সম্পাদনা করা যাচ্ছে না।':'This transaction cannot be edited.');return;
   }
   h.amt = amt;
-  if(note) h.note = note;
+  h.note = note;
   saveCashData();
   renderCash();
   cm('m-cedit');
@@ -2181,7 +2193,7 @@ function renderCash(){
   // 3. Search Filter
   const q = (document.getElementById('cash-srch')?.value || '').toLowerCase().trim();
   if(q){
-    hist = hist.filter(h => h.note.toLowerCase().includes(q));
+    hist = hist.filter(h => matchesSearch([h.note,h.amt,h.date,fmtD(h.date),h.category,h.type,...[h.wallet,h.fromWallet,h.toWallet].flatMap(w=>[w,WALLET_META[w]?.name,WALLET_META[w]?.en])],q));
   }
 
   // 4. Type Filter
@@ -2236,11 +2248,10 @@ function renderCash(){
     if(WALLET_FILTER && WALLET_FILTER !== 'all'){
       cashActionsWrap.style.display = 'grid';
       const meta = WALLET_META[WALLET_FILTER] || { name: WALLET_FILTER, en: WALLET_FILTER };
-      if(addBtnLabel) addBtnLabel.innerHTML = `<span class="bn">${meta.name}-এ টাকা যোগ</span><span class="en">Add to ${meta.en}</span>`;
-      if(subBtnLabel) subBtnLabel.innerHTML = `<span class="bn">${meta.name} থেকে খরচ</span><span class="en">Deduct from ${meta.en}</span>`;
+      if(addBtnLabel) addBtnLabel.innerHTML = `<span class="bn">${escapeHTML(meta.name)}-এ টাকা যোগ</span><span class="en">Add to ${escapeHTML(meta.en)}</span>`;
+      if(subBtnLabel) subBtnLabel.innerHTML = `<span class="bn">${escapeHTML(meta.name)} থেকে খরচ</span><span class="en">Deduct from ${escapeHTML(meta.en)}</span>`;
     } else {
-      cashActionsWrap.style.display = 'none';
-      closeCashForm();
+      cashActionsWrap.style.display = 'grid';
       if(addBtnLabel) addBtnLabel.innerHTML = `<span class="bn">টাকা যোগ (আয়)</span><span class="en">Add Income</span>`;
       if(subBtnLabel) subBtnLabel.innerHTML = `<span class="bn">খরচ করুন (ব্যয়)</span><span class="en">Add Expense</span>`;
     }
@@ -2253,19 +2264,20 @@ function renderCash(){
   renderDonutChart(hist.filter(h => h.type === 'sub'));
 
   // Budget Bar
-  const budget = CASH_DB.budget || 0;
+  const budget = getMonthlyBudget();
+  const budgetSpent=(CASH_DB.history||[]).filter(h=>h.type==='sub'&&localDateStr(new Date(h.date)).slice(0,7)===CASH_SELECTED_MONTH).reduce((s,h)=>s+h.amt,0);
   const budgetWrap = document.getElementById('budget-wrap');
   const budgetCta = document.getElementById('budget-cta');
   if(budget > 0){
     budgetWrap.style.display = 'block';
     budgetCta.style.display = 'none';
-    const pct = Math.min(100, Math.round((totalOut / budget) * 100));
+    const pct = Math.min(100, Math.round((budgetSpent / budget) * 100));
     const fill = document.getElementById('budget-fill');
     fill.style.width = pct + '%';
     fill.style.background = pct < 60 ? 'var(--green)' : pct < 85 ? 'var(--yellow)' : 'var(--red)';
     document.getElementById('budget-pct').textContent = pct + '%';
     document.getElementById('budget-pct').style.color = pct < 60 ? 'var(--green)' : pct < 85 ? 'var(--yellow)' : 'var(--red)';
-    const rem = budget - totalOut;
+    const rem = budget - budgetSpent;
     document.getElementById('budget-sub').textContent = LANG === 'bn'
       ? (rem > 0 ? `বাকি ৳${fmt(rem)} থেকে ৳${fmt(budget)}` : `বাজেট ৳${fmt(Math.abs(rem))} ছাড়িয়ে গেছে!`)
       : (rem > 0 ? `৳${fmt(rem)} left of ৳${fmt(budget)}` : `Over budget by ৳${fmt(Math.abs(rem))}!`);
@@ -2277,7 +2289,7 @@ function renderCash(){
   // Date-Grouped History List (4.2)
   const list = document.getElementById('cash-history-list');
   if(hist.length === 0){
-    list.innerHTML = `<div class="empty"><div class="empty-i" style="color:var(--muted)"><svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg></div><div class="empty-t"><span class="bn">${CASH_FILTER === 'all' ? 'কোনো লেনদেন নেই' : 'কোনো রেকর্ড নেই'}</span><span class="en">${CASH_FILTER === 'all' ? 'No transactions yet' : 'No records found'}</span></div><div class="empty-s"><span class="bn">উপরের বাটন দিয়ে শুরু করুন</span><span class="en">Use the buttons above to get started</span></div></div>`;
+    list.innerHTML = `<div class="empty"><div class="empty-i" style="color:var(--muted)"><svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg></div><div class="empty-t"><span class="bn">${CASH_FILTER === 'all' ? 'কোনো লেনদেন নেই' : 'কোনো রেকর্ড নেই'}</span><span class="en">${CASH_FILTER === 'all' ? 'No transactions yet' : 'No records found'}</span></div><div class="empty-s"><span class="bn">${allHist.length ? 'সার্চ, মাস বা ওয়ালেটের ফিল্টার বদলে দেখুন' : 'উপরের বাটন দিয়ে প্রথম লেনদেন যোগ করুন'}</span><span class="en">${allHist.length ? 'Try changing the search, month or wallet filter' : 'Use the buttons above to add your first transaction'}</span></div></div>`;
     return;
   }
 
@@ -2332,9 +2344,9 @@ function renderCash(){
         <div class="cash-entry">
           <div class="cash-entry-icon" style="background:${catObj.color}1f;font-size:18px;">${iconChar}</div>
           <div class="cash-entry-info">
-            <div class="cash-entry-note">${displayNote}</div>
+            <div class="cash-entry-note">${escapeHTML(displayNote)}</div>
             <div class="cash-entry-date" style="display:flex;align-items:center;gap:6px;">
-              <span class="wallet-badge">${wMeta.icon} ${LANG === 'bn' ? wMeta.name : wMeta.en}</span>
+              <span class="wallet-badge">${wMeta.icon} ${escapeHTML(LANG === 'bn' ? wMeta.name : wMeta.en)}</span>
               <span>${timeStr}</span>
             </div>
           </div>
@@ -2363,10 +2375,10 @@ function renderCash(){
 
 // ── FORMAT ──
 function localDateStr(d=new Date()){return new Date(d.getTime()-(d.getTimezoneOffset()*60000)).toISOString().split('T')[0];}
-function fmt(n){return Math.round(Number(n)).toLocaleString('en-IN');}
+function fmt(n){return money(n).toLocaleString('en-IN',{maximumFractionDigits:2});}
 function fmtD(v){
   let d=typeof v==='number'||(typeof v==='string'&&/^\d{10,}$/.test(v))?new Date(Number(v)):new Date(v);
-  if(isNaN(d))return String(v);
+  if(isNaN(d))return '—';
   return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
 }
 
@@ -2388,11 +2400,7 @@ function ageDays(p){
 function ageBadge(d){const l=LANG==='bn'?`${d} দিন`:`${d}d`;return d<=7?{cls:'',l}:d<=30?{cls:'mid',l}:{cls:'old',l:l+' ⚠️'};}
 
 // ── COUNT-UP ──
-function countUp(el,target,pre=''){
-  const dur=450,s=performance.now();
-  const up=n=>{const p=Math.min((n-s)/dur,1),e=1-Math.pow(1-p,3);el.textContent=pre+fmt(Math.round(target*e));if(p<1)requestAnimationFrame(up);else el.textContent=pre+fmt(target);};
-  requestAnimationFrame(up);
-}
+function countUp(el,target,pre=''){if(el)el.textContent=pre+fmt(target);}
 
 // ── UI ──
 let _toastQueue=[];
@@ -2483,7 +2491,9 @@ function toggleLang(){
   updateDynamicPlaceholders();
   render();
   if(typeof renderCash === 'function') renderCash();
-  if(typeof updateMonthNavUI === 'function') updateMonthNavUI();
+  if(document.getElementById('m-analytics')?.classList.contains('on'))openAnalytics();
+  updateMonthFilterUI();
+
 }
 function switchTab(t,ev){
   TAB=t;
@@ -2517,7 +2527,7 @@ function calculateLoanTotal(principal,fees=0,loanDateStr=null){
   const emi=(principal*r*Math.pow(1+r,n))/(Math.pow(1+r,n)-1);
   const fullInterest=principal*0.030823;
   const processingFee=Math.round(principal*0.00575);
-  const totalRepayment=principal+fullInterest+processingFee+fees;
+  const totalRepayment=money(principal+fullInterest+processingFee+fees);
 
   // Generate exact EMI schedule (reducing balance)
   let schedule=[];
@@ -2544,36 +2554,12 @@ function calculateLoanTotal(principal,fees=0,loanDateStr=null){
   return{emi,fullInterest,processingFee,fees,daysToCharge,totalRepayment,schedule};
 }
 function calculateThisMonthDue(principal,fullInterest,processingFee,fees,paidAmount,daysToCharge,payments,loanStart){
-  // Total payable = principal + fullInterest + processingFee + extraFee
-  const totalPayable=principal+fullInterest+processingFee+fees;
-  const monthlyEMI=Math.ceil(totalPayable/3);
-
-  // Current month index (0-based), 30-day cycles from loan date
-  const currentMonthIndex=Math.min(2,Math.floor(daysToCharge/30));
-
-  // Calculate how much was paid in each 30-day cycle
-  const paidPerCycle=[0,0,0];
-  for(const pay of payments){
-    const payDate=new Date(pay.date);payDate.setHours(0,0,0,0);
-    const d=Math.max(0,Math.round((payDate-loanStart)/86400000));
-    const cycleIdx=Math.min(2,Math.floor(d/30));
-    paidPerCycle[cycleIdx]+=pay.amt;
-  }
-
-  // Walk through completed cycles to accumulate carry
-  let carry=0;
-  for(let i=0;i<currentMonthIndex;i++){
-    const due=monthlyEMI+carry;
-    const paid=paidPerCycle[i];
-    carry=Math.max(0,due-paid);
-  }
-
-  // Current cycle due = this month EMI + carry - paid this cycle
-  const currentCycleDue=monthlyEMI+carry;
-  const paidThisCycle=paidPerCycle[currentMonthIndex];
-  const thisMonthDue=Math.max(0,currentCycleDue-paidThisCycle);
-
-  return{monthlyEMI,thisMonthDue,currentMonthIndex,carry};
+  const totalPayable=money(principal+fullInterest+processingFee+fees),monthlyEMI=money(Math.ceil(totalPayable*100/3)/100);
+  const currentMonthIndex=Math.min(2,Math.max(0,Math.floor(daysToCharge/30)));
+  const totalPaid=money(paidAmount),scheduled=money(Math.min(totalPayable,monthlyEMI*(currentMonthIndex+1)));
+  const priorScheduled=money(Math.min(totalPayable,monthlyEMI*currentMonthIndex));
+  const priorPaid=payments.filter(p=>new Date(p.date).getTime()<new Date(loanStart).getTime()+currentMonthIndex*30*86400000).reduce((s,p)=>s+p.amt,0);
+  return{monthlyEMI,thisMonthDue:money(Math.max(0,scheduled-totalPaid)),currentMonthIndex,carry:money(Math.max(0,priorScheduled-priorPaid))};
 }
 
 function getLoanBreakdown(p){
@@ -2584,7 +2570,7 @@ function getLoanBreakdown(p){
   const loanDateStr=localDateStr(loanDate);
   const calc=calculateLoanTotal(p.original,fees,loanDateStr);
 
-  const paidAmount=p.history.filter(h=>h.t==='pay').reduce((s,h)=>s+h.amt,0);
+  const paidAmount=p.history.filter(h=>h.t==='pay'&&(!p.cycleStartedAt||h.date>=p.cycleStartedAt)).reduce((s,h)=>s+h.amt,0);
 
   // Determine current interest accrued based on days passed (pro-rate over schedule)
   const daysToCharge=calc.daysToCharge;
@@ -2613,7 +2599,7 @@ function getLoanBreakdown(p){
     ?Math.min(100,Math.round((paidAmount/calc.totalRepayment)*100)):0;
 
   const loanStart=new Date(loanDate);loanStart.setHours(0,0,0,0);
-  const payments=p.history.filter(h=>h.t==='pay').map(h=>({date:h.date,amt:h.amt})).sort((a,b)=>a.date-b.date);
+  const payments=p.history.filter(h=>h.t==='pay'&&(!p.cycleStartedAt||h.date>=p.cycleStartedAt)).map(h=>({date:h.date,amt:h.amt})).sort((a,b)=>a.date-b.date);
   const emiCalc=calculateThisMonthDue(p.original,calc.fullInterest,calc.processingFee,fees,paidAmount,daysToCharge,payments,loanStart);
 
   return{
@@ -2631,7 +2617,7 @@ function getLoanBreakdown(p){
     paidAmount,
     remainingPrincipal,
     remainingDue,
-    dailyAmount:Math.max(0,remainingPrincipal+currentInterest+calc.processingFee+fees),
+    dailyAmount:money(Math.max(0,Math.min(remainingDue,p.original+currentInterest+calc.processingFee+fees-paidAmount))),
     progressPercent
   };
 }
@@ -2647,12 +2633,13 @@ function updateLoanNoteFields(){
 
 // ── ENTRIES ──
 function addEntry(type){
+  const {saveData,saveCashData,saveCats,render,renderCash,renderHisabMiniWallets,renderAllQtags,renderCatMgrSections,updateProfileHeaderUI,cm,closeCashForm,openProfileSwitcher,switchProfile,toast}=confirmedEffects;
   const p=type==='receive'?'r':'g';
   const name=document.getElementById(p+'-na').value.trim();
-  const amt=parseFloat(document.getElementById(p+'-am').value);
+  const amt=money(parseFloat(document.getElementById(p+'-am').value));
   const note=document.getElementById(p+'-no').value.trim()||'Entry';
   const dateVal=document.getElementById(p+'-date').value;
-  if(!name||isNaN(amt)||amt<=0)return alert(LANG==='bn'?'সঠিক তথ্য দিন!':'Enter valid data!');
+  if(!name||!validAmount(amt))return alert(LANG==='bn'?'সঠিক তথ্য দিন!':'Enter valid data!');
   
   let loanData=null;
   if(type==='receive'&&note.toLowerCase().includes('loan')){
@@ -2661,8 +2648,8 @@ function addEntry(type){
     loanData={fees,loanDate};
   }
   
-  const tsId=Date.now();
-  const histDate=dateVal?new Date(dateVal+'T12:00:00').getTime():tsId;
+  const tsId=nextId();
+  const histDate=dateVal?new Date(dateVal+'T12:00:00').getTime():Date.now();
   const hist={id:tsId,date:histDate,amt,note,t:'add'};
   
   let person=DB[type].find(x=>x.name.toLowerCase()===name.toLowerCase());
@@ -2670,11 +2657,11 @@ function addEntry(type){
     const wasSettled=person.remaining===0;
     if(wasSettled){
       person.original=amt;person.remaining=amt;
-      person.clearedAt=histDate;
+      person.clearedAt=histDate;person.cycleStartedAt=histDate;
       person.history.unshift(hist);
       if(loanData)person.loanData=loanData;
     } else {
-      person.original+=amt;person.remaining+=amt;person.history.unshift(hist);
+      person.original=money(person.original+amt);person.remaining=money(person.remaining+amt);person.history.unshift(hist);
       if(loanData)person.loanData=loanData;
     }
   } else {
@@ -2712,7 +2699,25 @@ function togglePayWalletSync(enabled) {
   updatePayWalletHint();
 }
 
+function updatePaymentPreview(){
+  const el=document.getElementById('payment-preview');
+  const p=DB[CTX.type]?.find(x=>x.id===CTX.id);
+  if(!el||!p)return;
+  const breakdown=CTX.type==='receive'?getLoanBreakdown(p):null;
+  const due=money(breakdown?Math.max(0,breakdown.totalRepayment-breakdown.paidAmount):p.remaining);
+  const input=document.getElementById('pa');
+  const amount=Number(input.value);
+  const invalid=input.value!==''&&(!Number.isFinite(amount)||amount<=0||money(amount)>due);
+  input.setAttribute('aria-invalid',String(invalid));
+  input.max=String(due);
+  el.classList.toggle('invalid',invalid);
+  el.textContent=invalid
+    ?(LANG==='bn'?`পরিমাণ শূন্যের বেশি এবং বাকি ৳${fmt(due)}-এর মধ্যে দিন।`:`Enter an amount above zero and no more than ৳${fmt(due)}.`)
+    :(LANG==='bn'?`এখন বাকি ৳${fmt(due)} · পরিশোধের পর বাকি ৳${fmt(Math.max(0,due-money(amount||0)))}`:`Due now ৳${fmt(due)} · Remaining after payment ৳${fmt(Math.max(0,due-money(amount||0)))}`);
+}
+
 function updatePayWalletHint() {
+  updatePaymentPreview();
   const hintEl = document.getElementById('pay-ws-hint');
   if (!hintEl) return;
   const toggle = document.getElementById('pay-sync-toggle');
@@ -2724,10 +2729,10 @@ function updatePayWalletHint() {
       : '🚫 No wallet sync (Hisab record only)';
     return;
   }
-  const amt = parseFloat(document.getElementById('pa')?.value) || 0;
+  const amt = money(parseFloat(document.getElementById('pa')?.value)||0);
   const w = SELECTED_PAY_WALLET || 'cash';
   const wMeta = WALLET_META[w] || { icon: '💵', name: 'নগদ', en: 'Cash' };
-  const wLabel = `${wMeta.icon} ${LANG === 'bn' ? wMeta.name : wMeta.en}`;
+  const wLabel = `${wMeta.icon} ${escapeHTML(LANG === 'bn' ? wMeta.name : wMeta.en)}`;
   const isRec = CTX.type === 'receive';
   if (isRec) {
     hintEl.className = 'pay-ws-hint income';
@@ -2774,7 +2779,7 @@ function updateAcWalletHint() {
   const type = PENDING_ALL_CLEAR ? PENDING_ALL_CLEAR.type : 'receive';
   const w = SELECTED_AC_WALLET || 'cash';
   const wMeta = WALLET_META[w] || { icon: '💵', name: 'নগদ', en: 'Cash' };
-  const wLabel = `${wMeta.icon} ${LANG === 'bn' ? wMeta.name : wMeta.en}`;
+  const wLabel = `${wMeta.icon} ${escapeHTML(LANG === 'bn' ? wMeta.name : wMeta.en)}`;
   if (type === 'receive') {
     hintEl.className = 'pay-ws-hint income';
     hintEl.innerHTML = LANG === 'bn'
@@ -2789,7 +2794,7 @@ function updateAcWalletHint() {
 }
 
 function openPay(type,id){
-  const p=DB[type].find(x=>x.id===id);CTX={type,id};
+  const p=DB[type]?.find(x=>x.id===id);if(!p)return;CTX={type,id};
   const breakdown=getLoanBreakdown(p);
   const due=(type==='receive'&&breakdown)?Math.max(0,breakdown.totalRepayment-breakdown.paidAmount):p.remaining;
   document.getElementById('m-pay-s').textContent=`${p.name} — Due: ৳${fmt(due)}`;
@@ -2878,25 +2883,28 @@ function oneClickAllClear(type, id, ev){
 }
 
 function confirmAllClearExecution(){
+  const {saveData,saveCashData,saveCats,render,renderCash,renderHisabMiniWallets,renderAllQtags,renderCatMgrSections,updateProfileHeaderUI,cm,closeCashForm,openProfileSwitcher,switchProfile,toast}=confirmedEffects;
   if(!PENDING_ALL_CLEAR) return;
-  const { type, id, due } = PENDING_ALL_CLEAR;
+  const { type, id } = PENDING_ALL_CLEAR;
   PENDING_ALL_CLEAR = null;
   
   const syncToggle = document.getElementById('ac-sync-toggle');
   const syncOn = syncToggle ? syncToggle.checked : true;
   const selectedWallet = SELECTED_AC_WALLET || 'cash';
+  if(syncOn&&!walletEnabled(selectedWallet)){toast(LANG==='bn'?'চালু ওয়ালেট বাছুন।':'Choose an enabled wallet.');return;}
   
   cm('m-allclear');
   
-  const p=DB[type]?.find(x=>x.id===id);
-  if(!p) return;
-  
-  const ts=Date.now();
+  let p=DB[type]?.find(x=>x.id===id);
+  if(!p)return;
+  const due=money(type==='receive'&&getLoanBreakdown(p)?getLoanBreakdown(p).remainingDue:p.remaining);
+  if(due<=0)return;
+  const ts=Date.now(), txnId=nextId();
   let cashTxnId = null;
 
   if (syncOn) {
     ensureWallets();
-    cashTxnId = ts;
+    cashTxnId = txnId;
     const isRec = type === 'receive';
     if (isRec) {
       CASH_DB.wallets[selectedWallet] = (CASH_DB.wallets[selectedWallet] || 0) + due;
@@ -2927,12 +2935,10 @@ function confirmAllClearExecution(){
         refType: 'give'
       });
     }
-    saveCashData();
-    if(typeof renderCash === 'function') renderCash();
   }
 
   const hist={
-    id: ts,
+    id: txnId,
     date: ts,
     amt: due,
     note: LANG==='bn'?'সম্পূর্ণ পরিশোধ (All Clear)':'Full Payment (All Clear)',
@@ -2942,6 +2948,7 @@ function confirmAllClearExecution(){
   };
   
   // Snapshots for Undo
+  const undoProfileId=ROOT_DB.activeProfileId, undoOwner=CUR_USER.id;
   const oldRemaining=p.remaining;
   const oldClearedAt=p.clearedAt;
   
@@ -2955,7 +2962,8 @@ function confirmAllClearExecution(){
   render();
   
   const undoFn = () => {
-    p.history = p.history.filter(h => h.id !== ts);
+    if(CUR_USER?.id!==undoOwner||ROOT_DB.activeProfileId!==undoProfileId||(p=DB[type]?.find(x=>x.id===id))?.history[0]?.id!==txnId){toast(LANG==='bn'?'❌ পরবর্তী পরিবর্তনের পরে এই Undo করা যাবে না।':'❌ Cannot undo after later changes.');return;}
+    p.history = p.history.filter(h => h.id !== txnId);
     p.remaining = oldRemaining;
     p.clearedAt = oldClearedAt;
 
@@ -2972,6 +2980,7 @@ function confirmAllClearExecution(){
       CASH_DB.history = CASH_DB.history.filter(h => h.id !== cashTxnId);
       saveCashData();
       if(typeof renderCash === 'function') renderCash();
+  if(document.getElementById('m-analytics')?.classList.contains('on'))openAnalytics();
     }
 
     saveData();
@@ -2984,22 +2993,27 @@ function confirmAllClearExecution(){
 }
 
 function confirmPay(){
-  const amt=parseFloat(document.getElementById('pa').value);
-  const note=document.getElementById('pn').value.trim()||'Payment';
-  if(isNaN(amt)||amt<=0)return;
+  return applyHisabPayment(CTX.type,CTX.id,parseFloat(document.getElementById('pa').value),document.getElementById('pn').value,document.getElementById('pay-sync-toggle')?.checked??true,SELECTED_PAY_WALLET||'cash');
+}
+function applyHisabPayment(type,id,amount,noteText,syncOn,selectedWallet){
+  const CTX={type,id};
+  const {saveData,saveCashData,saveCats,render,renderCash,renderHisabMiniWallets,renderAllQtags,renderCatMgrSections,updateProfileHeaderUI,cm,closeCashForm,openProfileSwitcher,switchProfile,toast}=confirmedEffects;
+  const amt=money(amount);
+  const note=String(noteText||'').trim()||'Payment';
+  if(!validAmount(amt))return;
   const p=DB[CTX.type].find(x=>x.id===CTX.id);
-  if(!p) return;
+  if(!p)return;
+  const loan=CTX.type==='receive'?getLoanBreakdown(p):null;
+  const outstanding=money(loan?loan.remainingDue:p.remaining);
+  if(amt>outstanding){toast(LANG==='bn'?'❌ বকেয়ার বেশি পরিশোধ করা যাবে না।':'❌ Payment exceeds the amount due.');return;}
 
-  const syncToggle = document.getElementById('pay-sync-toggle');
-  const syncOn = syncToggle ? syncToggle.checked : true;
-  const selectedWallet = SELECTED_PAY_WALLET || 'cash';
-  
-  const ts=Date.now();
+  if(syncOn&&!walletEnabled(selectedWallet)){toast(LANG==='bn'?'চালু ওয়ালেট বাছুন।':'Choose an enabled wallet.');return;}
+  const ts=Date.now(), txnId=nextId();
   let cashTxnId = null;
 
   if (syncOn) {
     ensureWallets();
-    cashTxnId = ts;
+    cashTxnId = txnId;
     const isRec = CTX.type === 'receive';
     if (isRec) {
       CASH_DB.wallets[selectedWallet] = (CASH_DB.wallets[selectedWallet] || 0) + amt;
@@ -3030,12 +3044,10 @@ function confirmPay(){
         refType: 'give'
       });
     }
-    saveCashData();
-    if(typeof renderCash === 'function') renderCash();
   }
 
   p.history.unshift({
-    id: ts,
+    id: txnId,
     date: ts,
     amt,
     note,
@@ -3060,37 +3072,40 @@ function confirmPay(){
   
   const syncMsg = syncOn ? (CTX.type === 'receive' ? ` (+৳${fmt(amt)} ${wName}-এ জমা)` : ` (-৳${fmt(amt)} ${wName} থেকে খরচ)`) : '';
   toast(LANG==='bn'?`💸 পরিশোধ হয়েছে!${syncMsg}`:`💸 Recorded!${syncMsg}`);
+  return true;
 }
 function openAddMore(type,id){
-  const p=DB[type].find(x=>x.id===id);CTX={type,id};
+  const p=DB[type]?.find(x=>x.id===id);if(!p)return;CTX={type,id};
   document.getElementById('m-add-s').textContent=`${p.name} — Current: ৳${fmt(p.remaining)}`;
   document.getElementById('aa').value='';document.getElementById('an').value='';
   renderQtags('addmore-qtags', type==='receive'?'hisabReceive':'hisabGive', 'an');
   document.getElementById('m-add').classList.add('on');
 }
 function confirmAddMore(){
-  const amt=parseFloat(document.getElementById('aa').value);
+  const {saveData,saveCashData,saveCats,render,renderCash,renderHisabMiniWallets,renderAllQtags,renderCatMgrSections,updateProfileHeaderUI,cm,closeCashForm,openProfileSwitcher,switchProfile,toast}=confirmedEffects;
+  const amt=money(parseFloat(document.getElementById('aa').value));
   const note=document.getElementById('an').value||'Added';
-  if(isNaN(amt)||amt<=0)return;
+  if(!validAmount(amt))return;
   const p=DB[CTX.type].find(x=>x.id===CTX.id);
   const wasSettled=p.remaining===0;
-  const ts=Date.now();
-  const hist={id:ts,date:ts,amt,note,t:'add'};
+  const ts=Date.now(), txnId=nextId();
+  const hist={id:txnId,date:ts,amt,note,t:'add'};
   if(wasSettled){
     p.original=amt;
     p.remaining=amt;
     p.clearedAt=ts;
-    p.history=[hist];
+    p.history.unshift(hist);
+    p.cycleStartedAt=ts;if(p.loanData)p.loanData.loanDate=localDateStr();
   } else {
-    p.original+=amt;
-    p.remaining+=amt;
+    p.original=money(p.original+amt);
+    p.remaining=money(p.remaining+amt);
     p.history.unshift(hist);
   }
   logActivity('পরিমাণ যোগ',`${p.name} — ৳${fmt(amt)}`);
-  cm('m-add');saveData();render();toast(LANG==='bn'?'➕ যোগ হয়েছে!':'➕ Added!');
+  cm('m-add');saveData();render();toast(LANG==='bn'?'✅ সেভ হয়েছে।':'✅ Saved.');
 }
 function openEdit(type,id){
-  const p=DB[type].find(x=>x.id===id);CTX={type,id};
+  const p=DB[type]?.find(x=>x.id===id);if(!p)return;CTX={type,id};
   const isLoan=p.loanData||p.history.some(h=>h.note.toLowerCase().includes('loan'));
   document.getElementById('ed-amt').value=p.original;
   document.getElementById('ed-name').value=p.name||'';
@@ -3148,15 +3163,22 @@ function updateLoanCalcBreakdown(p){
   document.getElementById('ed-total-due').textContent=fmt(Math.round(calc.totalRepayment));
 }
 function confirmEdit(){
-  const amt=parseFloat(document.getElementById('ed-amt').value);
-  if(isNaN(amt)||amt<=0)return alert(LANG==='bn'?'সঠিক তথ্য দিন!':'Enter valid data!');
+  const {saveData,saveCashData,saveCats,render,renderCash,renderHisabMiniWallets,renderAllQtags,renderCatMgrSections,updateProfileHeaderUI,cm,closeCashForm,openProfileSwitcher,switchProfile,toast}=confirmedEffects;
+  const amt=money(parseFloat(document.getElementById('ed-amt').value));
+  if(!validAmount(amt))return alert(LANG==='bn'?'সঠিক তথ্য দিন!':'Enter valid data!');
   const p=DB[CTX.type].find(x=>x.id===CTX.id);
   const oldAmt=p.original;
+  const paid=p.history.filter(h=>h.t==='pay'&&(!p.cycleStartedAt||h.date>=p.cycleStartedAt)).reduce((s,h)=>s+h.amt,0);
+  const fees=CTX.type==='receive'&&p.loanData?parseFeeString(document.getElementById('ed-fee').value):0;
+  const total=CTX.type==='receive'&&p.loanData?calculateLoanTotal(amt,fees,document.getElementById('ed-loan-date').value).totalRepayment:amt;
+  if(total<paid){toast(LANG==='bn'?'❌ ইতিমধ্যে পরিশোধ করা টাকার চেয়ে মোট হিসাব কম হতে পারবে না।':'❌ Total cannot be below payments already received.');return;}
+
   const newName=document.getElementById('ed-name').value.trim();
   const dateVal=document.getElementById('ed-date').value;
   if(newName)p.name=newName;
   p.original=amt;
-  p.remaining=p.remaining+(amt-oldAmt);
+  p.remaining=money(Math.max(0,total-paid));
+  if(amt!==oldAmt)p.history.unshift({id:nextId(),date:Date.now(),t:'adjust',amt:Math.abs(money(amt-oldAmt)),note:`Correction: ${oldAmt} → ${amt}`});
   if(dateVal){
     const newTs=new Date(dateVal+'T12:00:00').getTime();
     const addHist=p.history.filter(h=>h.t==='add');
@@ -3176,6 +3198,8 @@ function confirmEdit(){
   cm('m-edit');saveData();render();toast(LANG==='bn'?'✏️ সংশোধন হয়েছে!':'✏️ Updated!');
 }
 function deleteEntry(type,id){
+  const {saveData,saveCashData,saveCats,render,renderCash,renderHisabMiniWallets,renderAllQtags,renderCatMgrSections,updateProfileHeaderUI,cm,closeCashForm,openProfileSwitcher,switchProfile,toast}=confirmedEffects;
+  const profileId=ROOT_DB.activeProfileId,owner=CUR_USER.id;
   const p=DB[type].find(x=>x.id===id);
   if(!p)return;
   const idx=DB[type].findIndex(x=>x.id===id);
@@ -3184,7 +3208,8 @@ function deleteEntry(type,id){
   DB[type]=DB[type].filter(x=>x.id!==id);
   saveData();render();
   toast(LANG==='bn'?`🗑️ "${p.name}" ডিলিট হয়েছে`:`🗑️ "${p.name}" deleted`,()=>{
-    DB[type].splice(Math.min(idx,DB[type].length),0,snapshot);
+    const target=ROOT_DB?.profilesData?.[profileId];if(CUR_USER?.id!==owner||!target||target[type].some(x=>x.id===id))return;
+    target[type].splice(Math.min(idx,target[type].length),0,snapshot);
     saveData();render();toast(LANG==='bn'?'↩️ ফিরিয়ে আনা হয়েছে':'↩️ Restored');
   });
 }
@@ -3270,11 +3295,11 @@ function openReceipt(type, id) {
       <div class="rc-history-wrap">
         <div class="rc-hist-title">${LANG==='bn'?'সাম্প্রতিক লেনদেন':'Recent Transactions'} (${Math.min(5, p.history.length)}/${p.history.length})</div>
         ${recentTxns.map(h => {
-          const wInfo = (h.wallet && WALLET_META[h.wallet]) ? `<span style="font-size:11px;opacity:0.85;margin-left:4px;">(${WALLET_META[h.wallet].icon} ${LANG==='bn'?WALLET_META[h.wallet].name:WALLET_META[h.wallet].en})</span>` : '';
+          const wInfo = (h.wallet && WALLET_META[h.wallet]) ? `<span style="font-size:11px;opacity:0.85;margin-left:4px;">(${WALLET_META[h.wallet].icon} ${escapeHTML(LANG==='bn'?WALLET_META[h.wallet].name:WALLET_META[h.wallet].en)})</span>` : '';
           return `
           <div class="rc-hist-row">
-            <span>${fmtD(h.date)} — ${h.note}${wInfo}</span>
-            <b style="color:var(--${h.t==='add'?'red':'green'})">${h.t==='add'?'+':'-'}৳${fmt(h.amt)}</b>
+            <span>${fmtD(h.date)} — ${escapeHTML(h.note)}${wInfo}</span>
+            <b style="color:var(--${h.t==='add'?'red':'green'})">${h.t==='add'?'+':h.t==='pay'?'-':'↔'}৳${fmt(h.amt)}</b>
           </div>
         `;}).join('')}
       </div>
@@ -3304,7 +3329,7 @@ function openReceipt(type, id) {
       <div class="rc-meta-grid">
         <div class="rc-meta-item">
           <span class="rc-meta-lbl">${LANG==='bn'?'গ্রাহক / নাম':'Party / Name'}</span>
-          <span class="rc-meta-val rc-client-name">${p.name}</span>
+          <span class="rc-meta-val rc-client-name">${escapeHTML(p.name)}</span>
         </div>
         <div class="rc-meta-item">
           <span class="rc-meta-lbl">${LANG==='bn'?'তারিখ ও সময়':'Date & Time'}</span>
@@ -3704,18 +3729,20 @@ async function shareReceiptSlip() {
   }
 }
 
-// ── CARD HISTORY TOGGLE (5 -> MAX 20) ──
+// ── CARD HISTORY: latest five or complete history ──
 const _expandedHistoryCards = new Set();
 
 function renderCardHistoryItems(p, isExp) {
   if (!p || !p.history || !p.history.length) return '';
-  const maxShown = isExp ? 20 : 5;
+  const maxShown = isExp ? p.history.length : 5;
   const list = p.history.slice(0, maxShown);
   const items = list.map(h => {
     const wBadge = (h.wallet && WALLET_META[h.wallet]) 
-      ? `<span class="hist-wbadge" title="${WALLET_META[h.wallet].name}">${WALLET_META[h.wallet].icon} ${LANG==='bn'?WALLET_META[h.wallet].name:WALLET_META[h.wallet].en}</span>` 
+      ? `<span class="hist-wbadge" title="${escapeHTML(WALLET_META[h.wallet].name)}">${WALLET_META[h.wallet].icon} ${escapeHTML(LANG==='bn'?WALLET_META[h.wallet].name:WALLET_META[h.wallet].en)}</span>` 
       : '';
-    return `<div class="hi ${h.t==='add'?'ar':'pr'}"><span>${fmtD(h.date)} — ${h.note}${wBadge}</span><b style="color:var(--${h.t==='add'?'green':'red'})">${h.t==='add'?'+':'-'} ৳${fmt(h.amt)}</b></div>`;
+    const actionLabel=LANG==='bn'?(h.t==='add'?'যোগ হয়েছে':h.t==='pay'?'পরিশোধ':'সংশোধন'):(h.t==='add'?'Added':h.t==='pay'?'Payment':'Adjusted');
+    const paths=h.t==='add'?'<path d="M12 5v14M5 12h14"/>':h.t==='pay'?'<path d="m5 12 4 4L19 6"/>':'<path d="M4 8h16m-4-4 4 4-4 4M20 16H4m4-4-4 4 4 4"/>';
+    return `<div class="hi history-row history-${h.t==='add'?'addition':h.t==='pay'?'payment':'adjustment'}"><div class="history-symbol" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${paths}</svg></div><div class="history-copy"><div class="history-note">${escapeHTML(h.note||actionLabel)}</div><div class="history-meta"><time>${fmtD(h.date)}</time>${wBadge}</div></div><div class="history-value"><b>${h.t==='add'?'+':h.t==='pay'?'−':'↔'} ৳${fmt(h.amt)}</b></div></div>`;
   }).join('');
   
   if (p.history.length <= 5) {
@@ -3723,20 +3750,18 @@ function renderCardHistoryItems(p, isExp) {
   }
   
   const total = p.history.length;
-  const countToDisplay = Math.min(20, total);
-  const btnLabel = isExp 
-    ? (LANG === 'bn' ? 'কম দেখুন' : 'Show less')
-    : (LANG === 'bn' ? `সব ইতিহাস দেখুন (${countToDisplay}টি)` : `View all history (${countToDisplay})`);
-  
-  const notice = (isExp && total > 20)
-    ? `<div class="hist-more-notice">${LANG === 'bn' ? `(সর্বোচ্চ ২০টি প্রদর্শিত, মোট ${total}টি)` : `(Showing max 20 of ${total} total)`}</div>`
-    : '';
-    
+  const countToDisplay = total;
+  const btnLabel = isExp
+    ? (LANG==='bn'?'কম দেখুন':'Show less')
+    : (LANG==='bn'?`সব ইতিহাস দেখুন (${countToDisplay}টি)`:`View all history (${countToDisplay})`);
+
+  const notice = '';
+
   const cardType = p._type || (DB.receive.some(x=>x.id===p.id)?'receive':'give');
   return `
     ${items}
     <div class="hist-toggle-wrap">
-      <button type="button" class="btn-hist-toggle" onclick="toggleCardHistory('${cardType}', ${p.id}, event)">
+      <button type="button" class="btn-hist-toggle" aria-expanded="${isExp}" onclick="toggleCardHistory('${cardType}', ${p.id}, event)">
         <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:2px;">
           ${isExp ? '<path d="m18 15-6-6-6 6"/>' : '<path d="m6 9 6 6 6-6"/>'}
         </svg>
@@ -3855,39 +3880,37 @@ function renderCard(p,type){
     <div class="swipe-action left"><span class="swipe-action-icon">➕</span><span class="swipe-action-lbl">${LANG==='bn'?'যোগ':'Add'}</span></div>
     <div class="swipe-action right"><span class="swipe-action-icon">💸</span><span class="swipe-action-lbl">${LANG==='bn'?'শোধ':'Pay'}</span></div>
     <div class="pcard-inner">
-    <div class="pt" onclick="this.nextElementSibling.classList.toggle('on')">
+    <div class="pt" role="button" tabindex="0" aria-expanded="false" onclick="toggleAccountCard(this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleAccountCard(this)}">
       <div class="pt-l">
-        <div class="pname">${p.name}</div>
+        <div class="pname">${escapeHTML(p.name)}</div>
         <div class="pbadge ${settled?'':b.cls}">${ageLbl}</div>
       </div>
       <div class="pt-r">
         <div class="pamt" style="color:${col}">৳${fmt(displayAmt)}</div>
+        <div class="pamt-caption">${pct}% ${LANG==='bn'?'শোধ হয়েছে':'paid'}</div>
         <div class="pbar-wrap">
           <div class="pbar"><div class="pbar-fill" style="width:${pct}%;background:${col}"></div></div>
-          <div class="pbar-lbl">${pct}% ${LANG==='bn'?'শোধ':'paid'}</div>
+
         </div>
       </div>
     </div>
     <div class="pbody">
       <div class="psum">
-        <div class="ps-i"><div class="ps-l bn">মূল</div><div class="ps-l en">Original</div><div class="ps-v" style="color:${col}">৳${fmt(p.original)}</div></div>
-        <div class="ps-i"><div class="ps-l bn">শোধ</div><div class="ps-l en">Paid</div><div class="ps-v" style="color:var(--green)">৳${fmt(type==='receive'&&getLoanBreakdown(p)?getLoanBreakdown(p).paidAmount:(p.original-p.remaining))}</div></div>
-        <div class="ps-i"><div class="ps-l bn">লেনদেন</div><div class="ps-l en">Txns</div><div class="ps-v">${p.history.length}</div></div>
+        <div class="ps-i"><div class="ps-l bn">${p.cycleStartedAt?'এই দফার মূল':'মূল টাকা'}</div><div class="ps-l en">${p.cycleStartedAt?'Current cycle total':'Original total'}</div><div class="ps-v" style="color:${col}">৳${fmt(p.original)}</div></div>
+        <div class="ps-i"><div class="ps-l bn">${p.cycleStartedAt?'এই দফায় শোধ':'পরিশোধ হয়েছে'}</div><div class="ps-l en">${p.cycleStartedAt?'Paid this cycle':'Paid'}</div><div class="ps-v" style="color:var(--green)">৳${fmt(type==='receive'&&getLoanBreakdown(p)?getLoanBreakdown(p).paidAmount:(p.original-p.remaining))}</div></div>
+        <div class="ps-i"><div class="ps-l bn">মোট লেনদেন</div><div class="ps-l en">All transactions</div><div class="ps-v">${p.history.length}</div></div>
       </div>
+      ${p.cycleStartedAt?`<p class="card-cycle-note">${LANG==='bn'?'মূল ও পরিশোধের অঙ্ক এই দফার হিসাব। নিচে আগের সব লেনদেনও আছে।':'Totals reflect the current cycle. History also includes earlier transactions.'}</p>`:''}
       ${loanBreakdownHtml}
-      <div class="card-action-grid">
-        <div class="cag-row cag-primary">
-          <button class="btn-a btn-pay" onclick="openPay('${type}',${p.id})"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg><span class="bn">পরিশোধ</span><span class="en">Pay</span></button>
-          ${!settled ? `<button class="btn-a btn-all-clear" onclick="oneClickAllClear('${type}',${p.id},event)" title="${LANG==='bn'?'১-ক্লিকে সম্পূর্ণ পরিশোধ':'One-Click Full Paid'}"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:2px;"><path d="M18 6 7 17l-5-5"/><path d="m22 10-7.5 7.5L13 16"/></svg><span class="bn">সব শোধ</span><span class="en">All Clear</span></button>` : ''}
-          <button class="btn-a btn-add-more" onclick="openAddMore('${type}',${p.id})"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg><span class="bn">আরো যোগ</span><span class="en">Add More</span></button>
-        </div>
-        <div class="cag-row cag-secondary">
-          <button class="btn-a btn-receipt" onclick="openReceipt('${type}',${p.id})" title="WhatsApp Share / রসিদ স্লিপ"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="#25D366" style="flex-shrink:0;"><path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0 0 12.04 2m.01 1.67c2.2 0 4.26.86 5.82 2.42a8.225 8.225 0 0 1 2.41 5.83c0 4.54-3.7 8.24-8.24 8.24-1.48 0-2.93-.4-4.2-1.15l-.3-.18-3.12.82.83-3.04-.2-.31a8.196 8.196 0 0 1-1.26-4.38c0-4.54 3.7-8.24 8.24-8.24m4.52 11.66c-.25-.13-1.47-.72-1.7-.81-.23-.08-.39-.13-.56.13-.17.25-.64.81-.79.97-.14.17-.29.19-.54.06-.25-.13-1.06-.39-2.02-1.25-.75-.67-1.26-1.5-1.4-1.76-.15-.25-.02-.39.11-.51.11-.11.25-.29.37-.44.13-.15.17-.25.25-.42.08-.17.04-.31-.02-.44-.06-.13-.56-1.35-.77-1.85-.2-.49-.41-.42-.56-.43h-.48c-.17 0-.44.06-.67.31-.23.25-.88.86-.88 2.1 0 1.24.9 2.44 1.03 2.61.13.17 1.78 2.71 4.3 3.8 2.53 1.08 2.53.72 2.99.68.45-.05 1.47-.6 1.68-1.18.21-.58.21-1.07.15-1.18-.07-.11-.23-.17-.48-.3"/></svg><span class="bn">WhatsApp স্লিপ</span><span class="en">Receipt Slip</span></button>
-          <button class="btn-a btn-edit-entry" onclick="openEdit('${type}',${p.id})"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg><span class="bn">এডিট</span><span class="en">Edit</span></button>
-          <button class="btn-a btn-del-bold" onclick="deleteEntry('${type}',${p.id})" title="${LANG==='bn'?'ডিলিট':'Delete'}"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg></button>
-        </div>
+      <div class="person-actions">
+        <button type="button" class="person-action person-action-pay" ${settled?'disabled':''} onclick="openPay('${type}',${p.id})"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v16m-6-6 6 6 6-6"/></svg><span class="bn">${type==='receive'?'পেয়েছি':'দিয়েছি'}</span><span class="en">${type==='receive'?'Received':'Paid'}</span></button>
+        <button type="button" class="person-action person-action-add" onclick="openAddMore('${type}',${p.id})"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span class="bn">আরও যোগ</span><span class="en">Add more</span></button>
+        <button type="button" class="person-action person-action-receipt" onclick="openReceipt('${type}',${p.id})"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2V3Zm3 5h6m-6 4h6"/></svg><span class="bn">রসিদ</span><span class="en">Receipt</span></button>
+        <button type="button" class="person-action person-action-settle" ${settled?'disabled':''} onclick="oneClickAllClear('${type}',${p.id},event)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 12 4 4 9-9m-5 9 9-9"/></svg><span class="bn">সব শোধ</span><span class="en">All clear</span></button>
+        <button type="button" class="person-action person-action-edit" onclick="openEdit('${type}',${p.id})"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 5 4 4M4 20l4-1L20 7a2.8 2.8 0 0 0-4-4L4 15v5Z"/></svg><span class="bn">এডিট</span><span class="en">Edit</span></button>
+        <button type="button" class="person-action person-action-delete" onclick="deleteEntry('${type}',${p.id})"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7m4-7v7"/></svg><span class="bn">মুছুন</span><span class="en">Delete</span></button>
       </div>
-      <div class="hh" style="margin-top:14px;">HISTORY</div>
+      <div class="hh card-history-heading"><span class="bn">লেনদেনের ইতিহাস</span><span class="en">Transaction history</span><span class="history-count">${p.history.length}</span></div>
       <div id="hist-wrap-${p.id}" class="hist-wrap">
         ${renderCardHistoryItems(p, _expandedHistoryCards.has(p.id))}
       </div>
@@ -3900,13 +3923,13 @@ function emptyS(bn,en,ic){return`<div class="empty"><div class="empty-i" style="
 // ── TOP LISTS ──
 function renderTop(){
   const q=document.getElementById('srch').value.toLowerCase().trim();
-  const mk=(list,col,bnt,ent)=>{
+  const mk=(list,col,bnt,ent,type)=>{
     if(!list.length)return'';
-    return`<div class="top-s"><div class="top-sh"><span class="bn">${bnt}</span><span class="en">${ent}</span></div>${list.map((p,i)=>{const b=ageBadge(ageDays(p));return`<div class="top-row"><span class="top-rank">#${i+1}</span><span class="top-name">${p.name}</span><span class="top-age ${b.cls}">${b.l}</span><span class="top-amt" style="color:${col}">৳${fmt(p.remaining)}</span></div>`;}).join('')}</div>`;
+    return`<div class="top-s"><div class="top-sh"><span class="bn">${bnt}</span><span class="en">${ent}</span></div>${list.map((p,i)=>{const b=ageBadge(ageDays(p));return`<div class="top-row"><span class="top-rank">#${i+1}</span><button type="button" class="top-name top-person-link" onclick="openTopPerson('${type}',${p.id})">${escapeHTML(p.name)}</button><span class="top-age ${b.cls}">${b.l}</span><span class="top-amt" style="color:${col}">৳${fmt(p.remaining)}</span></div>`;}).join('')}</div>`;
   };
-  const tR=[...DB.receive].filter(p=>p.remaining>0&&(!q||p.name.toLowerCase().includes(q))).sort((a,b)=>b.remaining-a.remaining).slice(0,5);
-  const tG=[...DB.give].filter(p=>p.remaining>0&&(!q||p.name.toLowerCase().includes(q))).sort((a,b)=>b.remaining-a.remaining).slice(0,5);
-  document.getElementById('top-lists').innerHTML=mk(tR,'var(--green)','🏆 সর্বোচ্চ পাওনাদার','🏆 Top Receivables')+mk(tG,'var(--red)','🏆 সর্বোচ্চ দেনাদার','🏆 Top Payables');
+  const tR=[...DB.receive].filter(p=>p.remaining>0&&(!q||matchesPerson(p,q))).sort((a,b)=>b.remaining-a.remaining).slice(0,5);
+  const tG=[...DB.give].filter(p=>p.remaining>0&&(!q||matchesPerson(p,q))).sort((a,b)=>b.remaining-a.remaining).slice(0,5);
+  document.getElementById('top-lists').innerHTML=mk(tR,'var(--green)','🏆 সর্বোচ্চ পাওনাদার','🏆 Top Receivables','receive')+mk(tG,'var(--red)','🏆 সর্বোচ্চ দেনাদার','🏆 Top Payables','give');
 }
 
 // ── MAIN RENDER ──
@@ -3943,10 +3966,10 @@ function render(){
   else{ns.textContent=LANG==='bn'?'= সমান':'= Balanced';ni.innerHTML=`<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 9h14M5 15h14"/></svg>`;}
   renderTop();
   renderHisabMiniWallets();
-  const fl=list=>q?list.filter(p=>p.name.toLowerCase().includes(q)):list;
+  const fl=list=>q?list.filter(p=>matchesPerson(p,q)):list;
   const sR=fl([...DB.receive].filter(p=>p.remaining>0)).sort((a,b)=>b.remaining-a.remaining);
   const shR=SA.r?sR:sR.slice(0,3);
-  document.getElementById('lst-r').innerHTML=shR.map(p=>renderCard(p,'receive')).filter(Boolean).join('')||emptyS('কোনো পাওনা নেই','No receivables','<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>');
+  document.getElementById('lst-r').innerHTML=shR.map(p=>renderCard(p,'receive')).filter(Boolean).join('')||emptyS(q?'এই খোঁজে কোনো পাওনা পাওয়া যায়নি':'কোনো পাওনা নেই — উপরের ফর্মে যোগ করুন',q?'No matching receivables':'No receivables — add one using the form above','<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>');
   shR.forEach(p=>{const el=document.getElementById('card-'+p.id);if(el)initSwipe(el,'receive',p.id);});
   const bR=document.getElementById('sa-r');
   bR.style.display=sR.length>3?'inline-flex':'none';
@@ -3954,7 +3977,7 @@ function render(){
   bR.querySelector('.en').textContent=SA.r?'Show Less':`See All (${sR.length})`;
   const sG=fl([...DB.give].filter(p=>p.remaining>0)).sort((a,b)=>b.remaining-a.remaining);
   const shG=SA.g?sG:sG.slice(0,3);
-  document.getElementById('lst-g').innerHTML=shG.map(p=>renderCard(p,'give')).filter(Boolean).join('')||emptyS('কোনো দেনা নেই','No payables','<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>');
+  document.getElementById('lst-g').innerHTML=shG.map(p=>renderCard(p,'give')).filter(Boolean).join('')||emptyS(q?'এই খোঁজে কোনো দেনা পাওয়া যায়নি':'কোনো দেনা নেই — উপরের ফর্মে যোগ করুন',q?'No matching payables':'No payables — add one using the form above','<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>');
   shG.forEach(p=>{const el=document.getElementById('card-'+p.id);if(el)initSwipe(el,'give',p.id);});
   const bG=document.getElementById('sa-g');
   bG.style.display=sG.length>3?'inline-flex':'none';
@@ -3980,16 +4003,18 @@ function renderHisabMiniWallets(){
   const grid = document.getElementById('hmw-grid');
   if(!grid) return;
 
-  const keys = ['cash', 'bkash', 'nagad', 'bank'];
+  const keys = enabledWalletKeys();
   grid.innerHTML = keys.map(k => {
     const meta = WALLET_META[k] || { icon: '💵', name: 'নগদ', en: 'Cash' };
     const amt = w[k] || 0;
     const nameStr = LANG === 'bn' ? meta.name : meta.en;
+    const glyph=k.startsWith('wallet_')?customWalletIconPath(WALLET_META[k]?.iconKind):k==='cash'?'<rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="12" cy="12" r="3"/><path d="M6 9h1m10 6h1"/>':k==='bank'?'<path d="m3 9 9-6 9 6H3Zm2 3v6m5-6v6m4-6v6m5-6v6M3 21h18"/>':'<rect x="6" y="2" width="12" height="20" rx="3"/><path d="M10 5h4m-3 14h2"/>';
+
     return `
-      <div class="hmw-pill" onclick="goToCashWallet('${k}', event)" title="${nameStr}: ৳${fmt(amt)} (${LANG==='bn'?'ক্লিক করে আয়-ব্যয়ে যান':'Click to view in Expense'})">
+      <div class="hmw-pill" data-wallet="${k}" onclick="goToCashWallet('${k}', event)" title="${escapeHTML(nameStr)}: ৳${fmt(amt)} (${LANG==='bn'?'ক্লিক করে আয়-ব্যয়ে যান':'Click to view in Expense'})">
         <div class="hmw-pill-top">
-          <span class="hmw-pill-icon">${meta.icon}</span>
-          <span class="hmw-pill-name">${nameStr}</span>
+          <span class="hmw-pill-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${glyph}</svg></span>
+          <span class="hmw-pill-name">${escapeHTML(nameStr)}</span>
         </div>
         <div class="hmw-pill-amt">৳${fmt(amt)}</div>
       </div>
@@ -4009,51 +4034,24 @@ function goToCashWallet(wKey, ev){
 
 // ── BACKUP ──
 function exportData(){
-  ensureProfilesStructure();
-  const payload = {
-    version: 2,
-    appName: 'HisabTrackerPRO',
-    exportedAt: new Date().toISOString(),
-    user: (typeof CUR_USER !== 'undefined' && CUR_USER) ? CUR_USER.email : 'user',
-    hisab: ROOT_DB,
-    cash: ROOT_CASH_DB
-  };
-  const b=new Blob([JSON.stringify(payload, null, 2)],{type:'application/json'});
-  const a=document.createElement('a');
-  a.href=URL.createObjectURL(b);
-  a.download=`hisab_backup_${new Date().toISOString().slice(0,10)}.json`;
-  a.click();
+  ensureProfilesStructure();downloadJSON({version:3,appName:'HisabTrackerPRO',exportedAt:new Date().toISOString(),hisab:makeSnapshot(),cash:ROOT_CASH_DB},'hisab_backup_'+localDateStr()+'.json');
 }
 function triggerImport(){document.getElementById('importFile').click();}
 function handleImport(e){
-  const r=new FileReader();
-  r.onload=ev=>{
+  const file=e.target.files?.[0];if(!file)return;if(file.size>10*1024*1024){toast('❌ Backup must be smaller than 10 MB');e.target.value='';return;}
+  const reader=new FileReader();reader.onload=async event=>{
     try{
-      const parsed=JSON.parse(ev.target.result);
-      if(parsed.hisab && parsed.cash){
-        ROOT_DB = parsed.hisab;
-        ROOT_CASH_DB = parsed.cash;
-        ensureProfilesStructure();
-        switchProfile(ROOT_DB.activeProfileId || 'default', false);
-      } else if(parsed.receive || parsed.give){
-        ensureProfilesStructure();
-        DB.receive = parsed.receive || [];
-        DB.give = parsed.give || [];
-        if(parsed.categories) DB.categories = parsed.categories;
-        if(parsed.activityLog) DB.activityLog = parsed.activityLog;
-      }
-      logActivity('Backup import করা হয়েছে');
-      saveData();
-      saveCashData();
-      render();
-      renderCash();
-      updateProfileHeaderUI();
-      toast('✅ Backup সফলভাবে Import হয়েছে!');
-    }catch(err){
-      toast('❌ Invalid backup file!');
-    }
-  };
-  r.readAsText(e.target.files[0]);
+      const parsed=JSON.parse(event.target.result);let hisab,cash;
+      if(parsed.appName==='HisabTrackerPRO'&&[2,3].includes(parsed.version)&&parsed.hisab&&parsed.cash){hisab=parsed.hisab;cash=parsed.cash;}
+      else if(Array.isArray(parsed.receive)&&Array.isArray(parsed.give)){hisab=JSON.parse(JSON.stringify(ROOT_DB));hisab.profilesData[ROOT_DB.activeProfileId]={...DB,...parsed};cash=JSON.parse(JSON.stringify(ROOT_CASH_DB));}
+      else throw new Error('Unsupported backup format');
+      HisabSafety.validate(hisab,cash);
+      if(!confirm(LANG==='bn'?'এই ব্যাকআপ দিয়ে হিসাব প্রতিস্থাপন করবেন? বর্তমান হিসাবের ব্যাকআপ আগে ডাউনলোড হবে।':'Replace account data with this backup? Your current data will be downloaded first.'))return;
+      exportData();
+      const ok=await runConfirmedChange(()=>{ROOT_DB=JSON.parse(JSON.stringify(hisab));ROOT_CASH_DB=JSON.parse(JSON.stringify(cash));ROOT_DB._cash=ROOT_CASH_DB;ensureProfilesStructure();logActivity('Backup import');confirmedEffects.saveData();confirmedEffects.render();confirmedEffects.renderCash();confirmedEffects.updateProfileHeaderUI();confirmedEffects.toast(LANG==='bn'?'✅ ব্যাকআপ সেভ হয়েছে।':'✅ Backup saved.');},{name:'import',args:[file.name,file.size,file.lastModified,JSON.stringify(hisab),JSON.stringify(cash)]});
+      if(ok)e.target.value='';
+    }catch(error){toast('❌ Invalid backup: '+error.message);}
+  };reader.onerror=()=>{toast('❌ Backup could not be read');e.target.value='';};reader.readAsText(file);
 }
 
 document.addEventListener('DOMContentLoaded',()=>{
@@ -4089,8 +4087,395 @@ document.addEventListener('DOMContentLoaded',()=>{
   setInterval(()=>{
     const now=new Date();
     if(now.getHours()===0&&now.getMinutes()<1){
-      saveData();
       render();
+      renderCash();
     }
   },60000);
 });
+
+// Modal keyboard navigation and accessible names.
+document.addEventListener('DOMContentLoaded',()=>{
+  const previous=new WeakMap();
+  for(const overlay of document.querySelectorAll('.overlay')){
+    const dialog=overlay.querySelector('.modal')||overlay.firstElementChild;if(!dialog)continue;
+    dialog.setAttribute('role','dialog');dialog.setAttribute('aria-modal','true');dialog.tabIndex=-1;
+    const title=dialog.querySelector('.modal-title,.sheet-title');if(title)dialog.setAttribute('aria-label',title.textContent.trim());
+    new MutationObserver(()=>{
+      if(overlay.classList.contains('on')){previous.set(overlay,document.activeElement);const first=dialog.querySelector('input:not([type=hidden]),select,textarea,button');(first||dialog).focus();}
+      else{const old=previous.get(overlay);if(old?.isConnected)old.focus();}
+    }).observe(overlay,{attributes:true,attributeFilter:['class']});
+  }
+  const labels={'au-email':'Email','au-pass':'Password','au-name':'Name','r-na':'Receivable person name','g-na':'Payable person name','r-am':'Receivable amount','g-am':'Payable amount','aa':'Additional amount','an':'Additional note','pa':'Payment amount','pn':'Payment note','cash-amt':'Cash amount','cash-note':'Cash note','cash-date':'Transaction date','srch':'Search people','cash-srch':'Search transactions'};
+  for(const [id,label]of Object.entries(labels)){const input=document.getElementById(id);if(input)input.setAttribute('aria-label',label);}
+  document.addEventListener('keydown',event=>{
+    const open=[...document.querySelectorAll('.overlay.on')].at(-1);if(!open)return;
+    if(event.key==='Escape'){event.preventDefault();cm(open.id);return;}
+    if(event.key!=='Tab')return;
+    const items=[...open.querySelectorAll('button,input:not([type=hidden]),select,textarea,a[href],[tabindex="0"]')].filter(x=>!x.disabled&&x.getClientRects().length);
+    if(!items.length){event.preventDefault();return;}const first=items[0],last=items.at(-1);
+    if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus();}else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus();}
+  });
+});
+
+// Confirmed command boundary: prepare against a detached account draft, persist it,
+// then publish the data and UI effects together. Failed forms stay unchanged.
+let activeDraft=null,savingChange=false,failedCommand=null;
+function commandFields(){return [...document.querySelectorAll('input,textarea,select')].filter(el=>el.type!=='file').map(el=>({el,value:el.value,checked:el.checked}));}
+function restoreFields(fields){for(const f of fields){f.el.value=f.value;if(typeof f.checked==='boolean')f.el.checked=f.checked;}}
+function commandUI(){return [...document.querySelectorAll('.overlay,#app,#pin-screen,#cash-form')].map(el=>({el,className:el.className,style:el.getAttribute('style')}));}
+function restoreUI(ui){for(const v of ui){v.el.className=v.className;if(v.style==null)v.el.removeAttribute('style');else v.el.setAttribute('style',v.style);}}
+function draftEffect(name,args){
+  if(activeDraft){activeDraft.effects.push(()=>globalThis[name](...args));return;}
+  return globalThis[name](...args);
+}
+const confirmedEffects={
+  saveData(){if(activeDraft)activeDraft.dirty=true;},saveCashData(){if(activeDraft)activeDraft.dirty=true;},saveCats(){if(activeDraft)activeDraft.dirty=true;},
+  switchProfile(id,notify=true){
+    if(!activeDraft)return switchProfile(id,notify);
+    if(!ROOT_DB.profiles.some(p=>p.id===id))return;
+    activeDraft.dirty=true;ROOT_DB.activeProfileId=id;localStorage.setItem('ht_active_profile_'+CUR_USER.id,id);ensureProfilesStructure();
+    confirmedEffects.render();confirmedEffects.renderCash();confirmedEffects.updateProfileHeaderUI();confirmedEffects.cm('m-profiles');
+  },
+  toast(message,undo){
+    const undoKey=undo?String(nextId()):null;
+    const effect=()=>toast(message,undo?()=>runConfirmedChange(undo,{name:'undo',args:[undoKey]}):null);
+    if(activeDraft)activeDraft.effects.push(effect);else effect();
+  }
+};
+for(const name of ['render','renderCash','renderHisabMiniWallets','renderAllQtags','renderCatMgrSections','updateProfileHeaderUI','cm','closeCashForm','openProfileSwitcher'])confirmedEffects[name]=(...args)=>draftEffect(name,args);
+function clearSaveNotice(){for(const el of document.querySelectorAll('.form-save-notice'))el.remove();}
+function saveNotice(target,message,retry){
+  clearSaveNotice();const box=document.createElement('div');box.className='form-save-notice';box.setAttribute('role','alert');
+  const text=document.createElement('span');text.textContent=message;box.appendChild(text);
+  if(retry){const button=document.createElement('button');button.type='button';button.textContent=LANG==='bn'?'আবার চেষ্টা করুন':'Try again';button.addEventListener('click',retry);box.appendChild(button);}
+  (target?.isConnected?target:document.querySelector('.overlay.on .modal')||document.getElementById('app')).appendChild(box);
+}
+async function runConfirmedChange(command,descriptor={name:'change',args:[]}){
+  if(savingChange||!CUR_USER)return false;
+  const user=CUR_USER.id,key='ht_active_profile_'+user,preference=localStorage.getItem(key),fields=commandFields();
+  const signature=JSON.stringify([descriptor.name,descriptor.args,ROOT_DB?.activeProfileId,CTX,pinMode,pinBuf,pinTmp,fields.map(f=>[f.el.id,f.value,f.checked])]);
+  const source=document.activeElement,button=source?.closest?.('button'),target=source?.closest?.('.modal,.cash-form,.add-form,.pin-box')||button?.parentElement||document.querySelector('.overlay.on .modal')||document.getElementById('app');
+  let prepared=failedCommand?.signature===signature&&failedCommand.user===user?failedCommand:null;
+  if(!prepared){
+    const original={ROOT_DB,ROOT_CASH_DB,DB,CASH_DB,pinMode,pinBuf,pinTmp,pending:PENDING_ALL_CLEAR},ui=commandUI();
+    activeDraft={dirty:false,effects:[]};
+    try{
+      ROOT_DB=JSON.parse(JSON.stringify(ROOT_DB));ROOT_CASH_DB=JSON.parse(JSON.stringify(ROOT_CASH_DB));ensureProfilesStructure();
+      const result=command();if(result&&typeof result.then==='function')throw new Error('Command preparation must be synchronous');
+      const after=commandFields();prepared={user,signature,operationId:String(nextId()),dirty:activeDraft.dirty,effects:activeDraft.effects,data:activeDraft.dirty?makeSnapshot():null,after,profile:ROOT_DB.activeProfileId,pin:{pinMode,pinBuf,pinTmp,pending:PENDING_ALL_CLEAR},uiAfter:commandUI()};
+    }catch(error){prepared={error};}
+    finally{
+      ROOT_DB=original.ROOT_DB;ROOT_CASH_DB=original.ROOT_CASH_DB;DB=original.DB;CASH_DB=original.CASH_DB;pinMode=original.pinMode;pinBuf=original.pinBuf;pinTmp=original.pinTmp;PENDING_ALL_CLEAR=original.pending;
+      if(preference==null)localStorage.removeItem(key);else localStorage.setItem(key,preference);
+      restoreFields(fields);restoreUI(ui);activeDraft=null;
+    }
+    if(prepared.error){saveNotice(target,LANG==='bn'?'সেভ হয়নি। তথ্য দেখে আবার চেষ্টা করুন।':'Not saved. Check the details and try again.');return false;}
+    if(!prepared.dirty){for(const effect of prepared.effects)effect();return false;}
+  }
+  savingChange=true;clearSaveNotice();
+  const controls=[...document.querySelectorAll('button,input,textarea,select')].map(el=>({el,disabled:el.disabled})),label=button?.innerHTML;
+  for(const c of controls)c.el.disabled=true;if(button)button.textContent=LANG==='bn'?'সেভ হচ্ছে…':'Saving…';
+  document.body.setAttribute('aria-busy','true');
+  let saved=false;
+  try{
+    const sync=getAccountSync();saved=await sync.save(prepared.data,prepared.operationId);
+    if(!saved){failedCommand=prepared;const conflict=sync.lastError?.name==='SyncConflict';
+      saveNotice(target,conflict?(LANG==='bn'?'হিসাব অন্য জায়গায় বদলেছে। পেজ রিফ্রেশ করে আবার চেষ্টা করুন।':'Account changed elsewhere. Refresh the page and try again.'):(LANG==='bn'?'সেভ হয়নি। ইন্টারনেট সংযোগ দেখে আবার চেষ্টা করুন।':'Not saved. Check your connection and try again.'),conflict?null:()=>runConfirmedChange(command,descriptor));return false;
+    }
+    if(CUR_USER?.id!==user)return false;
+    failedCommand=null;localStorage.setItem(key,prepared.profile);applySnapshot(sync.current);
+    restoreFields(prepared.after);restoreUI(prepared.uiAfter);pinMode=prepared.pin.pinMode;pinBuf=prepared.pin.pinBuf;pinTmp=prepared.pin.pinTmp;PENDING_ALL_CLEAR=prepared.pin.pending;
+    for(const effect of prepared.effects)effect();return true;
+  }catch(error){failedCommand=prepared;saveNotice(target,LANG==='bn'?'সেভ হয়নি। আবার চেষ্টা করুন।':'Not saved. Please try again.',()=>runConfirmedChange(command,descriptor));return false;}
+  finally{savingChange=false;for(const c of controls)c.el.disabled=c.disabled;if(button)button.innerHTML=label;document.body.removeAttribute('aria-busy');}
+}
+
+{const original=addEntry;addEntry=function(...args){return runConfirmedChange(()=>original(...args),{name:'addEntry',args});}}
+
+{const original=confirmAddMore;confirmAddMore=function(...args){return runConfirmedChange(()=>original(...args),{name:'confirmAddMore',args});}}
+
+{const original=confirmPay;confirmPay=function(...args){return runConfirmedChange(()=>original(...args),{name:'confirmPay',args});}}
+
+{const original=confirmAllClearExecution;confirmAllClearExecution=function(...args){return runConfirmedChange(()=>original(...args),{name:'confirmAllClearExecution',args});}}
+
+{const original=confirmEdit;confirmEdit=function(...args){return runConfirmedChange(()=>original(...args),{name:'confirmEdit',args});}}
+
+{const original=submitCash;submitCash=function(...args){return runConfirmedChange(()=>original(...args),{name:'submitCash',args});}}
+
+{const original=submitQuickAdd;submitQuickAdd=function(...args){if(savingChange)return;return runConfirmedChange(()=>original(...args),{name:'submitQuickAdd',args:[...args,QA_MODE,SELECTED_QA_WALLET,SELECTED_QA_CAT]});}}
+
+{const original=confirmTransfer;confirmTransfer=function(...args){return runConfirmedChange(()=>original(...args),{name:'confirmTransfer',args});}}
+
+{const original=confirmCashEdit;confirmCashEdit=function(...args){return runConfirmedChange(()=>original(...args),{name:'confirmCashEdit',args});}}
+
+{const original=deleteCashEntry;deleteCashEntry=function(...args){return runConfirmedChange(()=>original(...args),{name:'deleteCashEntry',args});}}
+
+{const original=confirmClearCashExecution;confirmClearCashExecution=function(...args){return runConfirmedChange(()=>original(...args),{name:'confirmClearCashExecution',args});}}
+
+{const original=deleteEntry;deleteEntry=function(...args){return runConfirmedChange(()=>original(...args),{name:'deleteEntry',args});}}
+
+{const original=saveProfileSubmit;saveProfileSubmit=function(...args){return runConfirmedChange(()=>original(...args),{name:'saveProfileSubmit',args});}}
+
+{const original=confirmDeleteProfile;confirmDeleteProfile=function(...args){return runConfirmedChange(()=>original(...args),{name:'confirmDeleteProfile',args});}}
+
+{const original=confirmBudget;confirmBudget=function(...args){return runConfirmedChange(()=>original(...args),{name:'confirmBudget',args});}}
+
+{const original=removeBudget;removeBudget=function(...args){return runConfirmedChange(()=>original(...args),{name:'removeBudget',args});}}
+
+{const original=updateCat;updateCat=function(...args){return runConfirmedChange(()=>original(...args),{name:'updateCat',args});}}
+
+{const original=addCat;addCat=function(...args){return runConfirmedChange(()=>original(...args),{name:'addCat',args});}}
+
+{const original=deleteCat;deleteCat=function(...args){return runConfirmedChange(()=>original(...args),{name:'deleteCat',args});}}
+
+{const original=handlePin;handlePin=function(){if(pinMode==='set-new2'&&pinBuf===pinTmp)return runConfirmedChange(()=>original(),{name:'handlePin',args:[]});return original();};}
+
+
+
+// Quick hisab selection is stored in form controls so retry signatures include the chosen account.
+function resetQuickPerson(){
+  document.getElementById('qa-person-new').value='0';
+  document.getElementById('qa-person-id').value='';
+  document.getElementById('qa-name').value='';
+}
+function quickPersonDue(person,kind){
+  const loan=kind==='receive'?getLoanBreakdown(person):null;
+  return money(loan?loan.remainingDue:person.remaining);
+}
+function chooseQuickPerson(id){
+  document.getElementById('qa-person-new').value='0';
+  const kind=document.getElementById('qa-hisab-kind').value;
+  const p=DB[kind]?.find(p=>p.id===id);if(!p)return;
+  document.getElementById('qa-person-id').value=String(p.id);
+  document.getElementById('qa-name').value=p.name;
+  updateQuickHisab();updateQuickTask();document.getElementById('qa-amt').focus();
+}
+function updateQuickHisab(){
+  const kindOptions=document.getElementById('qa-hisab-kind').options;
+  kindOptions[0].textContent=LANG==='bn'?'পাবো':'Receivable';
+  kindOptions[1].textContent=LANG==='bn'?'দেবো':'Payable';
+  const actionOptions=document.getElementById('qa-hisab-action').options;
+  actionOptions[0].textContent=LANG==='bn'?'টাকা যোগ':'Add amount';
+  actionOptions[1].textContent=LANG==='bn'?'পরিশোধ':'Payment';
+  const kind=document.getElementById('qa-hisab-kind').value;
+  const paying=document.getElementById('qa-hisab-action').value==='pay';
+  const selected=document.getElementById('qa-person-id').value;
+  const query=document.getElementById('qa-name').value.trim();
+  const people=DB[kind]||[];
+  const person=people.find(p=>String(p.id)===selected);
+  const matches=people.filter(p=>(!query||searchText(p.name).includes(searchText(query)))&&(!paying||quickPersonDue(p,kind)>0));
+  const results=document.getElementById('qa-person-results');
+  results.innerHTML=person?'':matches.slice(0,12).map(p=>`<button type="button" onclick="chooseQuickPerson(${p.id})"><span>${escapeHTML(p.name)}</span><small>${LANG==='bn'?'বাকি':'Due'} ৳${fmt(quickPersonDue(p,kind))} · ${fmtD(firstTs(p))}</small></button>`).join('');
+  const info=document.getElementById('qa-person-summary');
+  info.textContent=person
+    ?(LANG==='bn'?`${person.name} — বাকি ৳${fmt(quickPersonDue(person,kind))}। ${paying?'নিচে ওয়ালেট বেছে পরিশোধ সেভ করুন।':'এই হিসাবেই টাকা যোগ হবে।'}`:`${person.name} — Due ৳${fmt(quickPersonDue(person,kind))}. ${paying?'Choose a wallet below and save the payment.':'Amount will be added to this account.'}`)
+    :paying?(LANG==='bn'?'পরিশোধ করতে তালিকা থেকে আগের ব্যক্তিকে বাছুন।':'Select an existing person to record payment.')
+    :query&&matches.length===0?(LANG==='bn'?'এই নামে নতুন হিসাব তৈরি হবে।':'A new account will be created for this name.')
+    :matches.length>12?(LANG==='bn'?'আরও মিল আছে। পুরো নাম লিখে খুঁজুন।':'More matches available. Type more of the name.')
+    :(LANG==='bn'?'আগের হিসাবে যোগ করতে তালিকা থেকে বাছুন।':'Select a result to add to an existing account.');
+  if(QA_MODE==='hisab'){
+    const btn=document.getElementById('qa-submit-btn');
+    btn.className='sbtn '+(kind==='receive'?'sbtn-g':'sbtn-r');
+    btn.textContent=paying?(LANG==='bn'?'পরিশোধের পরের ধাপ →':'Review payment →'):(LANG==='bn'?(kind==='receive'?'পাওনা যোগ করুন ✓':'দেনা যোগ করুন ✓'):(kind==='receive'?'Add receivable ✓':'Add payable ✓'));
+  }
+}
+
+function backQuickTask(){
+  if(savingChange)return;
+  document.getElementById('qa-editor').hidden=true;document.getElementById('qa-chooser').hidden=false;
+  document.querySelector('#qa-chooser button').focus();
+}
+function chooseQuickTask(task){
+  if(savingChange)return;
+  document.getElementById('qa-hisab-action').value=task==='pay'?'pay':'add';
+  setQuickAddType(task==='pay'?'hisab':task);
+  document.getElementById('qa-chooser').hidden=true;document.getElementById('qa-editor').hidden=false;
+  updateQuickTask();document.getElementById(QA_MODE==='hisab'?'qa-name':'qa-amt').focus();
+}
+function quickNewPerson(){
+  const creating=document.getElementById('qa-person-new').value!=='1';
+  resetQuickPerson();document.getElementById('qa-person-new').value=creating?'1':'0';
+  updateQuickHisab();updateQuickTask();document.getElementById('qa-name').focus();
+}
+function fillQuickPayment(){
+  const kind=document.getElementById('qa-hisab-kind').value;
+  const p=DB[kind]?.find(p=>String(p.id)===document.getElementById('qa-person-id').value);
+  if(p)document.getElementById('qa-amt').value=quickPersonDue(p,kind);
+  updateQuickTask();
+}
+function updateQuickTask(){
+  const hisab=QA_MODE==='hisab',paying=hisab&&document.getElementById('qa-hisab-action').value==='pay';
+  const kind=document.getElementById('qa-hisab-kind').value;
+  const person=hisab?DB[kind]?.find(p=>String(p.id)===document.getElementById('qa-person-id').value):null;
+  const creating=document.getElementById('qa-person-new').value==='1'&&!paying;
+  const amount=money(Number(document.getElementById('qa-amt').value)||0);
+  const label=LANG==='bn'?(paying?(kind==='receive'?'টাকা পেয়েছি':'টাকা দিয়েছি'):hisab?(kind==='receive'?'পাওনা যোগ':'দেনা যোগ'):QA_MODE==='add'?'আয় সেভ':'খরচ সেভ'):(paying?(kind==='receive'?'Record received':'Record paid'):hisab?(kind==='receive'?'Add receivable':'Add payable'):QA_MODE==='add'?'Save income':'Save expense');
+  document.getElementById('qa-task-title').textContent=label;
+  document.getElementById('qa-wallet-sec').style.display=!hisab||paying?'block':'none';
+  document.getElementById('qa-new-person').hidden=paying;
+  document.getElementById('qa-new-person').textContent=LANG==='bn'?(creating?'← আগের ব্যক্তি বাছুন':'+ নতুন ব্যক্তি'):(creating?'← Select existing person':'+ New person');
+  document.getElementById('qa-full-payment').hidden=!paying||!person;
+  if(creating){document.getElementById('qa-person-results').innerHTML='';document.getElementById('qa-person-summary').textContent=LANG==='bn'?'নতুন ব্যক্তির নাম লিখুন।':'Enter the new person’s name.';}
+  const hint=document.getElementById('qa-payment-preview');
+  const w=WALLET_META[SELECTED_QA_WALLET||'cash'];
+  hint.textContent=paying&&person?(LANG==='bn'?`বাকি ৳${fmt(quickPersonDue(person,kind))} · পরিশোধের পর ৳${fmt(Math.max(0,quickPersonDue(person,kind)-amount))}। ${w?.name||''} ওয়ালেটে টাকা ${kind==='receive'?'জমা হবে':'কাটা হবে'}।`:`Due ৳${fmt(quickPersonDue(person,kind))} · After payment ৳${fmt(Math.max(0,quickPersonDue(person,kind)-amount))}. ${w?.en||''} wallet will be ${kind==='receive'?'credited':'debited'}.`):'';
+  document.getElementById('qa-submit-btn').textContent=(validAmount(amount)?'৳'+fmt(amount)+' · ':'')+label+' ✓';
+}
+// Keep preview and amount-specific action labels aligned with selector changes.
+{const original=updateQuickHisab;updateQuickHisab=function(){original();updateQuickTask();};}
+{const original=selectQAWallet;selectQAWallet=function(...args){original(...args);updateQuickTask();};}
+
+function toggleAccountCard(header){
+  const body=header.nextElementSibling;
+  if(!body?.classList.contains('pbody'))return;
+  body.classList.toggle('on');
+  header.setAttribute('aria-expanded',String(body.classList.contains('on')));
+}
+
+function openTopPerson(type,id){
+  if(!['receive','give'].includes(type)||!DB[type].some(p=>p.id===id))return;
+  const tab=type==='receive'?'r':'g';
+  SA[tab]=true;
+  setAppTab('hisab');sliderSwitch(tab);render();
+  const card=document.querySelector('#sec-'+tab+' #card-'+id);
+  if(!card)return;
+  card.querySelector('.pbody')?.classList.add('on');
+  const header=card.querySelector('.pt');
+  if(header){header.setAttribute('aria-expanded','true');header.focus({preventScroll:true});}
+  card.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth',block:'start'});
+}
+
+function openAppInfo(kind){
+  if(!['privacy','about'].includes(kind))return;
+  closeDrawer();const modal=document.getElementById('m-app-'+kind);modal.classList.add('on');modal.querySelector('button')?.focus();
+}
+
+// Wallet visibility belongs to the active book. Balances and historical references remain intact.
+function enabledWalletKeys(){
+  const known=['cash','bkash','nagad','bank',...Object.keys(CASH_DB.customWallets||{})];
+  const saved=Array.isArray(CASH_DB.enabledWallets)?CASH_DB.enabledWallets:null;
+  // Preserve funded legacy wallets; empty/new books start with Cash only.
+  return known.filter(k=>k==='cash'||(saved?saved.includes(k):false)||Math.abs(Number(CASH_DB.wallets?.[k])||0)>0);
+}
+function walletEnabled(key){return enabledWalletKeys().includes(key);}
+function syncEnabledWalletUI(){
+  const enabled=enabledWalletKeys();
+  if(WALLET_FILTER!=='all'&&!enabled.includes(WALLET_FILTER))WALLET_FILTER='all';
+  if(!enabled.includes(SELECTED_FORM_WALLET))SELECTED_FORM_WALLET='cash';
+  if(!enabled.includes(SELECTED_QA_WALLET))SELECTED_QA_WALLET='cash';
+  if(!enabled.includes(SELECTED_PAY_WALLET))SELECTED_PAY_WALLET='cash';
+  if(!enabled.includes(SELECTED_AC_WALLET))SELECTED_AC_WALLET='cash';
+  if(!enabled.includes(TF_FROM_WALLET))TF_FROM_WALLET=enabled[0];
+  if(!enabled.includes(TF_TO_WALLET))TF_TO_WALLET=enabled.find(k=>k!==TF_FROM_WALLET)||'cash';
+  const groups={'form-wallet-row':SELECTED_FORM_WALLET,'qa-wallet-row':SELECTED_QA_WALLET,'pay-ws-wallets':SELECTED_PAY_WALLET,'ac-ws-wallets':SELECTED_AC_WALLET,'tf-from-row':TF_FROM_WALLET,'tf-to-row':TF_TO_WALLET};
+  const handlers={'form-wallet-row':"selectFormWallet",'qa-wallet-row':"selectQAWallet",'pay-ws-wallets':"selectPayWallet",'ac-ws-wallets':"selectAcWallet"};
+  for(const [id,selected]of Object.entries(groups)){
+    const row=document.getElementById(id);if(!row)continue;
+    // Preserve controls during a save; otherwise rebuild when profile, locale or settings change.
+    const signature=JSON.stringify([enabled,LANG,enabled.map(k=>[WALLET_META[k]?.name,WALLET_META[k]?.iconKind])]);
+    if(row.dataset.walletSignature!==signature&&(!savingChange||!accountSync?.busy)){
+      row.innerHTML=enabled.map(key=>{
+        const handler=id==='tf-from-row'?`selectTransferWallet('from','${key}',this)`:id==='tf-to-row'?`selectTransferWallet('to','${key}',this)`:`${handlers[id]}('${key}',this)`;
+        const meta=WALLET_META[key];
+        return `<button type="button" class="${id.includes('ws-wallets')?'pws-btn':'wsel-btn'}" data-w="${key}" onclick="${handler}">${walletChoiceIcon(key)}<span>${escapeHTML(LANG==='bn'?meta.name:meta.en)}</span></button>`;
+      }).join('');row.dataset.walletSignature=signature;
+    }
+    row.querySelectorAll('[data-w]').forEach(button=>{button.hidden=!enabled.includes(button.dataset.w);button.classList.toggle('on',button.dataset.w===selected);button.setAttribute('aria-pressed',String(button.dataset.w===selected));});
+  }
+  for(const el of document.querySelectorAll('#wallets-grid,#hmw-grid,#form-wallet-row,#qa-wallet-row,#pay-ws-wallets,#ac-ws-wallets,#tf-from-row,#tf-to-row')){
+    el.style.setProperty('--enabled-wallet-columns',String(enabled.length));
+    el.style.setProperty('--wallet-mobile-columns',String(Math.min(2,enabled.length)));
+  }
+}
+function openWalletManager(){
+  if(savingChange)return;
+  closeDrawer();renderWalletManager();document.getElementById('m-wallet-manager').classList.add('on');
+}
+function renderWalletManager(){
+  const enabled=enabledWalletKeys();
+  document.getElementById('wallet-manager-book').textContent=ROOT_DB?.profiles?.find(p=>p.id===ROOT_DB.activeProfileId)?.name||'';
+  document.getElementById('wallet-manager-count').textContent=enabled.length+' / 5';
+  document.getElementById('wallet-manager-list').innerHTML=['cash','bkash','nagad','bank',...Object.keys(CASH_DB.customWallets||{})].map(key=>{
+    const meta=WALLET_META[key],on=enabled.includes(key),balance=money(CASH_DB.wallets?.[key]||0);
+    const icon=walletChoiceIcon(key);
+    return `<div class="wallet-manager-row" data-w="${key}">${icon}<div class="wallet-manager-copy"><b>${escapeHTML(LANG==='bn'?meta.name:meta.en)}</b><small>${key==='cash'?(LANG==='bn'?'ডিফল্ট · সবসময় চালু':'Default · always enabled'):(LANG==='bn'?'ব্যালেন্স':'Balance')+' ৳'+fmt(balance)}</small></div><button type="button" ${key==='cash'||(!on&&enabled.length>=5)?'disabled':''} class="wallet-manager-action ${on?'enabled':''}" onclick="setManagedWallet('${key}',${!on})">${LANG==='bn'?(key==='cash'?'ডিফল্ট':on?'সরান':'+ যোগ করুন'):(key==='cash'?'Default':on?'Remove':'+ Add')}</button></div>`;
+  }).join('');
+}
+function setManagedWallet(key,enable){
+  return runConfirmedChange(()=>{
+    if(key==='cash'||!WALLET_META[key]||typeof enable!=='boolean')return;
+    ensureWallets();const keys=enabledWalletKeys();
+    if(!enable&&money(CASH_DB.wallets[key]||0)!==0){
+      confirmedEffects.toast(LANG==='bn'?'ওয়ালেটে টাকা আছে। আগে ব্যালেন্স ট্রান্সফার বা সমন্বয় করে শূন্য করুন।':'This wallet has a balance. Transfer or reconcile it to zero before removing.');return;
+    }
+    if(keys.includes(key)===enable)return;
+    if(enable&&keys.length>=5){confirmedEffects.toast(LANG==='bn'?'Cash-সহ সর্বোচ্চ ৫টি ওয়ালেট রাখা যাবে।':'You can have up to 5 wallets, including Cash.');return;}
+    CASH_DB.enabledWallets=enable?[...keys,key]:keys.filter(k=>k!==key);
+    confirmedEffects.saveCashData();confirmedEffects.render();confirmedEffects.renderCash();
+    activeDraft.effects.push(()=>{syncEnabledWalletUI();renderWalletManager();});
+    confirmedEffects.toast(LANG==='bn'?(enable?'ওয়ালেট যোগ হয়েছে।':'ওয়ালেট সরানো হয়েছে। ইতিহাস রাখা আছে.'):(enable?'Wallet added.':'Wallet removed. History retained.'));
+  },{name:'manageWallet',args:[key,enable]});
+}
+// Refresh selector availability before rendering or opening any wallet-related form.
+for(const name of ['renderCash','renderHisabMiniWallets','openCashForm','openQuickAddSheet','openPay','oneClickAllClear','openTransferModal']){
+  const original=globalThis[name];globalThis[name]=function(...args){syncEnabledWalletUI();const result=original.apply(this,args);syncEnabledWalletUI();return result;};
+}
+
+function walletChoiceIcon(key){
+  const path=key.startsWith('wallet_')?customWalletIconPath(WALLET_META[key]?.iconKind):key==='cash'?'<rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="12" cy="12" r="3"/>':key==='bkash'||key==='nagad'?'<rect x="6" y="2" width="12" height="20" rx="3"/><path d="M10 5h4m-3 14h2"/>':key==='bank'?'<path d="m3 9 9-6 9 6H3Zm2 3v6m5-6v6m4-6v6m5-6v6M3 21h18"/>':'<path d="M20 8V5H6a3 3 0 0 0 0 6h15v10H6a3 3 0 0 1-3-3V8"/><path d="M21 14h-5v3h5"/>';
+  return `<span class="wallet-choice-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${path}</svg></span>`;
+}
+function createManagedWallet(){
+  return runConfirmedChange(()=>{
+    const name=document.getElementById('new-wallet-name').value.trim().replace(/\s+/g,' ');
+    const keys=enabledWalletKeys();
+    if(!WALLET_ICON_KINDS.includes(document.getElementById('new-wallet-icon').value))return;
+    if(!name||name.length>40){confirmedEffects.toast(LANG==='bn'?'১–৪০ অক্ষরের একটি নাম দিন।':'Enter a name of 1–40 characters.');return;}
+    if(keys.length>=5){confirmedEffects.toast(LANG==='bn'?'Cash-সহ সর্বোচ্চ ৫টি ওয়ালেট রাখা যাবে।':'Maximum 5 wallets, including Cash.');return;}
+    const known=['cash','bkash','nagad','bank',...Object.keys(CASH_DB.customWallets||{})];
+    const same=known.find(k=>[WALLET_META[k].name,WALLET_META[k].en].some(n=>n.normalize('NFKC').toLowerCase()===name.normalize('NFKC').toLowerCase()));
+    if(same&&keys.includes(same)){confirmedEffects.toast(LANG==='bn'?'এই নামে ওয়ালেট চালু আছে।':'A wallet with this name is already enabled.');return;}
+    if(!same&&Object.keys(CASH_DB.customWallets||{}).length>=1000){confirmedEffects.toast(LANG==='bn'?'পুরোনো তালিকা থেকে একটি ওয়ালেট যোগ করুন।':'Add a wallet from the existing list.');return;}
+    ensureWallets();const key=same||'wallet_'+nextId();
+    if(!same){if(!CASH_DB.customWallets)CASH_DB.customWallets={};CASH_DB.customWallets[key]={name,iconKind:document.getElementById('new-wallet-icon').value};CASH_DB.wallets[key]=0;}
+    CASH_DB.enabledWallets=[...keys,key];
+    confirmedEffects.saveCashData();confirmedEffects.render();confirmedEffects.renderCash();
+    document.getElementById('new-wallet-name').value='';
+    activeDraft.effects.push(()=>{syncEnabledWalletUI();renderWalletManager();});
+    confirmedEffects.toast(LANG==='bn'?'ওয়ালেট তৈরি ও যোগ হয়েছে।':'Wallet created and added.');
+  },{name:'createWallet',args:[]});
+}
+
+function beginFirstPin(){
+  localStorage.removeItem(tk());
+  pinMode='set-new1';pinBuf='';pinTmp='';updDots('');
+  document.getElementById('auth-screen').style.display='none';
+  document.getElementById('app').style.display='none';
+  document.getElementById('pin-screen').style.display='flex';
+  document.getElementById('pin-err').textContent='';
+  document.getElementById('pin-title').textContent=LANG==='bn'?'নিজের PIN তৈরি করুন':'Create your PIN';
+  document.getElementById('pin-sub').textContent=LANG==='bn'?'হিসাব খুলতে প্রথমে নিজের ৪ সংখ্যার PIN দিন।':'Choose your own 4-digit PIN to start using your account.';
+}
+
+const WALLET_ICON_KINDS=['wallet','mobile','bank','card','business','savings'];
+function customWalletIconPath(kind){
+  const icons={
+    wallet:'<path d="M20 8V5H6a3 3 0 0 0 0 6h15v10H6a3 3 0 0 1-3-3V8"/><path d="M21 14h-5v3h5"/>',
+    mobile:'<rect x="6" y="2" width="12" height="20" rx="3"/><path d="M10 5h4m-3 14h2"/>',
+    bank:'<path d="m3 9 9-6 9 6H3Zm2 3v6m5-6v6m4-6v6m5-6v6M3 21h18"/>',
+    card:'<rect x="3" y="5" width="18" height="14" rx="3"/><path d="M3 10h18M7 15h4"/>',
+    business:'<rect x="3" y="7" width="18" height="14" rx="2"/><path d="M8 7V3h8v4M3 12c5 4 13 4 18 0m-9 0v4"/>',
+    savings:'<path d="M4 11c0-4 3-6 7-6h3l3-2v4l3 3h2v5h-3l-2 5h-3v-3H9v3H6l-2-6H2v-3h2Zm6-3h4m2 3h.01"/>'
+  };return icons[kind]||icons.wallet;
+}
+function chooseNewWalletIcon(kind){
+  if(!WALLET_ICON_KINDS.includes(kind)||savingChange)return;
+  document.getElementById('new-wallet-icon').value=kind;
+  document.querySelectorAll('#new-wallet-icons button').forEach(button=>{const on=button.dataset.icon===kind;button.classList.toggle('selected',on);button.setAttribute('aria-pressed',String(on));});
+}
+function renderNewWalletIcons(){
+  const names=LANG==='bn'?['ওয়ালেট','মোবাইল','ব্যাংক','কার্ড','ব্যবসা','সঞ্চয়']:['Wallet','Mobile','Bank','Card','Business','Savings'];
+  const selected=document.getElementById('new-wallet-icon').value;
+  document.getElementById('new-wallet-icons').innerHTML=WALLET_ICON_KINDS.map((kind,i)=>`<button type="button" data-icon="${kind}" class="${kind===selected?'selected':''}" aria-pressed="${kind===selected}" onclick="chooseNewWalletIcon('${kind}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${customWalletIconPath(kind)}</svg><span>${names[i]}</span></button>`).join('');
+}
+{const original=renderWalletManager;renderWalletManager=function(){original();renderNewWalletIcons();};}

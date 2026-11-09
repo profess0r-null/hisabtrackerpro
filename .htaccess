@@ -1,0 +1,13 @@
+Options -Indexes
+<FilesMatch "(?i)(?:\.(?:csv|zip|sql|md|log|bak|env|py|cjs)$|^migrate\.php$|^\.)">
+  Require all denied
+</FilesMatch>
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteRule ^(?:\.git|hisabtrackerpro-main|tests)(?:/|$) - [F,L]
+</IfModule>
+<IfModule mod_headers.c>
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set Referrer-Policy "strict-origin-when-cross-origin"
+  Header always set X-Frame-Options "SAMEORIGIN"
+</IfModule>
