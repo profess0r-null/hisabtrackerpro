@@ -1,26 +1,50 @@
-# HisabTracker
+# 📒 Hisab Tracker PRO
 
-A Bengali/English personal finance app for receivables, payables, income, expenses and wallets.
+Your accounts, your control.
 
-## Main files
+🌐 **Website:** [hisabtracker.profess0r-null.xyz](https://hisabtracker.profess0r-null.xyz/)
 
-- `index.html`, `script.js`, `style.css`: application UI and accounting flows.
-- `expense.css`: Expense tab styling.
-- `sync.js`: confirmed online saves and concurrent-write handling.
-- `safety.js`: imported/account data validation and output escaping.
-- `vendor/supabase.min.js`: bundled Supabase browser SDK for authentication and cloud storage.
-- `sw.js`, `manifest.json`, `icon.png`: installable app shell and asset caching.
-- `.htaccess`: private-file access rules for Apache hosting.
-- `CNAME`: custom domain configuration.
+---
 
-## Local use and publishing
+## 🔐 Default PIN
+```
+1234
+```
+> When you log in for the first time, use PIN **1234** to enter. You can change it later from Settings.
 
-Serve the folder with a web server. With XAMPP, start Apache and open `http://localhost/hisabtracker/`.
+---
 
-Publish all application assets together. The app uses Supabase; server-side ownership/access policies must be configured and reviewed separately. The app-shell cache can display previously loaded pages when the local server is stopped.
+## ✨ Features
 
-The current application does not use the old PHP/MySQL backend. Legacy backend files, optional database utilities and local test fixtures are excluded from Git. Local copies are retained.
+### 📒 Hisab Tracker
+- Track receivables and payables separately
+- Partial payment support
+- Full transaction history per person
+- Swipe left to Pay, swipe right to Add More
+- Share summary via WhatsApp
+- Cloud sync — access from any device
 
-Recent changes were not tested, following the owner's request. Review locally before publishing. A GitHub push does not apply Supabase database changes.
+### 💵 Cash Tracker
+- Track your cash balance
+- Log income and expenses separately
+- Set a monthly budget with progress bar
+- Filter by income or expense
+- Cloud sync
 
-Created by [profess0r.null](https://www.profess0r-null.xyz/).
+### 🔒 Security
+- PIN lock
+- Cloud backup via Supabase
+- Data export & import (JSON)
+
+---
+
+## 🚀 How to Use
+
+1. Visit the website
+2. Register with your email and password
+3. Enter PIN **1234** to get started
+4. Change your PIN anytime from Settings
+
+---
+
+*Developed by profess0r-null*
