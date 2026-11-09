@@ -19,3 +19,11 @@ node_modules/
 hisabtrackerpro-main/
 playwright-report/
 test-results/
+
+# Local legacy backend and development utilities (not used by the current frontend)
+/api/
+/api.js
+/database.sql
+/migrate.php
+/supabase-hardening.sql
+/tests/
