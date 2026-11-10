@@ -2,7 +2,7 @@
 (function(){
  'use strict';
  if(!('serviceWorker' in navigator))return;
- const release='6.22',reloadKey='ht_release_reload_'+release;
+ const release='6.23',reloadKey='ht_release_reload_'+release;
  let hadController=!!navigator.serviceWorker.controller;
  navigator.serviceWorker.addEventListener('controllerchange',()=>{
   if(!hadController){hadController=true;return;}
@@ -12,7 +12,13 @@
    sessionStorage.setItem(reloadKey,'1');location.reload();
   }
  });
+ let registration;
+ function checkForUpdate(){
+  if(registration)registration.update().catch(()=>{});
+ }
  window.addEventListener('load',()=>{
-  navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(reg=>reg.update()).catch(()=>{});
+  navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(reg=>{registration=reg;checkForUpdate();}).catch(()=>{});
  },{once:true});
+ window.addEventListener('online',checkForUpdate);
+ document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')checkForUpdate();});
 })();
