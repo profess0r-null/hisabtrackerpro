@@ -48,14 +48,14 @@
 .expense-period-top{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:12px}
 .expense-period-top h2{font-size:14px;font-weight:650;letter-spacing:-.015em}
 #cash-content .month-nav-bar{display:flex;align-items:center;justify-content:center;gap:4px;margin:0;padding:0;border:0;border-radius:8px;background:transparent;box-shadow:none}
-#cash-content .month-nav-title{font-size:12px;font-weight:600;min-width:110px;text-align:center}
+#cash-content .month-nav-title{font-size:12px;font-weight:600;min-width:110px;text-align:center;justify-content:center;white-space:nowrap}
 #cash-content .month-nav-title svg{display:none}
 #cash-content .month-nav-btn{width:32px;height:34px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text2);display:grid;place-items:center}
 #cash-content .month-filter-pills{display:flex;gap:3px;padding:3px;margin:0 0 14px;background:var(--expense-tint);border-radius:9px}
 #cash-content .mf-pill{flex:1;min-width:0;min-height:34px;padding:6px 5px;border:0;border-radius:7px;font:inherit;font-size:11px;font-weight:600;background:transparent;color:var(--text2);box-shadow:none}
 #cash-content .mf-pill.on{background:var(--surface);color:var(--expense-accent);box-shadow:0 1px 4px rgba(40,65,110,.08)}
 #cash-content .cash-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:0;padding:0}
-#cash-content .cash-stat{padding:0;border:0;border-radius:0;background:none;box-shadow:none;min-width:0;text-align:left}
+#cash-content .cash-stat{padding:0;border:0;border-radius:0;background:none;box-shadow:none;min-width:0;text-align:center}
 #cash-content .cash-stat-lbl{font-size:11px;line-height:1.5;font-weight:500;color:var(--readable-secondary);letter-spacing:0;text-transform:none}
 #cash-content .cash-stat-val{font-size:21px;line-height:1.35;font-weight:700;letter-spacing:-.025em;margin-top:5px;white-space:nowrap;font-variant-numeric:tabular-nums}
 .expense-filter-note{font-size:10px;line-height:1.5;color:var(--readable-secondary);margin:0 0 13px}

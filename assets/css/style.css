@@ -2670,3 +2670,8 @@ button:disabled{cursor:wait;opacity:.65}
 .toast{bottom:calc(24px + env(safe-area-inset-bottom,0px));width:max-content;max-width:calc(100vw - 32px);box-sizing:border-box;}
 .toast .t-msg{min-width:0;max-width:340px;white-space:normal;overflow-wrap:anywhere;line-height:1.5;}
 @media(max-width:640px){.toast{bottom:calc(84px + env(safe-area-inset-bottom,0px));padding:12px 14px;gap:8px;}.toast .t-msg{max-width:calc(100vw - 150px);}}
+
+/* A single subtle focus edge instead of a thick, detached second border. */
+:is(button,a,input,textarea,select,summary,[tabindex]):focus:not(:focus-visible){outline:none!important}
+:is(button,a,input,textarea,select,summary,[tabindex]):focus-visible{outline:1px solid var(--primary,#38bdf8)!important;outline-offset:-1px!important}
+:is(input,textarea,select):focus{box-shadow:none!important}
