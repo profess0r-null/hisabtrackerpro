@@ -2,7 +2,7 @@
 (function(){
  'use strict';
  if(!('serviceWorker' in navigator))return;
- const release='6.25',reloadKey='ht_release_reload_'+release;
+ const release='6.26',reloadKey='ht_release_reload_'+release;
  let hadController=!!navigator.serviceWorker.controller;
  navigator.serviceWorker.addEventListener('controllerchange',()=>{
   if(!hadController){hadController=true;return;}

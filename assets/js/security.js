@@ -9,7 +9,7 @@
  }
  function create(client){
   let userId=null,state=null,epoch=0;
-  function unlocked(){return !!state?.unlocked&&Date.parse(state.unlocked_until)>Date.now();}
+  function unlocked(){return state?.unlocked===true;}
   async function call(name,args){
    const mine=epoch;
    const query=client.rpc(name,args);

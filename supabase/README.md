@@ -1,6 +1,6 @@
 # Security and usage setup
 
-This frontend version requires `migrations/20261110_security_and_usage.sql`.
+This frontend version requires `migrations/20261110_security_and_usage.sql`, followed by `migrations/20261110_manual_lock_only.sql`.
 No migration has been applied to the live Supabase project from this workspace.
 
 ## Install
@@ -23,7 +23,7 @@ Owner access is pinned to the verified Auth UUID selected by the migration. Chan
 ## PIN and cache behavior
 
 - PIN checks and failed-attempt limits run on the server. Five wrong attempts cause a 15-minute pause.
-- A successful PIN unlock is bound to the actual Auth session ID for 30 minutes. Recent active use refreshes this window.
+- A successful PIN unlock is bound to the actual Auth session ID without an inactivity timeout. Manual Lock App, logout, PIN changes that revoke other sessions, or revoking the Auth session still remove access. Usage reporting does not control lock timing.
 - The existing signed-in server session can survive a reload within that window; the old local trusted flag has no authority.
 - A PIN change requires an already-unlocked session and invalidates other device unlocks.
 - Locking removes the current session’s unlock. Signing out also clears local sensitive state/caches.

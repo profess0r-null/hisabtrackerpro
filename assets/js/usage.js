@@ -16,7 +16,7 @@
  }
  function start(){
   reset();lastInteraction=Date.now();document.getElementById('owner-usage-menu').hidden=!security.isOwner;
-  heartbeat();timer=setInterval(()=>{if(!security.isUnlocked){lockApp();return;}heartbeat();},60000);
+  heartbeat();timer=setInterval(heartbeat,60000);
  }
  function date(value){const d=new Date(value);return Number.isFinite(d.getTime())?d.toLocaleString(LANG==='bn'?'bn-BD':'en-GB',{dateStyle:'medium',timeStyle:'short'}):'—';}
  function add(parent,tag,content,cls){const el=document.createElement(tag);if(cls)el.className=cls;el.textContent=content;parent.appendChild(el);return el;}
