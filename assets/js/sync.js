@@ -15,18 +15,14 @@ function merge(base,local,remote,path='account'){
 }
 function business(data){const value=copy(data);if(value)for(const k of ['_format','_revision','_receipts'])delete value[k];return value;}
 class Store{
- constructor({client,storage,userId,normalize=x=>x,onState=()=>{},onData=()=>{}}){Object.assign(this,{client,storage,userId,normalize,onState,onData});this.cacheKey='ht_confirmed_v1_'+userId;this.stopped=false;this.busy=false;this.base=undefined;this.current=undefined;this.lastError=null;}
- read(k){try{return JSON.parse(this.storage.getItem(k)||'null');}catch(e){return null;}}
+ constructor({client,storage,userId,normalize=x=>x,onState=()=>{},onData=()=>{}}){Object.assign(this,{client,storage,userId,normalize,onState,onData});this.stopped=false;this.busy=false;this.base=undefined;this.current=undefined;this.lastError=null;}
  bounded(query){return typeof query.abortSignal==='function'&&typeof AbortSignal!=='undefined'&&typeof AbortSignal.timeout==='function'?query.abortSignal(AbortSignal.timeout(12000)):query;}
  async remote(){const q=this.client.from('hisab_users').select('data,updated_at').eq('id',this.userId);const r=await this.bounded(q).maybeSingle();if(r.error)throw r.error;return r.data?{data:this.normalize(r.data.data),version:r.data.updated_at,exists:true}:{data:undefined,version:null,exists:false};}
- remember(data){try{this.storage.setItem(this.cacheKey,JSON.stringify(data));this.storage.setItem('ht_'+this.userId,JSON.stringify(data));if(data?._cash)this.storage.setItem('ht_cash_'+this.userId,JSON.stringify(data._cash));}catch(error){console.warn('Confirmed cloud data could not be cached',error);}}
- async load(fallback){
-  try{const remote=await this.remote();this.base=copy(remote.data);this.current=copy(remote.data||{});
-   // Retain old offline-era data as an archive only. Never replay it or overwrite the database.
-   if(fallback&&!equal(fallback,this.current)){try{this.storage.setItem('ht_pre_online_backup_'+this.userId,JSON.stringify(fallback));}catch(e){}}
-   this.remember(this.current);this.onState('synced');return copy(this.current);
-  }catch(error){const confirmed=this.read(this.cacheKey);if(!confirmed)throw error;this.base=copy(confirmed);this.current=copy(confirmed);this.onState('offline',error);return copy(this.current);}
+ async load(){
+  const remote=await this.remote();if(this.stopped)throw new Error('Session ended');
+  this.base=copy(remote.data);this.current=copy(remote.data||{});this.onState('synced');return copy(this.current);
  }
+
  async save(data,operationId){
   if(this.stopped||this.busy)return false;this.busy=true;this.lastError=null;this.onState('saving');
   try{
@@ -47,7 +43,7 @@ class Store{
    }throw new Conflict('account');
   }catch(error){this.lastError=error;this.onState('failed',error);return false;}finally{this.busy=false;}
  }
- accept(data){this.base=copy(data);this.current=copy(data);this.remember(data);this.onData(copy(data));this.onState('synced');}
+ accept(data){this.base=copy(data);this.current=copy(data);this.onData(copy(data));this.onState('synced');}
  stop(){this.stopped=true;}
 }
 root.HisabSync={Store,merge,Conflict};if(typeof module!=='undefined'&&module.exports)module.exports=root.HisabSync;

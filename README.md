@@ -58,7 +58,7 @@ Separate books let you keep different sets of accounts without mixing their reco
 5. Open **Menu → Manage Wallets** to add the accounts you use.
 
 > [!IMPORTANT]
-> **There is no preset default PIN for new accounts.** You choose your PIN during first-time setup. The PIN locks the app screen; your account password is separate.
+> **There is no preset default PIN for new accounts.** You choose your PIN during first-time setup. PIN verification and record access are enforced by the server after the security migration is installed; your account password is separate.
 
 ### Wallet rules
 
@@ -74,13 +74,21 @@ Separate books let you keep different sets of accounts without mixing their reco
 
 The app shows updated account values after the online save succeeds. If saving fails, the form retains your input so you can retry. Unsaved changes are not silently queued for a later offline upload.
 
-Saved records are stored through Supabase. You can sign in on another device to load your saved account data. The app also keeps local preferences and a copy of confirmed records in the browser.
+Saved records are stored through Supabase. You can sign in on another device to load your saved account data. The app keeps local preferences, while financial records stay in memory rather than plaintext browser caches. Locking or signing out clears account records and old local copies.
 
 > The app's **available balance** is the total across wallets. Changing the month, search or wallet filter changes the transaction view and its summary, rather than rewriting that total.
 
 ## Menu tools
 
 **Manage Wallets** · **Switch / create books** · **Manage Categories** · **Reports & Analytics** · **Activity Log** · **Change Password** · **Change PIN** · **Lock App** · **Download / Restore Backup** · **About** · **Privacy Policy**
+
+## Owner usage report
+
+After the database migration is installed, the authorized owner sees **Menu → Website Usage**: total users recorded since activation, activity in the last 24 hours / 5 minutes, and each account’s first and last active times. Other accounts cannot access the report. It contains no financial records.
+
+## Security update setup
+
+Install the database migration before using this frontend version. See [Supabase setup](supabase/README.md) for the required SQL and deployment order. Missing server functions fail closed rather than falling back to a browser-only PIN.
 
 ## Run locally
 

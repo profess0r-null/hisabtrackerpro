@@ -7,6 +7,7 @@ const SB_URL='https://hmqckyecenigcjikfjob.supabase.co';
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhtcWNreWVjZW5pZ2NqaWtmam9iIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY5MzUzMDMsImV4cCI6MjA5MjUxMTMwM30.1pyoIp6-GegOVERyroNm0MlkPe4VOAiBL-bU-iJP2gU';
 const sb=supabase.createClient(SB_URL,SB_KEY);
 const escapeHTML=HisabSafety.escapeHTML;
+const security=HisabSecurity.create(sb);
 const money=n=>Math.round((Number(n)+Number.EPSILON)*100)/100;
 const validAmount=n=>Number.isFinite(n)&&n>0&&n<=1e12;
 let _lastId=0;
@@ -15,10 +16,10 @@ let accountSync=null, appLoading=false;
 function canonical(input){
   const out=JSON.parse(JSON.stringify(input||{}));
   if(out.profilesData){
-    if(!out.pinHash){for(const p of Object.values(out.profilesData)){if(p.pinHash){out.pinHash=p.pinHash;break;}}}
     for(const k of ['receive','give','activityLog','categories','activeProfileId'])delete out[k];
     for(const p of Object.values(out.profilesData))delete p.pinHash;
   }
+  delete out.pinHash;
   if(out._cash?.profilesData){for(const k of ['balance','history','wallets','budget','monthlyBudgets'])delete out._cash[k];}
   if(out.profilesData||Array.isArray(out.receive))HisabSafety.validate(out,out._cash||{balance:0,history:[]});
   return out;
@@ -65,7 +66,7 @@ function ensureProfilesStructure(){
   if(!ROOT_DB.profilesData || typeof ROOT_DB.profilesData !== 'object'){
     ROOT_DB.profilesData = {};
   }
-  if(!ROOT_DB.pinHash&&DB.pinHash)ROOT_DB.pinHash=DB.pinHash;
+
   if(!ROOT_DB.profilesData['default']){
     ROOT_DB.profilesData['default'] = {
       receive: Array.isArray(ROOT_DB.receive) ? ROOT_DB.receive : (DB.receive || []),
@@ -794,27 +795,32 @@ async function authForgot(){
   }catch(error){setAuthMsg(LANG==='bn'?'রিসেট নির্দেশনা পাঠানো যায়নি। আবার চেষ্টা করুন।':'Could not send reset instructions. Please try again.','err');}
   finally{authBusy=false;lockAuthControls(false);}
 }
-async function signOut(){
-  if(savingChange)return;
-  const leavingUser=CUR_USER?.id;
-  try{
-    const {error}=await sb.auth.signOut();
-    if(error)throw error;
-  }catch(error){toast(LANG==='bn'?'লগআউট হয়নি। আবার চেষ্টা করুন।':'Sign out failed. Please try again.');return;}
+function clearSensitiveState(){
   accountSync?.stop();accountSync=null;_dataLoaded=false;
-  localStorage.removeItem('ht_has_session');
-  document.documentElement.classList.remove('has-session');
-  if(leavingUser)localStorage.removeItem('ht_tr_'+leavingUser);
-  CUR_USER=null;
-  ROOT_DB=null; ROOT_CASH_DB=null;
-  DB={receive:[],give:[],activityLog:[]};
-  CASH_DB={balance:0,history:[]};
-  closeDrawer();
-  document.getElementById('app').style.display='none';
-  document.getElementById('pin-screen').style.display='none';
-  document.getElementById('auth-screen').style.display='flex';
-  document.body.style.overflow='';
-  setAuthMsg('','');
+  HisabSecurity.purge(localStorage,CUR_USER?.id);
+  ROOT_DB=null;ROOT_CASH_DB=null;DB={receive:[],give:[],activityLog:[]};CASH_DB={balance:0,history:[]};
+  CTX={};PENDING_ALL_CLEAR=null;CURRENT_RECEIPT_DATA=null;failedCommand=null;_expandedHistoryCards.clear();
+  for(const id of ['lst-r','lst-g','lst-a','top-lists','hmw-grid','wallets-grid','cash-history-list','log-list','analytics-content','profiles-list','catmgr-sections','receipt-slip-box','qa-person-results','usage-content'])document.getElementById(id)?.replaceChildren();
+  for(const el of document.querySelectorAll('#app input,.overlay input,.overlay textarea'))if(el.type!=='file'){el.value='';el.classList.remove('has-val');}
+  for(const el of document.querySelectorAll('.sc-val,.net-val,.pamt,.cash-stat-val,#cash-balance,#hmw-total'))el.textContent='—';
+  for(const el of document.querySelectorAll('.overlay.on'))el.classList.remove('on');
+  document.getElementById('cash-form').classList.add('hidden');
+  document.getElementById('app').style.display='none';appLoading=false;document.getElementById('app').inert=false;closeDrawer();clearSaveNotice();
+}
+async function signOut(){
+  if(savingChange||pinBusy)return;
+  try{await security.lock();}catch(error){console.warn('Server lock pending');}
+  clearSensitiveState();
+  try{
+    const {error}=await sb.auth.signOut();if(error)throw error;
+  }catch(error){
+    showPinScreen();toast(LANG==='bn'?'লগআউট সম্পূর্ণ হয়নি। সংযোগ ফিরে এলে আবার চেষ্টা করুন।':'Sign out incomplete. Try again when connected.');return;
+  }
+  security.clear();CUR_USER=null;_appInitialized=false;
+  localStorage.removeItem('ht_has_session');document.documentElement.classList.remove('has-session');
+  document.getElementById('pin-screen').style.display='none';document.getElementById('auth-screen').style.display='flex';
+  document.getElementById('drw-email').textContent='';document.body.style.overflow='';setAuthMsg('','');
+  document.dispatchEvent(new Event('hisab:signed-out'));
 }
 
 // Synchronously restore session from Supabase localStorage cache to eliminate 1s login flash
@@ -843,12 +849,6 @@ function restoreCachedSession(){
       const em = document.getElementById('drw-email');
       if(em) em.textContent = email;
 
-      // Hydrate local data immediately so UI renders in 0ms
-      loadCashData();
-      const raw = localStorage.getItem('ht_' + CUR_USER.id);
-      if(raw){
-        try { ROOT_DB = JSON.parse(raw); ensureProfilesStructure(); } catch(e){}
-      }
 
     }
   } catch(e){}
@@ -870,6 +870,7 @@ sb.auth.onAuthStateChange((event,session)=>{setTimeout(async()=>{
   }
   if(event==='PASSWORD_RECOVERY'){sessionStorage.setItem('ht_recovery_flow','1');}
   if(session&&session.user){
+    if(CUR_USER&&CUR_USER.id!==session.user.id){clearSensitiveState();security.clear();_appInitialized=false;}
     CUR_USER=session.user;
     localStorage.setItem('ht_has_session', '1');
     document.documentElement.classList.add('has-session');
@@ -883,9 +884,13 @@ sb.auth.onAuthStateChange((event,session)=>{setTimeout(async()=>{
     if(em) em.textContent=email;
     if(!_appInitialized){
       _appInitialized=true;
-      try{if(sessionStorage.getItem('ht_recovery_flow')==='1'){sessionStorage.removeItem('ht_recovery_flow');await loadData();if(!getPin()){sessionStorage.setItem('ht_open_password_after_pin','1');await checkPin();}else{await showApp();openProfile();}}else await checkPin();}catch(error){_appInitialized=false;setAuthMsg(LANG==='bn'?'হিসাব খুলতে সমস্যা হয়েছে। আবার চেষ্টা করুন।':'Unable to load account. Please retry.','err');document.getElementById('auth-screen').style.display='flex';console.error(error);}
+      try{
+        await security.connect(CUR_USER.id);await checkPin();
+        if(sessionStorage.getItem('ht_recovery_flow')==='1'){sessionStorage.removeItem('ht_recovery_flow');openProfile();}
+      }catch(error){_appInitialized=false;setAuthMsg(error.code==='PGRST202'?(LANG==='bn'?'সার্ভারে নিরাপত্তা আপডেট সম্পূর্ণ হয়নি। অ্যাপের মালিককে জানান।':'The server security update is incomplete. Contact the app owner.'):(LANG==='bn'?'হিসাব খুলতে সমস্যা হয়েছে। সংযোগ দেখে আবার চেষ্টা করুন।':'Unable to load account. Check your connection and retry.'),'err');document.getElementById('app').style.display='none';document.getElementById('auth-screen').style.display='flex';console.error(error);}
     }
   } else {
+    clearSensitiveState();security.clear();document.dispatchEvent(new Event('hisab:signed-out'));
     _appInitialized=false;
     localStorage.removeItem('ht_has_session');
     document.documentElement.classList.remove('has-session');
@@ -930,105 +935,63 @@ async function changePassword(){
   finally{passwordChangeBusy=false;controls.forEach(({el,disabled})=>el.disabled=disabled);}
 }
 
-// ── PIN ──
-function ph(p){let h=5381;for(let i=0;i<p.length;i++)h=(h*33)^p.charCodeAt(i);return(h>>>0).toString(36);}
-function pk(){return'ht_pin_'+CUR_USER.id;}
-function tk(){return'ht_tr_'+CUR_USER.id;}
-function getPin(){return ROOT_DB?.pinHash||null;}
-function isTrusted(){return localStorage.getItem(tk())==='1';}
-function setTrusted(){localStorage.setItem(tk(),'1');}
-
-async function checkPin(){
-  await loadData();
-  await loadCashDataCloud();
-  if(!getPin()){beginFirstPin();return;}
-  if(isTrusted()){await showApp();return;}
-  document.getElementById('auth-screen').style.display='none';document.getElementById('app').style.display='none';
-  pinMode='unlock';pinBuf='';updDots('');document.getElementById('pin-err').textContent='';
-  document.getElementById('pin-title').textContent=LANG==='bn'?'PIN দিন':'Enter PIN';
-  document.getElementById('pin-sub').textContent=LANG==='bn'?'আপনার ৪ সংখ্যার PIN লিখুন':'Enter your 4-digit PIN';document.getElementById('pin-screen').style.display='flex';
-}
-function openPinChange(){
-  closeDrawer();
-  pinMode='set-new1';pinBuf='';updDots('');
-  document.getElementById('pin-err').textContent='';
-  document.getElementById('pin-title').textContent=LANG==='bn'?'নতুন PIN দিন':'New PIN';
-  document.getElementById('pin-sub').textContent=LANG==='bn'?'নতুন ৪ সংখ্যার PIN লিখুন':'Enter a new 4-digit PIN';
-  document.getElementById('app').style.display='none';
-  document.getElementById('pin-screen').style.display='flex';
-}
-function lockApp(){
-  if(!getPin()){beginFirstPin();return;}
-  closeDrawer();
-
-  localStorage.removeItem(tk());
-  document.getElementById('app').style.display='none';
-  document.getElementById('auth-screen').style.display='none';
-  document.body.style.overflow='';
-  pinMode='unlock';pinBuf='';updDots('');
+// ── PIN: verification, attempts and record access are enforced by Supabase. ──
+let pinBusy=false;
+function getPin(){return security.hasPin;}
+function showPinScreen(){
+  document.getElementById('app').style.display='none';document.getElementById('auth-screen').style.display='none';
+  document.getElementById('pin-screen').style.display='flex';pinMode='unlock';pinBuf='';pinTmp='';updDots('');
   document.getElementById('pin-err').textContent='';
   document.getElementById('pin-title').textContent=LANG==='bn'?'PIN দিন':'Enter PIN';
   document.getElementById('pin-sub').textContent=LANG==='bn'?'আপনার ৪ সংখ্যার PIN লিখুন':'Enter your 4-digit PIN';
-  document.getElementById('pin-screen').style.display='flex';
 }
-function updDots(buf,cls){
-  for(let i=0;i<4;i++){const d=document.getElementById('pd'+i);d.className='pin-dot'+(i<buf.length?' '+(cls||'filled'):'');}
+async function checkPin(){
+  const state=await security.refresh();
+  if(!state.has_pin){beginFirstPin();return;}
+  if(security.isUnlocked){await showApp();return;}
+  clearSensitiveState();showPinScreen();
 }
-function pinKey(k){
-  if(savingChange||!/^\d$/.test(k)||pinBuf.length>=4)return;
-  pinBuf+=k;updDots(pinBuf);
+function openPinChange(){
+  if(!security.isUnlocked){checkPin().catch(()=>toast(LANG==='bn'?'সংযোগ দেখে আবার চেষ্টা করুন।':'Check your connection and retry.'));return;}
+  closeDrawer();pinMode='set-new1';pinBuf='';pinTmp='';updDots('');
   document.getElementById('pin-err').textContent='';
-  if(pinBuf.length===4)setTimeout(handlePin,120);
+  document.getElementById('pin-title').textContent=LANG==='bn'?'নতুন PIN দিন':'New PIN';
+  document.getElementById('pin-sub').textContent=LANG==='bn'?'নতুন ৪ সংখ্যার PIN লিখুন':'Enter a new 4-digit PIN';
+  document.getElementById('app').style.display='none';document.getElementById('pin-screen').style.display='flex';
 }
-function pinDel(){if(savingChange)return;pinBuf=pinBuf.slice(0,-1);updDots(pinBuf);}
-function handlePin(){
-  const {saveData,saveCashData,saveCats,render,renderCash,renderHisabMiniWallets,renderAllQtags,renderCatMgrSections,updateProfileHeaderUI,cm,closeCashForm,openProfileSwitcher,switchProfile,toast}=confirmedEffects;
-  const box=document.querySelector('.pin-box');
-  if(pinMode==='unlock'){
-    if(getPin()&&ph(pinBuf)===getPin()){
-      setTrusted();
-      document.getElementById('pin-screen').style.display='none';
-      showApp();
-    }else{
-      updDots('0000','err');
-      document.getElementById('pin-err').textContent=LANG==='bn'?'❌ ভুল PIN!':'❌ Wrong PIN!';
-      box.classList.add('shake');
-      setTimeout(()=>{box.classList.remove('shake');pinBuf='';updDots('');},500);
-    }
-  }else if(pinMode==='set-new1'){
-    pinTmp=pinBuf;pinBuf='';updDots('');
-    pinMode='set-new2';
+async function lockApp(){
+  if(savingChange||pinBusy||!CUR_USER)return;
+  const locking=security.lock();clearSensitiveState();showPinScreen();document.dispatchEvent(new Event('hisab:locked'));
+  try{await locking;}catch(error){document.getElementById('pin-err').textContent=LANG==='bn'?'আবার খুলতে ইন্টারনেট সংযোগ দিন।':'Reconnect to unlock your account.';}
+}
+function updDots(buf,cls){for(let i=0;i<4;i++){const d=document.getElementById('pd'+i);d.className='pin-dot'+(i<buf.length?' '+(cls||'filled'):'');}}
+function pinKey(k){
+  if(pinBusy||savingChange||!/^\d$/.test(k)||pinBuf.length>=4)return;
+  pinBuf+=k;updDots(pinBuf);document.getElementById('pin-err').textContent='';if(pinBuf.length===4)setTimeout(handlePin,120);
+}
+function pinDel(){if(pinBusy||savingChange)return;pinBuf=pinBuf.slice(0,-1);updDots(pinBuf);}
+async function handlePin(){
+  if(pinBusy||pinBuf.length!==4||!CUR_USER)return;
+  if(pinMode==='set-new1'){
+    pinTmp=pinBuf;pinBuf='';pinMode='set-new2';updDots('');
     document.getElementById('pin-title').textContent=LANG==='bn'?'আবার দিন':'Confirm PIN';
-    document.getElementById('pin-sub').textContent=LANG==='bn'?'PIN আবার লিখে নিশ্চিত করুন':'Re-enter your PIN to confirm';
-  }else if(pinMode==='set-new2'){
-    if(pinBuf===pinTmp){
-      const hash=ph(pinBuf);
-
-      const firstPin=!getPin();
-      ROOT_DB.pinHash=hash;
-      logActivity(firstPin?'PIN তৈরি করা হয়েছে':'PIN পরিবর্তন করা হয়েছে');
-      saveData();
-      pinBuf='';pinTmp='';pinMode='unlock';
-      document.getElementById('pin-screen').style.display='none';
-      document.getElementById('app').style.display='block';
-      toast(LANG==='bn'?(firstPin?'PIN তৈরি হয়েছে।':'PIN পরিবর্তন হয়েছে.'):(firstPin?'PIN created.':'PIN changed.'));
-      if(firstPin)activeDraft.effects.push(()=>{
-        setTrusted();showApp().then(()=>{
-          if(sessionStorage.getItem('ht_open_password_after_pin')==='1'){sessionStorage.removeItem('ht_open_password_after_pin');openProfile();}
-        }).catch(()=>toast(LANG==='bn'?'অ্যাপ খুলতে সমস্যা হয়েছে। পেজ রিফ্রেশ করুন।':'Unable to open the app. Refresh the page.'));
-      });
-    }else{
-      updDots('0000','err');
-      document.getElementById('pin-err').textContent=LANG==='bn'?'❌ মিলেনি! আবার চেষ্টা করুন।':'❌ Mismatch! Try again.';
-      box.classList.add('shake');
-      setTimeout(()=>{
-        box.classList.remove('shake');pinBuf='';pinTmp='';
-        pinMode='set-new1';updDots('');
-        document.getElementById('pin-title').textContent=LANG==='bn'?'নতুন PIN দিন':'New PIN';
-        document.getElementById('pin-sub').textContent=LANG==='bn'?'নতুন ৪ সংখ্যার PIN লিখুন':'Enter a new 4-digit PIN';
-      },500);
-    }
+    document.getElementById('pin-sub').textContent=LANG==='bn'?'PIN আবার লিখে নিশ্চিত করুন':'Re-enter your PIN to confirm';return;
   }
+  if(pinMode==='set-new2'&&pinBuf!==pinTmp){
+    pinBuf='';pinTmp='';pinMode='set-new1';updDots('');document.getElementById('pin-err').textContent=LANG==='bn'?'দুটি PIN মেলেনি। আবার দিন।':'PINs did not match. Try again.';return;
+  }
+  pinBusy=true;const candidate=pinBuf;pinBuf='';
+  try{
+    const changing=pinMode==='set-new2';
+    const result=changing?await security.setPin(candidate):await security.unlock(candidate);
+    if(!result?.ok){
+      updDots('','err');
+      document.getElementById('pin-err').textContent=result?.reason==='rate_limited'?(LANG==='bn'?'বেশি ভুল চেষ্টা হয়েছে। ১৫ মিনিট পরে আবার দিন।':'Too many attempts. Try again after 15 minutes.'):(LANG==='bn'?'ভুল PIN। আবার দিন।':'Wrong PIN. Try again.');return;
+    }
+    pinTmp='';pinMode='unlock';document.getElementById('pin-screen').style.display='none';
+    await showApp();if(changing)toast(LANG==='bn'?'PIN সেভ হয়েছে।':'PIN saved.');
+  }catch(error){document.getElementById('app').style.display='none';document.getElementById('app').inert=false;appLoading=false;document.getElementById('pin-screen').style.display='flex';updDots('');document.getElementById('pin-err').textContent=LANG==='bn'?'PIN যাচাই হয়নি। সংযোগ দেখে আবার চেষ্টা করুন।':'PIN could not be verified. Check your connection and retry.';}
+  finally{pinBusy=false;}
 }
 
 // ── DATA ──
@@ -1040,12 +1003,15 @@ function showSkeleton(){
 }
 let _dataLoaded = false;
 async function showApp(){
-  if(!getPin()){await checkPin();return;}
+  if(!security.isUnlocked){await checkPin();return;}
+  const openingUser=CUR_USER?.id;
   document.getElementById('app').style.display='block';
   setSyncState('saving','Loading...');
     appLoading=true;document.getElementById('app').inert=true;
   if(!_dataLoaded)await loadData();
   await loadCashDataCloud();
+  if(!security.isUnlocked||CUR_USER?.id!==openingUser)return;
+  document.dispatchEvent(new Event('hisab:unlocked'));
   appLoading=false;document.getElementById('app').inert=false;
 
   updateProfileHeaderUI();
@@ -1065,16 +1031,16 @@ async function showApp(){
   });
 }
 async function loadData(){
-  if(!CUR_USER)return;
-  let fallback;try{const raw=localStorage.getItem('ht_'+CUR_USER.id);if(raw)fallback=canonical(JSON.parse(raw));}catch(error){}
-  const sync=getAccountSync();
-  const data=await sync.load(fallback);
+  if(!CUR_USER||!security.isUnlocked)throw new Error('Unlock required');
+  const loadingUser=CUR_USER.id,sync=getAccountSync();
+  const data=await sync.load();
+  if(CUR_USER?.id!==loadingUser||!security.isUnlocked)throw new Error('Session changed');
   if(data&&Object.keys(data).length)HisabSafety.validate(data,data._cash||{balance:0,history:[]});
   applySnapshot(data);_dataLoaded=true;
 }
 let _retrySyncTimeout=null;
 async function saveData(){
-  if(!CUR_USER)return false;
+  if(!CUR_USER||!security.isUnlocked)return false;
   const sync=getAccountSync(),ok=await sync.save(makeSnapshot(),String(nextId()));
   if(ok)applySnapshot(sync.current);
   return ok;
@@ -1082,12 +1048,9 @@ async function saveData(){
 
 // ── CASH DATA ──
 function cashKey(){return'ht_cash_'+(CUR_USER?CUR_USER.id:'guest');}
-function loadCashData(){
-  const raw=localStorage.getItem(cashKey());
-  if(raw)try{ROOT_CASH_DB=JSON.parse(raw);}catch(e){}
-  ensureProfilesStructure();
-}
+function loadCashData(){ensureProfilesStructure();}
 async function loadCashDataCloud(){
+  if(!security.isUnlocked)throw new Error('Unlock required');
   if(ROOT_DB?._cash){ROOT_CASH_DB=ROOT_DB._cash;ensureProfilesStructure();return;}
   const {data,error}=await sb.from('hisab_cash').select('data').eq('id',CUR_USER.id).maybeSingle();
   if(error)throw error;
@@ -4035,10 +3998,12 @@ function goToCashWallet(wKey, ev){
 
 // ── BACKUP ──
 function exportData(){
+  if(!security.isUnlocked)return;
   ensureProfilesStructure();downloadJSON({version:3,appName:'HisabTrackerPRO',exportedAt:new Date().toISOString(),hisab:makeSnapshot(),cash:ROOT_CASH_DB},'hisab_backup_'+localDateStr()+'.json');
 }
 function triggerImport(){document.getElementById('importFile').click();}
 function handleImport(e){
+  if(!security.isUnlocked)return;
   const file=e.target.files?.[0];if(!file)return;if(file.size>10*1024*1024){toast('❌ Backup must be smaller than 10 MB');e.target.value='';return;}
   const reader=new FileReader();reader.onload=async event=>{
     try{
@@ -4046,6 +4011,9 @@ function handleImport(e){
       if(parsed.appName==='HisabTrackerPRO'&&[2,3].includes(parsed.version)&&parsed.hisab&&parsed.cash){hisab=parsed.hisab;cash=parsed.cash;}
       else if(Array.isArray(parsed.receive)&&Array.isArray(parsed.give)){hisab=JSON.parse(JSON.stringify(ROOT_DB));hisab.profilesData[ROOT_DB.activeProfileId]={...DB,...parsed};cash=JSON.parse(JSON.stringify(ROOT_CASH_DB));}
       else throw new Error('Unsupported backup format');
+      // Backups contain records only, never PIN/authentication metadata.
+      hisab=JSON.parse(JSON.stringify(hisab));delete hisab.pinHash;delete hisab._receipts;delete hisab._revision;delete hisab._format;
+      for(const book of Object.values(hisab.profilesData||{}))delete book.pinHash;
       HisabSafety.validate(hisab,cash);
       if(!confirm(LANG==='bn'?'এই ব্যাকআপ দিয়ে হিসাব প্রতিস্থাপন করবেন? বর্তমান হিসাবের ব্যাকআপ আগে ডাউনলোড হবে।':'Replace account data with this backup? Your current data will be downloaded first.'))return;
       exportData();
@@ -4152,7 +4120,7 @@ function saveNotice(target,message,retry){
   (target?.isConnected?target:document.querySelector('.overlay.on .modal')||document.getElementById('app')).appendChild(box);
 }
 async function runConfirmedChange(command,descriptor={name:'change',args:[]}){
-  if(savingChange||!CUR_USER)return false;
+  if(savingChange||!CUR_USER||!security.isUnlocked)return false;
   const user=CUR_USER.id,key='ht_active_profile_'+user,preference=localStorage.getItem(key),fields=commandFields();
   const signature=JSON.stringify([descriptor.name,descriptor.args,ROOT_DB?.activeProfileId,CTX,pinMode,pinBuf,pinTmp,fields.map(f=>[f.el.id,f.value,f.checked])]);
   const source=document.activeElement,button=source?.closest?.('button'),target=source?.closest?.('.modal,.cash-form,.add-form,.pin-box')||button?.parentElement||document.querySelector('.overlay.on .modal')||document.getElementById('app');
@@ -4231,7 +4199,7 @@ async function runConfirmedChange(command,descriptor={name:'change',args:[]}){
 
 {const original=deleteCat;deleteCat=function(...args){return runConfirmedChange(()=>original(...args),{name:'deleteCat',args});}}
 
-{const original=handlePin;handlePin=function(){if(pinMode==='set-new2'&&pinBuf===pinTmp)return runConfirmedChange(()=>original(),{name:'handlePin',args:[]});return original();};}
+
 
 
 
@@ -4450,7 +4418,6 @@ function createManagedWallet(){
 }
 
 function beginFirstPin(){
-  localStorage.removeItem(tk());
   pinMode='set-new1';pinBuf='';pinTmp='';updDots('');
   document.getElementById('auth-screen').style.display='none';
   document.getElementById('app').style.display='none';
