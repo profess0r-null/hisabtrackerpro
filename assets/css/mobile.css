@@ -5,8 +5,8 @@
 .hmw-pill-top{max-width:100%}
 #new-wallet-name{min-width:0}
 @media(max-width:600px){
- .hdr{padding:0 12px;gap:8px}.hdr .logo{min-width:0;flex:1;gap:7px}.hdr .logo-text{min-width:0}.hdr .logo-main{font-size:15px;white-space:nowrap}.hdr .logo-sub{font-size:9px}.hdr-right{gap:6px;flex-shrink:0}
- .profile-pill-btn{min-width:0;max-width:112px;padding:6px 9px;gap:5px}.profile-pill-name{min-width:0;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+ .hdr{padding:0 12px;gap:8px}.hdr .logo{min-width:0;flex:1;gap:7px}.hdr .logo-text{min-width:0}.hdr .logo-main{font-size:15px;white-space:nowrap}.hdr .logo-sub{font-size:9px}.hdr-right{gap:6px;flex-shrink:0;max-width:46%}.hdr .mode-badge{display:none}
+ .hdr .profile-pill-btn{min-width:124px;max-width:144px;width:100%;min-height:38px;padding:5px 9px 5px 6px;gap:7px;border-radius:12px;font-family:inherit;background:var(--surface);border-color:rgba(99,132,190,.22);box-shadow:0 2px 5px rgba(40,65,105,.05)}.hdr .profile-pill-icon{display:grid;place-items:center;flex:0 0 25px;width:25px;height:25px;border-radius:8px;background:rgba(59,130,246,.08);font-size:15px}.hdr .profile-pill-name{flex:1;text-align:left;font-weight:600;max-width:none}.hdr .profile-pill-caret{width:12px;height:12px;color:var(--text2)}.profile-pill-name{min-width:0;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
  .wrap{padding:16px 12px calc(105px + env(safe-area-inset-bottom,0px))}
  #drw{width:min(296px,88vw)}
  #drw .drw-user-card{padding:14px}
@@ -32,8 +32,8 @@
  .person-actions .person-action{min-width:0;white-space:nowrap;font-size:11px;gap:4px}.person-actions .person-action span{min-width:0;overflow:hidden;text-overflow:ellipsis}
  .qa-chooser button b{font-size:13px;line-height:1.45}.qa-chooser .qa-choice{padding:13px}
 }
-@media(max-width:420px){.hdr .mode-badge{display:none}.hdr .logo-icon{font-size:20px}.hdr .logo-main{font-size:14px}.profile-pill-btn{max-width:105px}.hmw-title{font-size:11px}.hmw-total{font-size:12px}}
-@media(max-width:359px){#drw{width:88vw}.hdr .logo-main{font-size:13px}.profile-pill-btn{max-width:98px}.wallet-manager-modal{padding:18px 13px}.app-info-heading{gap:8px}.wallet-manager-copy small{font-size:10px}}
+@media(max-width:420px){.hdr .mode-badge{display:none}.hdr .logo-icon{font-size:20px}.hdr .logo-main{font-size:14px}.hmw-title{font-size:11px}.hmw-total{font-size:12px}}
+@media(max-width:359px){#drw{width:88vw}.hdr .logo-main{font-size:13px}.wallet-manager-modal{padding:18px 13px}.app-info-heading{gap:8px}.wallet-manager-copy small{font-size:10px}}
 
 /* Prevent amount wrapping, crowded names and overlapping cash actions. */
 .balance-overview .sc-val,.balance-overview .net-val,.pcard .ps-v,.pcard .pamt,#cash-content .cash-stat-val{white-space:nowrap;overflow-wrap:normal;min-width:0;max-width:100%}
@@ -57,8 +57,28 @@
 /* Wallets remain on a single horizontally scrollable row on mobile. */
 @media(max-width:600px){
  #hisab-content #hmw-grid,#cash-content #wallets-grid,#form-wallet-row,#qa-wallet-row,#pay-ws-wallets,#ac-ws-wallets,#tf-from-row,#tf-to-row{
-  display:grid;grid-template-columns:none;grid-auto-flow:column;grid-auto-columns:minmax(118px,1fr);gap:8px;overflow-x:auto;overscroll-behavior-x:contain;scroll-snap-type:x proximity;scrollbar-width:thin;scrollbar-color:var(--border) transparent;padding-bottom:5px;-webkit-overflow-scrolling:touch;
+  display:grid;grid-template-columns:none;grid-auto-flow:column;grid-auto-columns:minmax(96px,1fr);gap:8px;overflow-x:auto;overscroll-behavior-x:contain;scroll-snap-type:x proximity;scrollbar-width:thin;scrollbar-color:var(--border) transparent;padding-bottom:5px;-webkit-overflow-scrolling:touch;
  }
  #hisab-content #hmw-grid>*,#cash-content #wallets-grid>*,#form-wallet-row>*,#qa-wallet-row>*,#pay-ws-wallets>*,#ac-ws-wallets>*,#tf-from-row>*,#tf-to-row>*{scroll-snap-align:start;min-width:0}
  #hisab-content .hmw-pill-top{justify-content:center;flex-wrap:nowrap}
+}
+
+/* Opaque header keeps scrolled content from showing through the book switcher. */
+.hdr{background:var(--bg2)}
+[data-theme="light"] .hdr{background:#f0f4f8}
+@media(max-width:600px){
+ #hisab-content #hmw-grid,#cash-content #wallets-grid{gap:6px;padding-bottom:3px;scroll-padding-inline:1px}
+ #hisab-content .hmw-pill{padding:8px 6px;border-radius:10px;gap:4px;min-height:62px}
+ #hisab-content .hmw-pill-name{font-size:12px;font-weight:600}
+ #hisab-content .hmw-pill-amt{font-size:15px;line-height:1.3;white-space:nowrap}
+ #cash-content .wallets-sec{padding:14px 12px}
+ #cash-content .wallets-header{margin-bottom:10px;gap:6px}
+ #cash-content .wallets-title{font-size:11px;letter-spacing:.025em}
+ #cash-content .wallet-card{min-height:72px;padding:9px 8px;border-radius:10px;gap:5px}
+ #cash-content .wcard-top{gap:5px;min-width:0}
+ #cash-content .wcard-icon{width:22px;height:22px;border-radius:6px;flex:0 0 22px}
+ #cash-content .wcard-icon svg{width:14px;height:14px}
+ #cash-content .wcard-name{font-size:12px;font-weight:600;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+ #cash-content .wcard-amt{font-size:17px;line-height:1.3;white-space:nowrap;overflow-wrap:normal}
+ #cash-content .wallet-card.active::after{top:5px;right:5px;width:4px;height:4px}
 }
