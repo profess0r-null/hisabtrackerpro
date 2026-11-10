@@ -82,3 +82,12 @@
  #cash-content .wcard-amt{font-size:17px;line-height:1.3;white-space:nowrap;overflow-wrap:normal}
  #cash-content .wallet-card.active::after{top:5px;right:5px;width:4px;height:4px}
 }
+
+/* Trim empty space in the two mobile receivable/payable summary cards. */
+@media(max-width:600px){
+ .balance-overview .summary>.sc{min-height:134px;padding:16px 14px}
+ .balance-overview .summary>.sc .sc-lbl{margin-bottom:8px}
+ .balance-overview .summary>.sc .sc-sub{margin-top:6px}
+ .balance-overview .summary>.sc .balance-overview-icon{top:12px;right:12px}
+ .balance-overview .summary>.sc::after{top:20px;bottom:20px}
+}

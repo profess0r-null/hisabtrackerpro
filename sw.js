@@ -1,6 +1,6 @@
 const PREFIX='hisabtracker:'+self.registration.scope+':';
-const CACHE=PREFIX+'v91';
-const FILES=['./','index.html','assets/css/style.css?v=6.16','assets/js/app.js?v=6.16','assets/js/sync.js?v=6.16','assets/js/safety.js?v=6.16','assets/css/expense.css?v=6.16','assets/css/mobile.css?v=6.16','assets/js/mobile.js?v=6.16','assets/images/icon.png','manifest.json','assets/vendor/supabase.min.js'];
+const CACHE=PREFIX+'v92';
+const FILES=['./','index.html','assets/css/style.css?v=6.16','assets/js/app.js?v=6.16','assets/js/sync.js?v=6.16','assets/js/safety.js?v=6.16','assets/css/expense.css?v=6.16','assets/css/mobile.css?v=6.17','assets/js/mobile.js?v=6.16','assets/images/icon.png','manifest.json','assets/vendor/supabase.min.js'];
 self.addEventListener('install',event=>{event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(FILES)).then(()=>self.skipWaiting()));});
 self.addEventListener('activate',event=>{event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k.startsWith(PREFIX)&&k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});
 self.addEventListener('fetch',event=>{
