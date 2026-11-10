@@ -2665,3 +2665,8 @@ button:disabled{cursor:wait;opacity:.65}
 .app-brand-icon{display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;width:29px;height:31px;border-radius:8px;background:rgba(59,130,246,.08);color:#3b82f6}
 .app-brand-icon svg{width:21px;height:21px;display:block}
 #drw .theme-opt>svg{width:17px;height:17px;flex-shrink:0}
+
+/* Keep action feedback readable above the mobile navigation. */
+.toast{bottom:calc(24px + env(safe-area-inset-bottom,0px));width:max-content;max-width:calc(100vw - 32px);box-sizing:border-box;}
+.toast .t-msg{min-width:0;max-width:340px;white-space:normal;overflow-wrap:anywhere;line-height:1.5;}
+@media(max-width:640px){.toast{bottom:calc(84px + env(safe-area-inset-bottom,0px));padding:12px 14px;gap:8px;}.toast .t-msg{max-width:calc(100vw - 150px);}}
