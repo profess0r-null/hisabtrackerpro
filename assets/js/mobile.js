@@ -1,7 +1,7 @@
 /* Fit exact monetary values to narrow cards without rounding or changing account data. */
 (function(){
  let pending=false;
- function fit(){pending=false;document.querySelectorAll('.balance-overview .sc-val,.balance-overview .net-val,.pcard .ps-v,.pcard .pamt,#cash-content .cash-stat-val').forEach(el=>{
+ function fit(){pending=false;document.querySelectorAll('.balance-overview .sc-val,.balance-overview .net-val,.pcard .ps-v,.pcard .pamt,#cash-content .cash-stat-val,#cash-balance,#cash-content .wcard-amt').forEach(el=>{
   if(!el.getClientRects().length)return;
   el.style.removeProperty('font-size');
   let size=parseFloat(getComputedStyle(el).fontSize);
