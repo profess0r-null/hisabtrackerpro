@@ -2066,13 +2066,19 @@ function clearCashHistory(){
 
 function confirmClearCashExecution(){
   const {saveData,saveCashData,saveCats,render,renderCash,renderHisabMiniWallets,renderAllQtags,renderCatMgrSections,updateProfileHeaderUI,cm,closeCashForm,openProfileSwitcher,switchProfile,toast}=confirmedEffects;
-  if(CASH_DB.history.some(h=>h.refHisabId)){cm('m-clearcash');toast(LANG==='bn'?'❌ পরিশোধের সঙ্গে যুক্ত লেনদেন আছে। পুরো ইতিহাস মুছবেন না।':'❌ History contains linked settlements. It cannot be cleared independently.');return;}
   cm('m-clearcash');
   const actId = (ROOT_DB && ROOT_DB.activeProfileId) || 'default';
 
   const clearProfileId=ROOT_DB.activeProfileId;
   // 1. Snapshot for Undo
-  const snapHistory = [...(CASH_DB.history || [])];
+  const snapHistory = JSON.parse(JSON.stringify(CASH_DB.history || []));
+  const cashIds=new Set(snapHistory.map(h=>h.id));
+  const resetLinks=[];
+  for(const type of ['receive','give'])for(const person of DB[type])for(let index=0;index<person.history.length;index++){
+    const h=person.history[index];if(h.cashTxnId!=null&&cashIds.has(h.cashTxnId)){
+      resetLinks.push({type,personId:person.id,historyId:h.id,index,cashTxnId:h.cashTxnId});h.cashTxnId=null;
+    }
+  }
   const snapWallets = { ...(CASH_DB.wallets || { cash:0 }) };
   const snapBalance = CASH_DB.balance || 0;
   const snapEnabledWallets=enabledWalletKeys();
@@ -2109,7 +2115,9 @@ function confirmClearCashExecution(){
   renderCash();
 
   toast(LANG === 'bn' ? '🗑️ সব ইতিহাস মুছে ফেলা হয়েছে' : '🗑️ All history cleared', () => {
-    if(ROOT_DB.activeProfileId!==clearProfileId||CASH_DB.history.length){toast(LANG==='bn'?'❌ খাতা বা হিসাব বদলানোর পরে এই Undo করা যাবে না।':'❌ Cannot undo after changing books or adding transactions.');return;}
+    const linkedEntry=link=>{const person=DB[link.type].find(p=>p.id===link.personId);return link.historyId!=null?person?.history.find(h=>h.id===link.historyId):person?.history[link.index];};
+    if(ROOT_DB.activeProfileId!==clearProfileId||CASH_DB.history.length||resetLinks.some(link=>linkedEntry(link)?.cashTxnId!==null)){toast(LANG==='bn'?'❌ খাতা বা হিসাব বদলানোর পরে এই Undo করা যাবে না।':'❌ Cannot undo after changing books or adding transactions.');return;}
+    for(const link of resetLinks)linkedEntry(link).cashTxnId=link.cashTxnId;
     CASH_DB.history = snapHistory;
     CASH_DB.wallets = snapWallets;
     CASH_DB.balance = snapBalance;
@@ -2342,11 +2350,11 @@ function renderCash(){
 
       return `
         <div class="cash-entry">
-          <div class="cash-entry-icon" style="background:${catObj.color}1f;font-size:18px;">${iconChar}</div>
+          <div class="cash-entry-icon" style="background:${catObj.color}12;color:${catObj.color}" aria-hidden="true">${expenseTransactionIcon(h.category,h.type)}</div>
           <div class="cash-entry-info">
             <div class="cash-entry-note">${escapeHTML(displayNote)}</div>
             <div class="cash-entry-date" style="display:flex;align-items:center;gap:6px;">
-              <span class="wallet-badge">${wMeta.icon} ${escapeHTML(LANG === 'bn' ? wMeta.name : wMeta.en)}</span>
+              <span class="wallet-badge">${walletChoiceIcon(h.wallet||'cash')} ${escapeHTML(LANG === 'bn' ? wMeta.name : wMeta.en)}</span>
               <span>${timeStr}</span>
             </div>
           </div>
@@ -2962,6 +2970,7 @@ function confirmAllClearExecution(){
   render();
   
   const undoFn = () => {
+    if(cashTxnId&&!CASH_DB.history.some(h=>h.id===cashTxnId)){toast(LANG==='bn'?'ওয়ালেট ক্লিয়ার করার পরে এই পরিশোধ Undo করা যাবে না।':'Cannot undo this payment after clearing wallet history.');return;}
     if(CUR_USER?.id!==undoOwner||ROOT_DB.activeProfileId!==undoProfileId||(p=DB[type]?.find(x=>x.id===id))?.history[0]?.id!==txnId){toast(LANG==='bn'?'❌ পরবর্তী পরিবর্তনের পরে এই Undo করা যাবে না।':'❌ Cannot undo after later changes.');return;}
     p.history = p.history.filter(h => h.id !== txnId);
     p.remaining = oldRemaining;
@@ -3882,7 +3891,7 @@ function renderCard(p,type){
     <div class="pcard-inner">
     <div class="pt" role="button" tabindex="0" aria-expanded="false" onclick="toggleAccountCard(this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleAccountCard(this)}">
       <div class="pt-l">
-        <div class="pname">${escapeHTML(p.name)}</div>
+        <div class="pname" title="${escapeHTML(p.name)}">${escapeHTML(p.name)}</div>
         <div class="pbadge ${settled?'':b.cls}">${ageLbl}</div>
       </div>
       <div class="pt-r">
@@ -3925,7 +3934,7 @@ function renderTop(){
   const q=document.getElementById('srch').value.toLowerCase().trim();
   const mk=(list,col,bnt,ent,type)=>{
     if(!list.length)return'';
-    return`<div class="top-s"><div class="top-sh"><span class="bn">${bnt}</span><span class="en">${ent}</span></div>${list.map((p,i)=>{const b=ageBadge(ageDays(p));return`<div class="top-row"><span class="top-rank">#${i+1}</span><button type="button" class="top-name top-person-link" onclick="openTopPerson('${type}',${p.id})">${escapeHTML(p.name)}</button><span class="top-age ${b.cls}">${b.l}</span><span class="top-amt" style="color:${col}">৳${fmt(p.remaining)}</span></div>`;}).join('')}</div>`;
+    return`<div class="top-s"><div class="top-sh"><span class="bn">${bnt}</span><span class="en">${ent}</span></div>${list.map((p,i)=>{const b=ageBadge(ageDays(p));return`<div class="top-row"><span class="top-rank">#${i+1}</span><button type="button" title="${escapeHTML(p.name)}" class="top-name top-person-link" onclick="openTopPerson('${type}',${p.id})">${escapeHTML(p.name)}</button><span class="top-age ${b.cls}">${b.l}</span><span class="top-amt" style="color:${col}">৳${fmt(p.remaining)}</span></div>`;}).join('')}</div>`;
   };
   const tR=[...DB.receive].filter(p=>p.remaining>0&&(!q||matchesPerson(p,q))).sort((a,b)=>b.remaining-a.remaining).slice(0,5);
   const tG=[...DB.give].filter(p=>p.remaining>0&&(!q||matchesPerson(p,q))).sort((a,b)=>b.remaining-a.remaining).slice(0,5);
@@ -4014,7 +4023,7 @@ function renderHisabMiniWallets(){
       <div class="hmw-pill" data-wallet="${k}" onclick="goToCashWallet('${k}', event)" title="${escapeHTML(nameStr)}: ৳${fmt(amt)} (${LANG==='bn'?'ক্লিক করে আয়-ব্যয়ে যান':'Click to view in Expense'})">
         <div class="hmw-pill-top">
           <span class="hmw-pill-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${glyph}</svg></span>
-          <span class="hmw-pill-name">${escapeHTML(nameStr)}</span>
+          <span class="hmw-pill-name" title="${escapeHTML(nameStr)}">${escapeHTML(nameStr)}</span>
         </div>
         <div class="hmw-pill-amt">৳${fmt(amt)}</div>
       </div>
@@ -4377,7 +4386,7 @@ function syncEnabledWalletUI(){
       row.innerHTML=enabled.map(key=>{
         const handler=id==='tf-from-row'?`selectTransferWallet('from','${key}',this)`:id==='tf-to-row'?`selectTransferWallet('to','${key}',this)`:`${handlers[id]}('${key}',this)`;
         const meta=WALLET_META[key];
-        return `<button type="button" class="${id.includes('ws-wallets')?'pws-btn':'wsel-btn'}" data-w="${key}" onclick="${handler}">${walletChoiceIcon(key)}<span>${escapeHTML(LANG==='bn'?meta.name:meta.en)}</span></button>`;
+        return `<button type="button" class="${id.includes('ws-wallets')?'pws-btn':'wsel-btn'}" data-w="${key}" onclick="${handler}">${walletChoiceIcon(key)}<span title="${escapeHTML(LANG==='bn'?meta.name:meta.en)}">${escapeHTML(LANG==='bn'?meta.name:meta.en)}</span></button>`;
       }).join('');row.dataset.walletSignature=signature;
     }
     row.querySelectorAll('[data-w]').forEach(button=>{button.hidden=!enabled.includes(button.dataset.w);button.classList.toggle('on',button.dataset.w===selected);button.setAttribute('aria-pressed',String(button.dataset.w===selected));});
@@ -4479,3 +4488,9 @@ function renderNewWalletIcons(){
   document.getElementById('new-wallet-icons').innerHTML=WALLET_ICON_KINDS.map((kind,i)=>`<button type="button" data-icon="${kind}" class="${kind===selected?'selected':''}" aria-pressed="${kind===selected}" onclick="chooseNewWalletIcon('${kind}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${customWalletIconPath(kind)}</svg><span>${names[i]}</span></button>`).join('');
 }
 {const original=renderWalletManager;renderWalletManager=function(){original();renderNewWalletIcons();};}
+
+function expenseTransactionIcon(category,type){
+ const paths={food:'<path d="M5 3v7a3 3 0 0 0 6 0V3M8 3v18M19 3c-4 2-4 8 0 9v9M19 3v9"/>',transport:'<rect x="4" y="3" width="16" height="16" rx="3"/><path d="M4 11h16M8 3v8M8 15h.01M16 15h.01M6 19v2m12-2v2"/>',rent:'<path d="m3 10 9-7 9 7M5 9v12h14V9M9 21v-8h6v8"/>',bills:'<path d="m13 2-8 12h6l-1 8 9-12h-6l1-8Z"/>',shopping:'<path d="M5 7h14l2 14H3L5 7Zm3 0V5a4 4 0 0 1 8 0v2"/>',health:'<path d="m8 16 8-8M5 19a5 5 0 0 1 0-7l7-7a5 5 0 0 1 7 7l-7 7a5 5 0 0 1-7 0Z"/>',education:'<path d="m2 8 10-5 10 5-10 5L2 8Zm4 3v7c4 3 8 3 12 0v-7M22 8v8"/>',family:'<circle cx="9" cy="7" r="4"/><path d="M2 21v-3a7 7 0 0 1 14 0v3M17 3a4 4 0 0 1 0 8m5 10v-3a6 6 0 0 0-3-5"/>',debt_in:'<path d="M12 3v12m-5-5 5 5 5-5M4 15v6h16v-6"/>',debt_out:'<path d="M12 16V4m-5 5 5-5 5 5M4 15v6h16v-6"/>',salary:'<rect x="3" y="7" width="18" height="14" rx="2"/><path d="M8 7V3h8v4M3 12c5 4 13 4 18 0"/>'};
+ const fallback=type==='transfer'?'<path d="M4 8h16m-4-4 4 4-4 4M20 16H4m4-4-4 4 4 4"/>':type==='add'?paths.debt_in:'<path d="M12 4v16m-6-6 6 6 6-6"/>';
+ return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">'+(paths[category]||fallback)+'</svg>';
+}

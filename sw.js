@@ -1,6 +1,6 @@
 const PREFIX='hisabtracker:'+self.registration.scope+':';
-const CACHE=PREFIX+'v85';
-const FILES=['./','index.html','style.css?v=6.13.1','script.js?v=6.13.1','sync.js?v=6.13.1','safety.js?v=6.13.1','expense.css?v=6.13.1','icon.png','manifest.json','vendor/supabase.min.js'];
+const CACHE=PREFIX+'v89';
+const FILES=['./','index.html','style.css?v=6.14.3','script.js?v=6.14.3','sync.js?v=6.14.3','safety.js?v=6.14.3','expense.css?v=6.14.3','mobile.css?v=6.14.3','mobile.js?v=6.14.3','icon.png','manifest.json','vendor/supabase.min.js'];
 self.addEventListener('install',event=>{event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(FILES)).then(()=>self.skipWaiting()));});
 self.addEventListener('activate',event=>{event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k.startsWith(PREFIX)&&k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));});
 self.addEventListener('fetch',event=>{

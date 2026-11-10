@@ -32,7 +32,7 @@
   } catch(e){}
 })();
 </script>
-<link rel="stylesheet" href="style.css?v=6.13.1">
+<link rel="stylesheet" href="style.css?v=6.14.3">
 <style>
 /* ── SVG ICON SYSTEM ── */
 .ic{display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;}
@@ -76,7 +76,8 @@ const ICONS={
 function ic(name){return`<span class="ic">${ICONS[name]||''}</span>`;}
 </script>
 <script src="vendor/supabase.min.js"></script>
-<link rel="stylesheet" href="expense.css?v=6.13.1">
+<link rel="stylesheet" href="expense.css?v=6.14.3">
+<link rel="stylesheet" href="mobile.css?v=6.14.3">
 </head>
 <body>
 
@@ -163,7 +164,7 @@ function ic(name){return`<span class="ic">${ICONS[name]||''}</span>`;}
 
 <header class="hdr">
   <div class="logo">
-    <span class="logo-icon">📒</span>
+    <span class="logo-icon app-brand-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V5a2 2 0 0 1 2-2h12v18H7a2 2 0 0 1 0-4h12M9 7h6M9 11h4"/></svg></span>
     <div class="logo-text">
       <span class="logo-main" id="hdr-logo-text"><span class="bn">হিসাব ট্র্যাকার</span><span class="en">Hisab Tracker</span></span>
       <span class="logo-sub" id="hdr-logo-sub"><span class="bn">দেনা-পাওনা • PRO</span><span class="en">HISAB • PRO</span></span>
@@ -221,8 +222,8 @@ function ic(name){return`<span class="ic">${ICONS[name]||''}</span>`;}
 
     <div class="drw-sec"><span class="bn">থিম</span><span class="en">Theme</span></div>
     <div class="theme-row">
-      <button class="theme-opt" id="th-dark" onclick="setTheme('dark')">🌙 Dark</button>
-      <button class="theme-opt" id="th-light" onclick="setTheme('light')">☀️ Light</button>
+      <button class="theme-opt" id="th-dark" onclick="setTheme('dark')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 13a9 9 0 0 1-10-10 9 9 0 1 0 10 10Z"/></svg> Dark</button>
+      <button class="theme-opt" id="th-light" onclick="setTheme('light')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/></svg> Light</button>
     </div>
     <div class="drw-sec"><span class="bn">ভাষা</span><span class="en">Language</span></div>
     <button class="drw-item" onclick="toggleLang();closeDrawer()">
@@ -322,7 +323,7 @@ function ic(name){return`<span class="ic">${ICONS[name]||''}</span>`;}
       <div class="hmw-title">
         <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--primary);flex-shrink:0;"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg>
         <span class="bn">আমার ওয়ালেট ব্যালেন্স:</span>
-        <span class="en">My Wallet Balances:</span>
+        <span class="en">Wallet Balances:</span>
         <span class="hmw-total" id="hmw-total">৳০</span>
       </div>
       <div class="hmw-link">
@@ -922,18 +923,18 @@ function ic(name){return`<span class="ic">${ICONS[name]||''}</span>`;}
       </div>
     </div>
     <div class="modal-title" style="text-align:center;">
-      <span class="bn">সব ইতিহাস মুছবেন?</span><span class="en">Clear All History?</span>
+      <span class="bn">ব্যালেন্স ও ইতিহাস ক্লিয়ার করবেন?</span><span class="en">Reset Expense Balances?</span>
     </div>
     <div class="modal-sub" style="text-align:center;margin-bottom:12px;">
-      <span class="bn">সব লেনদেনের ইতিহাস মুছে যাবে এবং ব্যালেন্স ০ হয়ে যাবে।</span><span class="en">All transaction history will be wiped and balances reset to ৳0.</span>
+      <span class="bn">এই খাতার সব ওয়ালেটের ব্যালেন্স শূন্য হবে ও Expense-এর ইতিহাস মুছবে। Hisab-এর পাওনা–দেনা ও পরিশোধের হিসাব থাকবে।</span><span class="en">All wallet balances and Expense history in this book will be reset. Hisab receivables, payables and payment records will remain.</span>
     </div>
 
     <div class="allclear-card" style="border-color:rgba(239,68,68,0.25);">
       <div class="allclear-hint" style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);border-radius:10px;padding:10px;">
         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;color:var(--red);margin-top:2px;"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
         <div style="font-size:12px;color:var(--text);line-height:1.5;">
-          <span class="bn">সতর্কতা: ক্যাশ ও সব ওয়ালেটের ব্যালেন্স শূন্য হয়ে যাবে। এই অ্যাকশনটি পূর্বাবস্থায় ফিরিয়ে আনা যাবে না।</span>
-          <span class="en">Warning: All wallet balances will reset to zero. This action cannot be reversed.</span>
+          <span class="bn">সতর্কতা: এটি সব সময়ের Expense ইতিহাসে প্রযোজ্য; শুধু বর্তমান ফিল্টারের লেনদেনে নয়। ওয়ালেটের নাম ও বাজেট রাখা হবে।</span>
+          <span class="en">This affects the entire Expense history, not only filtered transactions. Wallet definitions and budgets will be retained.</span>
         </div>
       </div>
     </div>
@@ -1214,8 +1215,9 @@ function ic(name){return`<span class="ic">${ICONS[name]||''}</span>`;}
 <div class="overlay" id="m-wallet-manager" onclick="if(event.target===this)cm(this.id)" role="dialog" aria-modal="true" aria-labelledby="wallet-manager-title"><div class="modal wallet-manager-modal"><div class="app-info-heading"><h2 id="wallet-manager-title"><span class="bn">ওয়ালেট ম্যানেজ করুন</span><span class="en">Manage Wallets</span></h2><button type="button" class="drw-close" aria-label="Close" onclick="cm('m-wallet-manager')">✕</button></div><div id="wallet-manager-book" class="wallet-manager-book"></div><p class="wallet-manager-help"><span class="bn">Cash-সহ সর্বোচ্চ ৫টি ওয়ালেট চালু রাখতে পারবেন। Cash সবসময় থাকবে। সরাতে হলে ব্যালেন্স শূন্য হতে হবে; পুরোনো ইতিহাস মুছবে না।</span><span class="en">Create or add up to 5 wallets in this book, including Cash. Cash always stays enabled. A wallet must have a zero balance to remove it; past transactions are retained.</span></p><div class="wallet-manager-limit"><span class="bn">চালু ওয়ালেট (Cash-সহ)</span><span class="en">Enabled wallets (including Cash)</span><b id="wallet-manager-count">1 / 5</b></div><div id="wallet-manager-list"></div><div class="new-wallet-form"><input id="new-wallet-icon" type="hidden" value="wallet"><div class="wallet-icon-heading"><span class="bn">আইকন বাছুন</span><span class="en">Choose an icon</span></div><div id="new-wallet-icons" class="wallet-icon-picker" role="group" aria-label="Wallet icon"></div><label for="new-wallet-name"><span class="bn">নিজের নামে ওয়ালেট তৈরি করুন</span><span class="en">Create your own wallet</span></label><div><input id="new-wallet-name" type="text" class="ai" maxlength="40" autocomplete="off" placeholder="Wallet name"><button type="button" onclick="createManagedWallet()"><span class="bn">তৈরি করুন</span><span class="en">Create</span></button></div></div></div></div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-<script src="safety.js?v=6.13.1"></script>
-<script src="sync.js?v=6.13.1"></script>
-<script src="script.js?v=6.13.1"></script>
+<script src="safety.js?v=6.14.3"></script>
+<script src="sync.js?v=6.14.3"></script>
+<script src="script.js?v=6.14.3"></script>
+<script src="mobile.js?v=6.14.3"></script>
 </body>
 </html>

@@ -191,3 +191,8 @@
  #cash-content .cash-entry-amt{font-size:15px;font-weight:700;padding-right:0}
  #cash-content .cash-edit-btn,#cash-content .cash-del-btn{min-width:40px;min-height:44px;width:40px;height:44px}
 }
+
+#cash-content .cash-entry-icon svg{width:19px;height:19px;display:block}
+#cash-content .wallet-badge{display:inline-flex;align-items:center;gap:4px}
+#cash-content .wallet-badge .wallet-choice-icon{width:13px;height:14px;border-radius:0;background:none;color:var(--readable-secondary)}
+#cash-content .wallet-badge .wallet-choice-icon svg{width:13px;height:13px}

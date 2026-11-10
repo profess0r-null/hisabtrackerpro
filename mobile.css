@@ -1,0 +1,64 @@
+/* Responsive corrections for smaller screens and wallet-filled dialogs. */
+#form-wallet-row,#qa-wallet-row,#pay-ws-wallets,#ac-ws-wallets,#tf-from-row,#tf-to-row{grid-template-columns:repeat(var(--wallet-mobile-columns,1),minmax(0,1fr))}
+.wallet-select-row button>span:not(.wallet-choice-icon),.pay-ws-wallets button>span:not(.wallet-choice-icon){min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;line-height:1.5}
+.hmw-pill-name{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hmw-pill-top{max-width:100%}
+#new-wallet-name{min-width:0}
+@media(max-width:600px){
+ .hdr{padding:0 12px;gap:8px}.hdr .logo{min-width:0;flex:1;gap:7px}.hdr .logo-text{min-width:0}.hdr .logo-main{font-size:15px;white-space:nowrap}.hdr .logo-sub{font-size:9px}.hdr-right{gap:6px;flex-shrink:0}
+ .profile-pill-btn{min-width:0;max-width:112px;padding:6px 9px;gap:5px}.profile-pill-name{min-width:0;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+ .wrap{padding:16px 12px calc(105px + env(safe-area-inset-bottom,0px))}
+ #drw{width:min(296px,88vw)}
+ #drw .drw-user-card{padding:14px}
+ #drw .drw-avatar{width:38px;height:38px;border-radius:11px;font-size:18px}
+ #drw .drw-username{font-size:14px}#drw .drw-user-top{gap:9px}
+ #drw .drw-close{width:36px;height:36px;min-width:36px;min-height:36px;border-radius:9px}
+ #drw .drw-email-row{margin-top:10px;padding:7px 9px}#drw .drw-email-text{font-size:11px}
+ #drw .drawer-body{padding:6px 9px calc(16px + env(safe-area-inset-bottom,0px))}
+ #drw .drw-sec{padding:12px 8px 6px;font-size:10px}
+ #drw .drw-divider{margin:8px}
+ #drw .drw-item{min-height:44px;padding:8px 9px;margin-bottom:2px;font-size:13px;line-height:1.45;gap:9px}
+ #drw .drw-icon{width:25px;height:25px;border-radius:7px}#drw .drw-icon svg{width:17px;height:17px}
+ #drw .theme-row{padding:2px 8px;gap:8px}#drw .theme-opt{height:40px;font-size:12px}
+ #drw .drw-profile-card{padding:10px;gap:7px}#drw .drw-profile-title{font-size:13px}#drw .drw-profile-meta{font-size:11px}
+ .hmw-header{gap:6px}.hmw-title{min-width:0;flex:1;gap:5px;font-size:12px;flex-wrap:nowrap}.hmw-total{font-size:13px;white-space:nowrap}.hmw-link{flex-shrink:0;padding:5px;min-width:24px;justify-content:center}.hmw-link .bn,.hmw-link .en{display:none!important}
+ .hmw-pill{min-width:0;padding:10px 8px}.hmw-pill-top{gap:5px}.hmw-pill-name{font-size:11px}.hmw-pill .hmw-pill-icon{width:22px;height:22px;border-radius:6px}.hmw-pill-icon svg{width:14px;height:14px}.hmw-pill-amt{font-size:13px}
+ .modal{padding:20px 16px;width:100%;max-height:calc(100dvh - 24px)}.overlay{padding:12px}.modal-title{font-size:16px;line-height:1.4}
+ .modal-btns{gap:8px}.modal-btns button{min-width:0;white-space:normal;line-height:1.4;height:auto!important}
+ .wallet-manager-modal .app-info-heading h2{font-size:17px}.wallet-manager-row{gap:9px;padding:11px 0}.wallet-manager-copy b{font-size:13px;overflow-wrap:anywhere}.wallet-manager-action{font-size:11px;padding:8px 10px;flex-shrink:0}
+ .new-wallet-form>div{min-width:0}.new-wallet-form button{padding:9px 10px;flex-shrink:0}
+ #cash-content .expense-page-heading h1{font-size:24px}#cash-content .cash-actions{gap:6px}#cash-content .cash-btn,#cash-content .wallet-transfer-btn{font-size:11px;gap:4px;padding:9px 6px}
+ #cash-content .month-nav-title{min-width:90px}#cash-content .expense-period-top{align-items:center}#cash-content .month-nav-bar{max-width:100%}
+ .person-actions .person-action{min-width:0;white-space:nowrap;font-size:11px;gap:4px}.person-actions .person-action span{min-width:0;overflow:hidden;text-overflow:ellipsis}
+ .qa-chooser button b{font-size:13px;line-height:1.45}.qa-chooser .qa-choice{padding:13px}
+}
+@media(max-width:420px){.hdr .mode-badge{display:none}.hdr .logo-icon{font-size:20px}.hdr .logo-main{font-size:14px}.profile-pill-btn{max-width:105px}.hmw-title{font-size:11px}.hmw-total{font-size:12px}}
+@media(max-width:359px){#drw{width:88vw}.hdr .logo-main{font-size:13px}.profile-pill-btn{max-width:98px}.wallet-manager-modal{padding:18px 13px}.app-info-heading{gap:8px}.wallet-manager-copy small{font-size:10px}}
+
+/* Prevent amount wrapping, crowded names and overlapping cash actions. */
+.balance-overview .sc-val,.balance-overview .net-val,.pcard .ps-v,.pcard .pamt,#cash-content .cash-stat-val{white-space:nowrap;overflow-wrap:normal;min-width:0;max-width:100%}
+.balance-overview .sc-val,.balance-overview .net-val,.pcard .ps-v,#cash-content .cash-stat-val{width:100%}
+.pcard .pname{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.top-row .top-person-link{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.new-wallet-form>.wallet-icon-picker{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.new-wallet-form>.wallet-icon-picker button{width:100%;min-width:0;padding:9px 3px}
+#hmw-grid .hmw-pill-name{display:block;overflow:hidden;max-width:100%;text-overflow:ellipsis;white-space:nowrap}
+@media(min-width:601px) and (max-width:900px){#hmw-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:480px){
+ #cash-content .expense-ledger .cash-entry:has(.cash-edit-btn) .cash-edit-btn{grid-column:3;grid-row:2}
+ #cash-content .expense-ledger .cash-entry .cash-del-btn{grid-column:4;grid-row:2}
+ #cash-content .cash-entry-info{max-width:100%;min-width:0}
+ .pcard .psum .ps-l{white-space:nowrap;font-size:10px;letter-spacing:-.015em}
+ .balance-overview #net-card>div:first-child{padding-right:42px}
+}
+
+.balance-overview .sc-val,.balance-overview .net-val,.pcard .ps-v,.pcard .pamt,#cash-content .cash-stat-val{transition:none!important}
+
+/* Wallets remain on a single horizontally scrollable row on mobile. */
+@media(max-width:600px){
+ #hisab-content #hmw-grid,#cash-content #wallets-grid,#form-wallet-row,#qa-wallet-row,#pay-ws-wallets,#ac-ws-wallets,#tf-from-row,#tf-to-row{
+  display:grid;grid-template-columns:none;grid-auto-flow:column;grid-auto-columns:minmax(118px,1fr);gap:8px;overflow-x:auto;overscroll-behavior-x:contain;scroll-snap-type:x proximity;scrollbar-width:thin;scrollbar-color:var(--border) transparent;padding-bottom:5px;-webkit-overflow-scrolling:touch;
+ }
+ #hisab-content #hmw-grid>*,#cash-content #wallets-grid>*,#form-wallet-row>*,#qa-wallet-row>*,#pay-ws-wallets>*,#ac-ws-wallets>*,#tf-from-row>*,#tf-to-row>*{scroll-snap-align:start;min-width:0}
+ #hisab-content .hmw-pill-top{justify-content:center;flex-wrap:nowrap}
+}

@@ -2661,3 +2661,7 @@ button:disabled{cursor:wait;opacity:.65}
 .wallet-icon-picker button span{font-size:10px;line-height:1.4}
 .wallet-icon-picker button.selected{border-color:rgba(59,130,246,.5);background:rgba(59,130,246,.07);color:#3b82f6}
 @media(max-width:380px){.wallet-icon-picker{grid-template-columns:repeat(3,minmax(0,1fr))}}
+
+.app-brand-icon{display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;width:29px;height:31px;border-radius:8px;background:rgba(59,130,246,.08);color:#3b82f6}
+.app-brand-icon svg{width:21px;height:21px;display:block}
+#drw .theme-opt>svg{width:17px;height:17px;flex-shrink:0}
