@@ -10,7 +10,7 @@
 <link rel="manifest" href="manifest.json">
 <title>হিসাব ট্র্যাকার PRO</title>
 <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;600;700&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-<link rel="icon" type="image/png" href="icon.png">
+<link rel="icon" type="image/png" href="assets/images/icon.png">
 <script>
 // Instant zero-delay session detection (eliminates 1s login screen flash)
 (function(){
@@ -32,7 +32,7 @@
   } catch(e){}
 })();
 </script>
-<link rel="stylesheet" href="style.css?v=6.14.3">
+<link rel="stylesheet" href="assets/css/style.css?v=6.15">
 <style>
 /* ── SVG ICON SYSTEM ── */
 .ic{display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;}
@@ -75,9 +75,9 @@ const ICONS={
 };
 function ic(name){return`<span class="ic">${ICONS[name]||''}</span>`;}
 </script>
-<script src="vendor/supabase.min.js"></script>
-<link rel="stylesheet" href="expense.css?v=6.14.3">
-<link rel="stylesheet" href="mobile.css?v=6.14.3">
+<script src="assets/vendor/supabase.min.js"></script>
+<link rel="stylesheet" href="assets/css/expense.css?v=6.15">
+<link rel="stylesheet" href="assets/css/mobile.css?v=6.15">
 </head>
 <body>
 
@@ -1215,9 +1215,9 @@ function ic(name){return`<span class="ic">${ICONS[name]||''}</span>`;}
 <div class="overlay" id="m-wallet-manager" onclick="if(event.target===this)cm(this.id)" role="dialog" aria-modal="true" aria-labelledby="wallet-manager-title"><div class="modal wallet-manager-modal"><div class="app-info-heading"><h2 id="wallet-manager-title"><span class="bn">ওয়ালেট ম্যানেজ করুন</span><span class="en">Manage Wallets</span></h2><button type="button" class="drw-close" aria-label="Close" onclick="cm('m-wallet-manager')">✕</button></div><div id="wallet-manager-book" class="wallet-manager-book"></div><p class="wallet-manager-help"><span class="bn">Cash-সহ সর্বোচ্চ ৫টি ওয়ালেট চালু রাখতে পারবেন। Cash সবসময় থাকবে। সরাতে হলে ব্যালেন্স শূন্য হতে হবে; পুরোনো ইতিহাস মুছবে না।</span><span class="en">Create or add up to 5 wallets in this book, including Cash. Cash always stays enabled. A wallet must have a zero balance to remove it; past transactions are retained.</span></p><div class="wallet-manager-limit"><span class="bn">চালু ওয়ালেট (Cash-সহ)</span><span class="en">Enabled wallets (including Cash)</span><b id="wallet-manager-count">1 / 5</b></div><div id="wallet-manager-list"></div><div class="new-wallet-form"><input id="new-wallet-icon" type="hidden" value="wallet"><div class="wallet-icon-heading"><span class="bn">আইকন বাছুন</span><span class="en">Choose an icon</span></div><div id="new-wallet-icons" class="wallet-icon-picker" role="group" aria-label="Wallet icon"></div><label for="new-wallet-name"><span class="bn">নিজের নামে ওয়ালেট তৈরি করুন</span><span class="en">Create your own wallet</span></label><div><input id="new-wallet-name" type="text" class="ai" maxlength="40" autocomplete="off" placeholder="Wallet name"><button type="button" onclick="createManagedWallet()"><span class="bn">তৈরি করুন</span><span class="en">Create</span></button></div></div></div></div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-<script src="safety.js?v=6.14.3"></script>
-<script src="sync.js?v=6.14.3"></script>
-<script src="script.js?v=6.14.3"></script>
-<script src="mobile.js?v=6.14.3"></script>
+<script src="assets/js/safety.js?v=6.15"></script>
+<script src="assets/js/sync.js?v=6.15"></script>
+<script src="assets/js/app.js?v=6.15"></script>
+<script src="assets/js/mobile.js?v=6.15"></script>
 </body>
 </html>

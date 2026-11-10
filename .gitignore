@@ -27,3 +27,6 @@ test-results/
 /migrate.php
 /supabase-hardening.sql
 /tests/
+
+# Local development/recovery notes
+/project_recovery_state.md
