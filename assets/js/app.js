@@ -417,7 +417,7 @@ updateDynamicPlaceholders();
 applyThemeSilent(THEME);
 
 // PWA
-if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
+// Service worker updates are coordinated by update.js.
 
 // ── EYE TOGGLE ──
 function toggleEye(inputId,btn){
@@ -980,7 +980,7 @@ async function handlePin(){
   if(pinMode==='set-new2'&&pinBuf!==pinTmp){
     pinBuf='';pinTmp='';pinMode='set-new1';updDots('');document.getElementById('pin-err').textContent=LANG==='bn'?'দুটি PIN মেলেনি। আবার দিন।':'PINs did not match. Try again.';return;
   }
-  pinBusy=true;const candidate=pinBuf;pinBuf='';
+  pinBusy=true;let verified=false;const candidate=pinBuf;pinBuf='';
   try{
     const changing=pinMode==='set-new2';
     const result=changing?await security.setPin(candidate):await security.unlock(candidate);
@@ -988,9 +988,19 @@ async function handlePin(){
       updDots('','err');
       document.getElementById('pin-err').textContent=result?.reason==='rate_limited'?(LANG==='bn'?'বেশি ভুল চেষ্টা হয়েছে। ১৫ মিনিট পরে আবার দিন।':'Too many attempts. Try again after 15 minutes.'):(LANG==='bn'?'ভুল PIN। আবার দিন।':'Wrong PIN. Try again.');return;
     }
-    pinTmp='';pinMode='unlock';document.getElementById('pin-screen').style.display='none';
+    if(!security.isUnlocked)throw new Error('Invalid unlock response');
+    verified=true;pinTmp='';pinMode='unlock';document.getElementById('pin-screen').style.display='none';
     await showApp();if(changing)toast(LANG==='bn'?'PIN সেভ হয়েছে।':'PIN saved.');
-  }catch(error){document.getElementById('app').style.display='none';document.getElementById('app').inert=false;appLoading=false;document.getElementById('pin-screen').style.display='flex';updDots('');document.getElementById('pin-err').textContent=LANG==='bn'?'PIN যাচাই হয়নি। সংযোগ দেখে আবার চেষ্টা করুন।':'PIN could not be verified. Check your connection and retry.';}
+  }catch(error){
+    console.error('PIN/account opening failed:',error.code||'',error.message);
+    document.getElementById('app').style.display='none';document.getElementById('app').inert=false;appLoading=false;
+    document.getElementById('pin-screen').style.display='flex';updDots('');
+    const message=verified?(LANG==='bn'?'PIN ঠিক আছে, কিন্তু হিসাব খোলা যায়নি। পাতা রিফ্রেশ করে আবার চেষ্টা করুন।':'PIN verified, but account data could not be loaded. Refresh and retry.'):
+      error.code==='42501'?(LANG==='bn'?'লগইনের মেয়াদ বা অনুমতিতে সমস্যা হয়েছে। Switch account দিয়ে আবার লগইন করুন।':'Your session or permission is unavailable. Use Switch account to sign in again.'):
+      ['PGRST202','42883','42P01','42703'].includes(error.code)?(LANG==='bn'?'সার্ভারের আপডেট সম্পূর্ণ হয়নি। অ্যাপের মালিককে জানান।':'The server update is incomplete. Contact the app owner.'):
+      (LANG==='bn'?'PIN যাচাই হয়নি। সংযোগ দেখে আবার চেষ্টা করুন।':'PIN could not be verified. Check your connection and retry.');
+    document.getElementById('pin-err').textContent=message;
+  }
   finally{pinBusy=false;}
 }
 
@@ -4455,3 +4465,12 @@ function expenseTransactionIcon(category,type){
  const fallback=type==='transfer'?'<path d="M4 8h16m-4-4 4 4-4 4M20 16H4m4-4-4 4 4 4"/>':type==='add'?paths.debt_in:'<path d="M12 4v16m-6-6 6 6 6-6"/>';
  return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">'+(paths[category]||fallback)+'</svg>';
 }
+
+// Both touchscreen buttons and the computer keyboard use the same PIN validation path.
+document.addEventListener('keydown',event=>{
+ const screen=document.getElementById('pin-screen');
+ if(!screen||getComputedStyle(screen).display==='none'||event.ctrlKey||event.altKey||event.metaKey||event.isComposing)return;
+ if(/^(INPUT|TEXTAREA|SELECT)$/.test(event.target?.tagName||''))return;
+ if(/^[0-9]$/.test(event.key)){event.preventDefault();pinKey(event.key);}
+ else if(event.key==='Backspace'||event.key==='Delete'){event.preventDefault();pinDel();}
+});
