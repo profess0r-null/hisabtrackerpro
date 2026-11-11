@@ -3768,7 +3768,9 @@ function toggleCardHistory(type, id, ev){
   if (!wrap) return;
   
   const isExp = _expandedHistoryCards.has(id);
+  const previousHeight=wrap.getBoundingClientRect().height;
   wrap.innerHTML = renderCardHistoryItems(p, isExp);
+  window.HisabMotion?.resizeHistory(wrap,previousHeight);
 }
 
 // ── RENDER CARD ──
@@ -4307,11 +4309,13 @@ function updateQuickTask(){
 {const original=updateQuickHisab;updateQuickHisab=function(){original();updateQuickTask();};}
 {const original=selectQAWallet;selectQAWallet=function(...args){original(...args);updateQuickTask();};}
 
-function toggleAccountCard(header){
+function toggleAccountCard(header,expanded){
   const body=header.nextElementSibling;
   if(!body?.classList.contains('pbody'))return;
-  body.classList.toggle('on');
-  header.setAttribute('aria-expanded',String(body.classList.contains('on')));
+  const opening=typeof expanded==='boolean'?expanded:header.getAttribute('aria-expanded')!=='true';
+  if(window.HisabMotion){window.HisabMotion.toggleCard(header,opening);return;}
+  body.classList.toggle('on',opening);body.inert=!opening;
+  header.setAttribute('aria-expanded',String(opening));
 }
 
 function openTopPerson(type,id){
@@ -4321,9 +4325,8 @@ function openTopPerson(type,id){
   setAppTab('hisab');sliderSwitch(tab);render();
   const card=document.querySelector('#sec-'+tab+' #card-'+id);
   if(!card)return;
-  card.querySelector('.pbody')?.classList.add('on');
   const header=card.querySelector('.pt');
-  if(header){header.setAttribute('aria-expanded','true');header.focus({preventScroll:true});}
+  if(header){toggleAccountCard(header,true);header.focus({preventScroll:true});}
   card.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth',block:'start'});
 }
 
