@@ -434,6 +434,7 @@ function toggleEye(inputId,btn){
 function applyThemeSilent(t){
   THEME=t;
   document.documentElement.setAttribute('data-theme',t);
+  document.documentElement.style.colorScheme=t;
   localStorage.setItem('ht_theme',t);
   const mc=document.getElementById('theme-color-meta');
   if(mc)mc.content=t==='dark'?'#141929':'#f0f4f8';
@@ -885,7 +886,7 @@ sb.auth.onAuthStateChange((event,session)=>{setTimeout(async()=>{
     if(!_appInitialized){
       _appInitialized=true;
       try{
-        await security.connect(CUR_USER.id);await checkPin();
+        const gateState=await security.connect(CUR_USER.id);await checkPin(gateState);
         if(sessionStorage.getItem('ht_recovery_flow')==='1'){sessionStorage.removeItem('ht_recovery_flow');openProfile();}
       }catch(error){_appInitialized=false;setAuthMsg(error.code==='PGRST202'?(LANG==='bn'?'সার্ভারে নিরাপত্তা আপডেট সম্পূর্ণ হয়নি। অ্যাপের মালিককে জানান।':'The server security update is incomplete. Contact the app owner.'):(LANG==='bn'?'হিসাব খুলতে সমস্যা হয়েছে। সংযোগ দেখে আবার চেষ্টা করুন।':'Unable to load account. Check your connection and retry.'),'err');document.getElementById('app').style.display='none';document.getElementById('auth-screen').style.display='flex';console.error(error);}
     }
@@ -945,8 +946,8 @@ function showPinScreen(){
   document.getElementById('pin-title').textContent=LANG==='bn'?'PIN দিন':'Enter PIN';
   document.getElementById('pin-sub').textContent=LANG==='bn'?'আপনার ৪ সংখ্যার PIN লিখুন':'Enter your 4-digit PIN';
 }
-async function checkPin(){
-  const state=await security.refresh();
+async function checkPin(initialState){
+  const state=initialState??await security.refresh();
   if(!state.has_pin){beginFirstPin();return;}
   if(security.isUnlocked){await showApp();return;}
   clearSensitiveState();showPinScreen();

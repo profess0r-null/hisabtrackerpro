@@ -1,23 +1,23 @@
 /* Small, finite interactions; account values are never animated or interpolated. */
 :root{--motion-ease:cubic-bezier(.2,.7,.2,1)}
-#app button,.overlay button,.auth-wrap button,.pin-box button{transition:scale 140ms var(--motion-ease),background-color 160ms ease,border-color 160ms ease,color 160ms ease,box-shadow 160ms ease}
-#app button:not(:disabled):active,.overlay button:not(:disabled):active,.auth-wrap button:not(:disabled):active,.pin-box button:not(:disabled):active{scale:.98}
+#app button,.overlay button,.auth-wrap button,.pin-box button{transition:scale 100ms var(--motion-ease),background-color 160ms ease,border-color 160ms ease,color 160ms ease,box-shadow 160ms ease}
+#app button:not(:disabled):active,.overlay button:not(:disabled):active,.auth-wrap button:not(:disabled):active,.pin-box button:not(:disabled):active{scale:.99}
 #app .wallet-card,#app .hmw-pill,.wallet-select-row button,.pay-ws-wallets button{transition:background-color 180ms ease,border-color 180ms ease,color 180ms ease,box-shadow 180ms ease}
 #bottom-nav .bnav-icon{transition:background-color 160ms ease,color 160ms ease}
 #bottom-nav .bnav-fab,#bottom-nav .bnav-fab-wrap{transition-duration:180ms;transition-timing-function:var(--motion-ease)}
-.drawer{transition:transform 220ms var(--motion-ease)}
-.drawer-overlay{transition:opacity 200ms ease}
+.drawer{transition:transform 180ms var(--motion-ease)}
+.drawer-overlay{transition:opacity 150ms ease}
 .toast{transition:transform 200ms var(--motion-ease),opacity 180ms ease}
 /* Native discrete transitions let closed dialogs finish fading without timers. */
-.overlay{opacity:0;pointer-events:none;transition:opacity 180ms ease,display 180ms;transition-behavior:allow-discrete}
+.overlay{opacity:0;pointer-events:none;transition:opacity 140ms ease,display 140ms;transition-behavior:allow-discrete}
 .overlay.on{opacity:1;pointer-events:auto}
-.overlay>.modal{opacity:0;transform:translateY(9px) scale(.992);transition:opacity 180ms ease,transform 200ms var(--motion-ease)}
+.overlay>.modal{opacity:0;transform:translateY(4px);transition:opacity 140ms ease,transform 160ms var(--motion-ease)}
 .overlay.on>.modal{opacity:1;transform:none}
 .overlay .bottom-sheet-modal{animation:none!important}
-@starting-style{.overlay.on{opacity:0}.overlay.on>.modal{opacity:0;transform:translateY(9px) scale(.992)}}
-@supports not (transition-behavior:allow-discrete){.overlay.on>.modal{animation:ht-dialog-in 180ms var(--motion-ease)}}
-@keyframes ht-dialog-in{from{opacity:0;transform:translateY(9px)}to{opacity:1;transform:none}}
-#app .pcard,#app .cash-actions{animation:none}
+@starting-style{.overlay.on{opacity:0}.overlay.on>.modal{opacity:0;transform:translateY(4px)}}
+@supports not (transition-behavior:allow-discrete){.overlay.on>.modal{animation:ht-dialog-in 160ms var(--motion-ease)}}
+@keyframes ht-dialog-in{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+#app .pcard,#app .cash-actions,#app .cash-entry{animation:none}
 @media(prefers-reduced-motion:reduce){
  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;transition-delay:0s!important;scroll-behavior:auto!important}
 }
