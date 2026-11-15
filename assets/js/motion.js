@@ -13,7 +13,45 @@
   const cleanup=()=>{running.delete(animation);if(channels.get(channel)===animation)channels.delete(channel);};
   animation.addEventListener('finish',cleanup,{once:true});animation.addEventListener('cancel',cleanup,{once:true});
  }
+ // Count only a visual overlay. The real amount text remains unchanged and accessible.
+ const counters=new Map();let counterFrame=0;
+ function finishCounter(el){
+  const item=counters.get(el);if(!item)return;
+  counters.delete(el);el.classList.remove('ht-count-up');el.removeAttribute('data-count-display');
+  if(item.color)el.style.setProperty('--count-color',item.color);else el.style.removeProperty('--count-color');
+ }
+ function stopCounters(){
+  cancelAnimationFrame(counterFrame);counterFrame=0;for(const el of [...counters.keys()])finishCounter(el);
+ }
+ function tickCounters(now){
+  counterFrame=0;
+  for(const [el,item] of counters){
+   if(!el.isConnected||el.textContent!==item.original||!visible(el)){finishCounter(el);continue;}
+   const progress=Math.min(1,Math.max(0,(now-item.start)/950));
+   if(progress===1){finishCounter(el);continue;}
+   const eased=1-Math.pow(1-progress,3);
+   el.setAttribute('data-count-display',item.format(item.value*eased));
+  }
+  if(counters.size)counterFrame=requestAnimationFrame(tickCounters);
+ }
+ function countAmount(el,delay){
+  if(reduce.matches||el.children.length)return;
+  const original=el.textContent;
+  const latin=original.replace(/[০-৯]/g,d=>String('০১২৩৪৫৬৭৮৯'.indexOf(d)));
+  const match=latin.match(/^([^0-9]*)([0-9,]+(?:\.[0-9]+)?)([^0-9]*)$/);
+  if(!match)return;
+  const value=Number(match[2].replaceAll(',',''));if(!Number.isFinite(value)||value===0)return;
+  const decimals=(match[2].split('.')[1]||'').length,bengali=/[০-৯]/.test(original);
+  const formatter=new Intl.NumberFormat('en-IN',{minimumFractionDigits:decimals,maximumFractionDigits:Math.min(decimals,20)});
+  const format=n=>{let digits=formatter.format(n);if(bengali)digits=digits.replace(/[0-9]/g,d=>'০১২৩৪৫৬৭৮৯'[Number(d)]);return match[1]+digits+match[3];};
+  finishCounter(el);
+  const item={original,value,format,start:performance.now()+delay,color:el.style.getPropertyValue('--count-color')};
+  const color=getComputedStyle(el).color;counters.set(el,item);
+  el.style.setProperty('--count-color',color);el.setAttribute('data-count-display',format(0));el.classList.add('ht-count-up');
+  if(!counterFrame)counterFrame=requestAnimationFrame(tickCounters);
+ }
  document.addEventListener('hisab:before-publish',()=>{
+  stopCounters();
   if(reduce.matches)return;
   before=new Set([...document.querySelectorAll('[data-motion-key]')].map(el=>el.dataset.motionKey));
  });
@@ -39,7 +77,9 @@
   });
   const amounts='.sc-val,.net-val,.pamt,#cash-balance,.wcard-amt,.hmw-pill-amt,.hmw-total,.cash-stat-val';
   [...tab.querySelectorAll(amounts)].filter(inView).slice(0,16).forEach((el,i)=>{
-   play(el,[{opacity:.15,transform:'translateY(6px)'},{opacity:1,transform:'translateY(0)'}],520,'amount-entrance',80+Math.min(i*40,180));
+   const delay=80+Math.min(i*40,180);
+   play(el,[{opacity:.15,transform:'translateY(6px)'},{opacity:1,transform:'translateY(0)'}],520,'amount-entrance',delay);
+   countAmount(el,delay);
   });
  }
  document.addEventListener('hisab:unlocked',()=>{
@@ -47,7 +87,7 @@
   requestAnimationFrame(()=>{for(const tab of document.querySelectorAll('#hisab-content,#cash-content'))revealLoadedTab(tab);});
  });
  for(const event of ['hisab:locked','hisab:signed-out'])document.addEventListener(event,()=>{
-  entranceReady=false;enteredTabs=new WeakSet();for(const animation of [...running])animation.cancel();
+  stopCounters();entranceReady=false;enteredTabs=new WeakSet();for(const animation of [...running])animation.cancel();
  });
  for(const tab of document.querySelectorAll('#hisab-content,#cash-content')){
   let shown=tab.style.display!=='none';
@@ -98,5 +138,6 @@
    expand(wrap,[{height:previousHeight+'px',opacity:.7},{height:height+'px',opacity:1}],300,()=>{});
   }
  });
- reduce.addEventListener('change',()=>{if(reduce.matches){for(const animation of running)animation.cancel();running.clear();}});
+ document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')stopCounters();});
+ reduce.addEventListener('change',()=>{if(reduce.matches){stopCounters();for(const animation of running)animation.cancel();running.clear();}});
 })();

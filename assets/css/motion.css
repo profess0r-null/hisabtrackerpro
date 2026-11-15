@@ -24,3 +24,7 @@
 @media(prefers-reduced-motion:reduce){
  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;transition-delay:0s!important;scroll-behavior:auto!important}
 }
+
+/* Paint the count-up above the unchanged, selectable real amount. */
+.ht-count-up{position:relative;color:transparent!important;font-variant-numeric:tabular-nums}
+.ht-count-up::after{content:attr(data-count-display);position:absolute;inset:0;color:var(--count-color);font:inherit;letter-spacing:inherit;text-align:inherit;white-space:inherit;pointer-events:none}
