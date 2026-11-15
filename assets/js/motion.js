@@ -4,11 +4,11 @@
  const reduce=matchMedia('(prefers-reduced-motion: reduce)'),running=new Set(),slots=new WeakMap();
  let before=null;
  function visible(el){return el.getClientRects().length>0&&getComputedStyle(el).visibility!=='hidden';}
- function play(el,frames,duration=200,channel='feedback'){
+ function play(el,frames,duration=200,channel='feedback',delay=0){
   if(reduce.matches||!visible(el)||typeof el.animate!=='function')return;
   let channels=slots.get(el);if(!channels){channels=new Map();slots.set(el,channels);}
   channels.get(channel)?.cancel();
-  const animation=el.animate(frames,{duration,easing:'cubic-bezier(.2,.7,.2,1)'});
+  const animation=el.animate(frames,{duration,delay,fill:'backwards',easing:'cubic-bezier(.2,.7,.2,1)'});
   channels.set(channel,animation);running.add(animation);
   const cleanup=()=>{running.delete(animation);if(channels.get(channel)===animation)channels.delete(channel);};
   animation.addEventListener('finish',cleanup,{once:true});animation.addEventListener('cancel',cleanup,{once:true});
@@ -27,11 +27,34 @@
    }
   }
  });
+ // Reveal confirmed balances once after account load, and on the other tab's first visit.
+ let entranceReady=false,enteredTabs=new WeakSet();
+ function inView(el){const r=el.getBoundingClientRect();return visible(el)&&r.bottom>0&&r.top<innerHeight;}
+ function revealLoadedTab(tab){
+  if(!entranceReady||reduce.matches||enteredTabs.has(tab)||!visible(tab))return;
+  enteredTabs.add(tab);
+  const cards='.balance-overview .sc,.balance-overview .sc-net,.hisab-mini-wallets,.top-card,.pcard,.expense-balance-panel,.expense-period-panel,.expense-ledger';
+  [...tab.querySelectorAll(cards)].filter(inView).slice(0,12).forEach((el,i)=>{
+   play(el,[{opacity:.2,transform:'translateY(12px)'},{opacity:1,transform:'translateY(0)'}],460,'entrance',Math.min(i*55,220));
+  });
+  const amounts='.sc-val,.net-val,.pamt,#cash-balance,.wcard-amt,.hmw-pill-amt,.hmw-total,.cash-stat-val';
+  [...tab.querySelectorAll(amounts)].filter(inView).slice(0,16).forEach((el,i)=>{
+   play(el,[{opacity:.15,transform:'translateY(6px)'},{opacity:1,transform:'translateY(0)'}],520,'amount-entrance',80+Math.min(i*40,180));
+  });
+ }
+ document.addEventListener('hisab:unlocked',()=>{
+  entranceReady=true;enteredTabs=new WeakSet();
+  requestAnimationFrame(()=>{for(const tab of document.querySelectorAll('#hisab-content,#cash-content'))revealLoadedTab(tab);});
+ });
+ for(const event of ['hisab:locked','hisab:signed-out'])document.addEventListener(event,()=>{
+  entranceReady=false;enteredTabs=new WeakSet();for(const animation of [...running])animation.cancel();
+ });
  for(const tab of document.querySelectorAll('#hisab-content,#cash-content')){
   let shown=tab.style.display!=='none';
   new MutationObserver(()=>{
    const next=tab.style.display!=='none';
    if(next&&!shown)play(tab.querySelector('.wrap')||tab,[{opacity:.5,transform:'translateY(8px)'},{opacity:1,transform:'translateY(0)'}],260,'tab');
+   if(next&&!shown)requestAnimationFrame(()=>revealLoadedTab(tab));
    shown=next;
   }).observe(tab,{attributes:true,attributeFilter:['style']});
  }
