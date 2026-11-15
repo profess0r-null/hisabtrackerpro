@@ -1019,8 +1019,12 @@ async function showApp(){
   document.getElementById('app').style.display='block';
   setSyncState('saving','Loading...');
     appLoading=true;document.getElementById('app').inert=true;
-  if(!_dataLoaded)await loadData();
-  await loadCashDataCloud();
+  const loadingApp=document.getElementById('app');
+  loadingApp.classList.add('ht-loading');loadingApp.setAttribute('aria-busy','true');
+  try{
+    if(!_dataLoaded)await loadData();
+    await loadCashDataCloud();
+  }finally{loadingApp.classList.remove('ht-loading');loadingApp.removeAttribute('aria-busy');}
   if(!security.isUnlocked||CUR_USER?.id!==openingUser)return;
   document.dispatchEvent(new Event('hisab:unlocked'));
   appLoading=false;document.getElementById('app').inert=false;
@@ -3864,7 +3868,7 @@ function renderCard(p,type){
       </div>
       <div class="pt-r">
         <div class="pamt" style="color:${col}">৳${fmt(displayAmt)}</div>
-        <div class="pamt-caption">${pct}% ${LANG==='bn'?'শোধ হয়েছে':'paid'}</div>
+        <div class="pamt-caption">${pct}% ${LANG==='bn'?'শোধ হয়েছে':'paid'}</div><span class="ht-card-arrow" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></span>
         <div class="pbar-wrap">
           <div class="pbar"><div class="pbar-fill" style="width:${pct}%;background:${col}"></div></div>
 

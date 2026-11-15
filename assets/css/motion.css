@@ -28,3 +28,18 @@
 /* Paint the count-up above the unchanged, selectable real amount. */
 .ht-count-up{position:relative;color:transparent!important;font-variant-numeric:tabular-nums}
 .ht-count-up::after{content:attr(data-count-display);position:absolute;inset:0;color:var(--count-color);font:inherit;letter-spacing:inherit;text-align:inherit;white-space:inherit;pointer-events:none}
+
+/* Navigation, confirmation and loading feedback. */
+#bottom-nav .ht-nav-marker{position:absolute;top:0;left:0;border-radius:10px;background:rgba(59,130,246,.1);pointer-events:none;transition:transform 300ms var(--motion-ease),width 200ms ease;height:29px;z-index:0}
+#bottom-nav .bnav-btn{position:relative;z-index:1}
+#bottom-nav:has(.ht-nav-marker) .bnav-btn.on .bnav-icon{background:transparent}
+.ht-save-success{position:fixed;top:calc(80px + env(safe-area-inset-top,0px));left:50%;z-index:10050;display:flex;align-items:center;gap:8px;padding:9px 15px;border:1px solid rgba(16,185,129,.25);border-radius:12px;background:var(--surface);color:var(--green);font-size:13px;font-weight:600;box-shadow:0 5px 20px rgba(0,0,0,.08);opacity:0;transform:translate(-50%,-8px);pointer-events:none;transition:opacity 200ms ease,transform 250ms var(--motion-ease)}
+.ht-save-success.on{opacity:1;transform:translate(-50%,0)}
+.ht-save-success svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+.ht-save-success.on path{stroke-dasharray:24;stroke-dashoffset:0;animation:ht-check 350ms ease both}
+@keyframes ht-check{from{stroke-dashoffset:24}to{stroke-dashoffset:0}}
+.ht-card-arrow{display:inline-flex;margin-top:3px;color:var(--muted);transition:transform 280ms var(--motion-ease)}
+.ht-card-arrow svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:1.8}
+.pt[aria-expanded="true"] .ht-card-arrow{transform:rotate(180deg)}
+#app.ht-loading :is(.sc-val,.net-val,.pamt,#cash-balance,.wcard-amt,.hmw-pill-amt,.hmw-total,.cash-stat-val){color:transparent!important;border-radius:7px;background:linear-gradient(90deg,var(--border),var(--surface),var(--border));background-size:200% 100%;animation:skel-shimmer 1.3s ease infinite}
+#app.ht-loading :is(.sc-sub,.cash-hero-sub,#cash-history-list,.pcard){visibility:hidden}
