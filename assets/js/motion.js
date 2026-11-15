@@ -27,7 +27,7 @@
   counterFrame=0;
   for(const [el,item] of counters){
    if(!el.isConnected||el.textContent!==item.original||!visible(el)){finishCounter(el);continue;}
-   const progress=Math.min(1,Math.max(0,(now-item.start)/950));
+   const progress=Math.min(1,Math.max(0,(now-item.start)/500));
    if(progress===1){finishCounter(el);continue;}
    const eased=1-Math.pow(1-progress,3);
    el.setAttribute('data-count-display',item.format(item.value*eased));
@@ -75,10 +75,10 @@
   [...tab.querySelectorAll(cards)].filter(inView).slice(0,12).forEach((el,i)=>{
    play(el,[{opacity:.2,transform:'translateY(12px)'},{opacity:1,transform:'translateY(0)'}],460,'entrance',Math.min(i*55,220));
   });
-  const amounts='.sc-val,.net-val,.pamt,#cash-balance,.wcard-amt,.hmw-pill-amt,.hmw-total,.cash-stat-val';
+  const amounts='#sv-r,#sv-g,#sv-n,#cash-balance';
   [...tab.querySelectorAll(amounts)].filter(inView).slice(0,16).forEach((el,i)=>{
-   const delay=80+Math.min(i*40,180);
-   play(el,[{opacity:.15,transform:'translateY(6px)'},{opacity:1,transform:'translateY(0)'}],520,'amount-entrance',delay);
+   const delay=30+Math.min(i*25,50);
+   play(el,[{opacity:.15,transform:'translateY(6px)'},{opacity:1,transform:'translateY(0)'}],340,'amount-entrance',delay);
    countAmount(el,delay);
   });
  }
