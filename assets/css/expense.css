@@ -177,3 +177,6 @@
 #cash-content .cash-history-pager button{min-height:38px;padding:8px 16px;border:1px solid var(--border);border-radius:10px;background:var(--surface);color:var(--expense-accent);font-family:inherit;font-size:12px;font-weight:600;cursor:pointer}
 #cash-content .cash-history-pager .cash-history-more{background:var(--expense-tint);border-color:rgba(99,134,190,.25);font-size:12px;font-weight:600}
 #cash-content .cash-history-pager .cash-history-less{color:var(--text2);font-size:12px}
+
+#cash-content .dgh-title{display:inline-flex;align-items:center;gap:5px}
+#cash-content .history-calendar-icon{width:14px;height:14px;flex-shrink:0;color:var(--text2)}

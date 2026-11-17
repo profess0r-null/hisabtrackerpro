@@ -2164,9 +2164,10 @@ function confirmCashEdit(){
 }
 
 // ── 4.2 RENDER CASH WITH DATE GROUPING & MODERN FINTECH CARDS ──
-let cashHistoryLimit=15,cashHistoryViewKey='';
-function showMoreCashHistory(){cashHistoryLimit+=15;renderCash();}
-function showLessCashHistory(){cashHistoryLimit=15;renderCash();document.querySelector('.expense-ledger')?.scrollIntoView({behavior:'smooth',block:'start'});}
+const CASH_HISTORY_PAGE_SIZE=7;
+let cashHistoryLimit=CASH_HISTORY_PAGE_SIZE,cashHistoryViewKey='';
+function showMoreCashHistory(){cashHistoryLimit+=CASH_HISTORY_PAGE_SIZE;renderCash();}
+function showLessCashHistory(){cashHistoryLimit=CASH_HISTORY_PAGE_SIZE;renderCash();document.querySelector('.expense-ledger')?.scrollIntoView({behavior:'smooth',block:'start'});}
 function renderCash(){
   ensureWallets();
   const bal = Object.values(CASH_DB.wallets).reduce((s, v) => s + (Number(v) || 0), 0);
@@ -2205,7 +2206,7 @@ function renderCash(){
   }
 
   const historyKey=JSON.stringify([CUR_USER?.id,ROOT_DB?.activeProfileId,q,CASH_FILTER,WALLET_FILTER,CASH_TIME_FILTER,CASH_SELECTED_MONTH]);
-  if(historyKey!==cashHistoryViewKey){cashHistoryViewKey=historyKey;cashHistoryLimit=15;}
+  if(historyKey!==cashHistoryViewKey){cashHistoryViewKey=historyKey;cashHistoryLimit=CASH_HISTORY_PAGE_SIZE;}
   // Stats for filtered view
   const totalIn = hist.filter(h => h.type === 'add').reduce((s, h) => s + h.amt, 0);
   const totalOut = hist.filter(h => h.type === 'sub').reduce((s, h) => s + h.amt, 0);
@@ -2305,11 +2306,11 @@ function renderCash(){
     let dayTitle = dStr;
     const dObj = new Date(dStr + 'T12:00:00');
     if(dStr === todayStr){
-      dayTitle = LANG === 'bn' ? '📅 আজ' : '📅 Today';
+      dayTitle = LANG === 'bn' ? 'আজ' : 'Today';
     } else if(dStr === yestStr){
-      dayTitle = LANG === 'bn' ? '📅 গতকাল' : '📅 Yesterday';
+      dayTitle = LANG === 'bn' ? 'গতকাল' : 'Yesterday';
     } else {
-      dayTitle = '📅 ' + dObj.toLocaleDateString(LANG === 'bn' ? 'bn-BD' : 'en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+      dayTitle = dObj.toLocaleDateString(LANG === 'bn' ? 'bn-BD' : 'en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
     }
 
     const itemsHtml = shownTxns.map(h => {
@@ -2348,7 +2349,7 @@ function renderCash(){
     return `
       <div class="date-group">
         <div class="date-group-hdr">
-          <div class="dgh-title">${dayTitle}</div>
+          <div class="dgh-title"><svg class="history-calendar-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 11h18"/></svg><span>${dayTitle}</span></div>
           <div class="dgh-total">
             ${dayOut > 0 ? `<span class="dgh-out">-${LANG === 'bn' ? 'খরচ' : 'Out'}: ৳${fmt(dayOut)}</span>` : ''}
             ${dayIn > 0 ? `<span class="dgh-in">+${LANG === 'bn' ? 'আয়' : 'In'}: ৳${fmt(dayIn)}</span>` : ''}
@@ -2358,7 +2359,7 @@ function renderCash(){
       </div>
     `;
   }).join('');
-  if(hist.length>15){
+  if(hist.length>CASH_HISTORY_PAGE_SIZE){
     const remaining=hist.length-visibleCount;
     const footer=document.createElement('div');footer.className='cash-history-pager';
     const count=document.createElement('span');count.setAttribute('role','status');
@@ -2366,10 +2367,10 @@ function renderCash(){
     footer.append(count);
     if(remaining){
       const more=document.createElement('button');more.type='button';more.className='cash-history-more';
-      more.textContent=LANG==='bn'?`আরও ${Math.min(15,remaining)}টি দেখুন`:`Show ${Math.min(15,remaining)} more`;
+      more.textContent=LANG==='bn'?`আরও ${Math.min(CASH_HISTORY_PAGE_SIZE,remaining)}টি দেখুন`:`Show ${Math.min(CASH_HISTORY_PAGE_SIZE,remaining)} more`;
       more.onclick=showMoreCashHistory;footer.append(more);
     }
-    if(visibleCount>15){
+    if(visibleCount>CASH_HISTORY_PAGE_SIZE){
       const less=document.createElement('button');less.type='button';less.className='cash-history-less';
       less.textContent=LANG==='bn'?'কম দেখুন':'Show less';less.onclick=showLessCashHistory;footer.append(less);
     }
