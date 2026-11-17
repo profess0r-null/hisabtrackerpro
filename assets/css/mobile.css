@@ -45,8 +45,8 @@
 #hmw-grid .hmw-pill-name{display:block;overflow:hidden;max-width:100%;text-overflow:ellipsis;white-space:nowrap}
 @media(min-width:601px) and (max-width:900px){#hmw-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:480px){
- #cash-content .expense-ledger .cash-entry:has(.cash-edit-btn) .cash-edit-btn{grid-column:3;grid-row:2}
- #cash-content .expense-ledger .cash-entry .cash-del-btn{grid-column:4;grid-row:2}
+
+
  #cash-content .cash-entry-info{max-width:100%;min-width:0}
  .pcard .psum .ps-l{white-space:nowrap;font-size:10px;letter-spacing:-.015em}
  .balance-overview #net-card>div:first-child{padding-right:42px}
@@ -96,4 +96,19 @@
 @media(max-width:600px){
  .pcard .hist-toggle-wrap{padding:4px 8px}
  .pcard .hist-toggle-wrap .btn-hist-toggle{min-height:34px;padding:6px 13px;font-size:11.5px;gap:6px}
+}
+
+/* Keep mobile transaction actions beside the entry instead of on a separate row. */
+@media(max-width:600px){
+ #cash-content .expense-ledger .cash-entry{grid-template-columns:28px minmax(0,1fr) minmax(48px,max-content) 32px 32px;column-gap:6px;row-gap:0;padding:12px 0;align-items:center}
+ #cash-content .expense-ledger .cash-entry-icon{grid-column:1;grid-row:1;width:28px;height:28px;border-radius:8px}
+ #cash-content .expense-ledger .cash-entry-info{grid-column:2;grid-row:1;min-width:0}
+ #cash-content .expense-ledger .cash-entry-amt{grid-column:3;grid-row:1;font-size:14px;text-align:right;max-width:90px;overflow-wrap:anywhere;padding:0}
+ #cash-content .expense-ledger .cash-entry:has(.cash-edit-btn) .cash-edit-btn{grid-column:4;grid-row:1}
+ #cash-content .expense-ledger .cash-entry .cash-del-btn{grid-column:5;grid-row:1}
+ #cash-content .expense-ledger :is(.cash-edit-btn,.cash-del-btn){width:32px;min-width:32px;height:36px;min-height:36px;padding:7px;border-radius:8px}
+ #cash-content .expense-ledger :is(.cash-edit-btn,.cash-del-btn) svg{width:16px;height:16px}
+ #cash-content .expense-ledger .cash-entry-note{font-size:13px;line-height:1.45}
+ #cash-content .expense-ledger .cash-entry-date{gap:3px 5px!important;margin-top:4px;font-size:10px}
+ #cash-content .expense-ledger .wallet-badge{font-size:10px;padding:1px 4px}
 }
