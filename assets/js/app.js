@@ -2164,6 +2164,9 @@ function confirmCashEdit(){
 }
 
 // ── 4.2 RENDER CASH WITH DATE GROUPING & MODERN FINTECH CARDS ──
+let cashHistoryLimit=15,cashHistoryViewKey='';
+function showMoreCashHistory(){cashHistoryLimit+=15;renderCash();}
+function showLessCashHistory(){cashHistoryLimit=15;renderCash();document.querySelector('.expense-ledger')?.scrollIntoView({behavior:'smooth',block:'start'});}
 function renderCash(){
   ensureWallets();
   const bal = Object.values(CASH_DB.wallets).reduce((s, v) => s + (Number(v) || 0), 0);
@@ -2201,6 +2204,8 @@ function renderCash(){
     });
   }
 
+  const historyKey=JSON.stringify([CUR_USER?.id,ROOT_DB?.activeProfileId,q,CASH_FILTER,WALLET_FILTER,CASH_TIME_FILTER,CASH_SELECTED_MONTH]);
+  if(historyKey!==cashHistoryViewKey){cashHistoryViewKey=historyKey;cashHistoryLimit=15;}
   // Stats for filtered view
   const totalIn = hist.filter(h => h.type === 'add').reduce((s, h) => s + h.amt, 0);
   const totalOut = hist.filter(h => h.type === 'sub').reduce((s, h) => s + h.amt, 0);
@@ -2272,7 +2277,7 @@ function renderCash(){
   }
 
   // Sort descending by date
-  hist.sort((a, b) => b.date - a.date);
+  hist = [...hist].sort((a, b) => b.date - a.date);
 
   // Group by local date string YYYY-MM-DD
   const groups = {};
@@ -2287,8 +2292,13 @@ function renderCash(){
   const yestStr = localDateStr(yesterday);
   const dateKeys = Object.keys(groups).sort((a, b) => b.localeCompare(a));
 
+  const visibleCount=Math.min(cashHistoryLimit,hist.length);
+  let remainingSlots=visibleCount;
   list.innerHTML = dateKeys.map(dStr => {
     const dayTxns = groups[dStr];
+    const shownTxns=dayTxns.slice(0,remainingSlots);
+    remainingSlots-=shownTxns.length;
+    if(!shownTxns.length)return '';
     const dayOut = dayTxns.filter(h => h.type === 'sub').reduce((s, h) => s + h.amt, 0);
     const dayIn = dayTxns.filter(h => h.type === 'add').reduce((s, h) => s + h.amt, 0);
 
@@ -2302,7 +2312,7 @@ function renderCash(){
       dayTitle = '📅 ' + dObj.toLocaleDateString(LANG === 'bn' ? 'bn-BD' : 'en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
     }
 
-    const itemsHtml = dayTxns.map(h => {
+    const itemsHtml = shownTxns.map(h => {
       const isAdd = h.type === 'add';
       const isSub = h.type === 'sub';
       const isTf = h.type === 'transfer';
@@ -2348,6 +2358,23 @@ function renderCash(){
       </div>
     `;
   }).join('');
+  if(hist.length>15){
+    const remaining=hist.length-visibleCount;
+    const footer=document.createElement('div');footer.className='cash-history-pager';
+    const count=document.createElement('span');count.setAttribute('role','status');
+    count.textContent=LANG==='bn'?`${visibleCount} / ${hist.length}টি দেখানো হচ্ছে`:`Showing ${visibleCount} of ${hist.length}`;
+    footer.append(count);
+    if(remaining){
+      const more=document.createElement('button');more.type='button';more.className='cash-history-more';
+      more.textContent=LANG==='bn'?`আরও ${Math.min(15,remaining)}টি দেখুন`:`Show ${Math.min(15,remaining)} more`;
+      more.onclick=showMoreCashHistory;footer.append(more);
+    }
+    if(visibleCount>15){
+      const less=document.createElement('button');less.type='button';less.className='cash-history-less';
+      less.textContent=LANG==='bn'?'কম দেখুন':'Show less';less.onclick=showLessCashHistory;footer.append(less);
+    }
+    list.append(footer);
+  }
 }
 
 
