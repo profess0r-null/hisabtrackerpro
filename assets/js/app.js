@@ -1432,7 +1432,7 @@ function renderWallets(){
           <span class="wcard-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${glyph}</svg></span>
           <span class="wcard-name">${escapeHTML(LANG==='bn'?meta.name:meta.en)}</span>
         </div>
-        <div class="wcard-amt">৳${fmt(amt)}</div>
+        <div class="wcard-amt">৳${fmtWholeTaka(amt)}</div>
       </button>
     `;
   }).join('');
@@ -2176,7 +2176,7 @@ function renderCash(){
   let hist = CASH_DB.history || [];
 
   // 1. Balance
-  document.getElementById('cash-balance').textContent = '৳' + fmt(bal);
+  document.getElementById('cash-balance').textContent = '৳' + fmtWholeTaka(bal);
 
   // 2. Multi-Wallets Grid
   renderWallets();
@@ -2213,11 +2213,13 @@ function renderCash(){
   const totalOut = hist.filter(h => h.type === 'sub').reduce((s, h) => s + h.amt, 0);
   const netSavings = totalIn - totalOut;
 
-  document.getElementById('cash-total-in').textContent = '৳' + fmt(totalIn);
-  document.getElementById('cash-total-out').textContent = '৳' + fmt(totalOut);
+  document.getElementById('cash-total-in').textContent = '৳' + fmtWholeTaka(totalIn);
+  document.getElementById('cash-total-out').textContent = '৳' + fmtWholeTaka(totalOut);
   const savEl = document.getElementById('cash-net-savings');
   if(savEl){
-    savEl.textContent = (netSavings >= 0 ? '+' : '-') + '৳' + fmt(Math.abs(netSavings));
+    const netAmount = fmtWholeTaka(Math.abs(netSavings));
+    const netSign = netAmount === '0' ? '' : netSavings >= 0 ? '+' : '-';
+    savEl.textContent = netSign + '৳' + netAmount;
     savEl.style.color = netSavings >= 0 ? 'var(--green)' : 'var(--red)';
   }
 
@@ -2383,6 +2385,10 @@ function renderCash(){
 // ── FORMAT ──
 function localDateStr(d=new Date()){return new Date(d.getTime()-(d.getTimezoneOffset()*60000)).toISOString().split('T')[0];}
 function fmt(n){return money(n).toLocaleString('en-IN',{maximumFractionDigits:2});}
+function fmtWholeTaka(n){
+  const amount=money(n);
+  return (Math.abs(amount)<0.5?0:amount).toLocaleString('en-IN',{maximumFractionDigits:0});
+}
 function fmtD(v){
   let d=typeof v==='number'||(typeof v==='string'&&/^\d{10,}$/.test(v))?new Date(Number(v)):new Date(v);
   if(isNaN(d))return '—';
