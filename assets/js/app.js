@@ -437,7 +437,7 @@ function applyThemeSilent(t){
   document.documentElement.style.colorScheme=t;
   localStorage.setItem('ht_theme',t);
   const mc=document.getElementById('theme-color-meta');
-  if(mc)mc.content=t==='dark'?'#141929':'#f0f4f8';
+  if(mc)mc.content=t==='dark'?'#000000':'#f0f4f8';
 }
 function applyTheme(t){applyThemeSilent(t);syncThemeBtns();}
 function setTheme(t){applyTheme(t);}
@@ -550,6 +550,7 @@ function openActivityLog(){
 
 // ── ANALYTICS ──
 function openAnalytics(){
+  if(document.getElementById('drw').classList.contains('on'))document.getElementById('bnav-menu').focus({preventScroll:true});
   closeDrawer();
   const reportText=(bn,en)=>LANG==='bn'?bn:en;
   const hist=CASH_DB.history||[];

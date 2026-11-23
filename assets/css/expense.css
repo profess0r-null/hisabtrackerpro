@@ -8,6 +8,7 @@
 .expense-manage:hover{color:var(--expense-accent);border-color:var(--expense-accent)}
 #cash-content .expense-balance-panel{border:1px solid rgba(109,134,190,.23);border-radius:20px;background:var(--surface);overflow:hidden;margin-bottom:22px;box-shadow:0 6px 24px rgba(40,65,110,.045)}
 #cash-content .cash-hero{position:relative;isolation:isolate;margin:0;border:0;border-radius:0;padding:0;box-shadow:none;background:radial-gradient(ellipse at 50% 0,rgba(100,136,244,.15),transparent 75%),var(--surface);text-align:center;color:var(--text)}
+[data-theme="dark"] #cash-content .cash-hero{background-image:none}
 #cash-content .cash-hero::before{content:none}
 .expense-balance-main{padding:27px 24px 18px;display:flex;flex-direction:column;align-items:center}
 #cash-content .cash-hero-lbl{font-size:13px;font-weight:600;line-height:1.5;color:var(--text2);text-transform:none;letter-spacing:.01em;opacity:1}
