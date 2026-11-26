@@ -93,7 +93,7 @@ function ic(name){return`<span class="ic">${ICONS[name]||''}</span>`;}
 <link rel="stylesheet" href="assets/css/mobile.css?v=6.40">
 <link rel="stylesheet" href="assets/css/security.css?v=6.40">
 <link rel="stylesheet" href="assets/css/motion.css?v=6.40">
-<link rel="stylesheet" href="assets/css/calculator.css?v=6.40">
+<link rel="stylesheet" href="assets/css/calculator.css?v=6.45">
 </head>
 <body>
 
@@ -666,43 +666,71 @@ function ic(name){return`<span class="ic">${ICONS[name]||''}</span>`;}
 
 <!-- MODALS -->
 <div class="overlay" id="m-calculator">
-  <div class="modal calculator-modal" role="dialog" aria-modal="true" aria-labelledby="calculator-title">
-    <div class="app-info-heading">
-      <h2 id="calculator-title"><span class="bn">ক্যালকুলেটর</span><span class="en">Calculator</span></h2>
-      <button type="button" class="drw-close" data-calculator-close aria-label="বন্ধ করুন / Close">✕</button>
-    </div>
-    <div class="calculator-display">
-      <div class="calculator-entry">
-        <input type="text" id="calculator-expression" dir="ltr" inputmode="none" maxlength="160" autocomplete="off" spellcheck="false" placeholder="0" aria-label="হিসাবের লাইন / Expression">
-        <button type="button" data-calculator-key="backspace" class="calculator-icon-button" aria-label="এক অক্ষর মুছুন / Backspace">⌫</button>
+  <div class="modal ios-calc-modal" role="dialog" aria-modal="true" aria-labelledby="calculator-title">
+    <div class="ios-calc-topbar">
+      <div class="ios-calc-topbar-left">
+        <button type="button" id="calc-history-toggle" class="ios-calc-tool-btn" aria-expanded="false" aria-controls="calc-history-panel" title="History">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15.5 14"/></svg>
+          <span class="ios-calc-hist-badge" id="calc-history-count" hidden>0</span>
+        </button>
+        <h2 id="calculator-title" class="ios-calc-title"><span class="bn">ক্যালকুলেটর</span><span class="en">Calculator</span></h2>
       </div>
-      <output id="calculator-result" dir="ltr">0</output>
+      <div class="ios-calc-topbar-right">
+        <button type="button" id="calculator-copy" class="ios-calc-copy-btn" disabled title="Copy result">
+          <span class="ios-calc-copy-ic" id="calculator-copy-icon" aria-hidden="true"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg></span>
+          <span class="bn">কপি</span><span class="en">Copy</span>
+        </button>
+        <button type="button" class="ios-calc-close-btn" data-calculator-close aria-label="Close">✕</button>
+      </div>
     </div>
-    <div class="calculator-pad">
-      <button type="button" data-calculator-key="clear" class="calculator-function" aria-label="সব মুছুন / Clear">AC</button>
-      <button type="button" data-calculator-key="(" class="calculator-function">(</button>
-      <button type="button" data-calculator-key=")" class="calculator-function">)</button>
-      <button type="button" data-calculator-key="/" class="calculator-operator">÷</button>
-      <button type="button" data-calculator-key="7"><span class="bn">৭</span><span class="en">7</span></button>
-      <button type="button" data-calculator-key="8"><span class="bn">৮</span><span class="en">8</span></button>
-      <button type="button" data-calculator-key="9"><span class="bn">৯</span><span class="en">9</span></button>
-      <button type="button" data-calculator-key="*" class="calculator-operator">×</button>
-      <button type="button" data-calculator-key="4"><span class="bn">৪</span><span class="en">4</span></button>
-      <button type="button" data-calculator-key="5"><span class="bn">৫</span><span class="en">5</span></button>
-      <button type="button" data-calculator-key="6"><span class="bn">৬</span><span class="en">6</span></button>
-      <button type="button" data-calculator-key="-" class="calculator-operator">−</button>
-      <button type="button" data-calculator-key="1"><span class="bn">১</span><span class="en">1</span></button>
-      <button type="button" data-calculator-key="2"><span class="bn">২</span><span class="en">2</span></button>
-      <button type="button" data-calculator-key="3"><span class="bn">৩</span><span class="en">3</span></button>
-      <button type="button" data-calculator-key="+" class="calculator-operator">+</button>
-      <button type="button" data-calculator-key="0"><span class="bn">০</span><span class="en">0</span></button>
-      <button type="button" data-calculator-key=".">.</button>
-      <button type="button" data-calculator-key="%" class="calculator-function">%</button>
-      <button type="button" data-calculator-key="=" class="calculator-equals">=</button>
-    </div>
-    <div class="calculator-toolbar">
-      <span id="calculator-feedback" role="status"></span>
-      <button type="button" id="calculator-copy" disabled><span class="bn">ফল কপি করুন</span><span class="en">Copy result</span></button>
+
+    <div class="ios-calc-body">
+      <div class="ios-calc-display" id="ios-calc-display" dir="ltr">
+        <div class="ios-calc-status-row">
+          <button type="button" data-calculator-key="backspace" class="ios-calc-bksp-btn" aria-label="Backspace" title="Backspace">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 4H8l-7 8 7 8h13a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z"/><line x1="18" y1="9" x2="12" y2="15"/><line x1="12" y1="9" x2="18" y2="15"/></svg>
+          </button>
+          <span id="calculator-feedback" class="ios-calc-feedback" role="status" aria-live="polite"></span>
+        </div>
+        <div class="ios-calc-expr-line" id="calculator-expression" aria-label="Expression"><span class="ios-expr-text">0</span><span class="ios-caret" aria-hidden="true"></span></div>
+        <output id="calculator-result" class="ios-calc-live-line"></output>
+      </div>
+
+      <div class="ios-calc-pad" dir="ltr">
+        <button type="button" data-calculator-key="clear" id="calc-clear-btn" class="ios-key ios-key-fn">AC</button>
+        <button type="button" data-calculator-key="negate" class="ios-key ios-key-fn" aria-label="Toggle sign">±</button>
+        <button type="button" data-calculator-key="%" class="ios-key ios-key-fn" aria-label="Percent">%</button>
+        <button type="button" data-calculator-key="/" class="ios-key ios-key-op" aria-label="Divide">÷</button>
+
+        <button type="button" data-calculator-key="7" class="ios-key ios-key-num">7</button>
+        <button type="button" data-calculator-key="8" class="ios-key ios-key-num">8</button>
+        <button type="button" data-calculator-key="9" class="ios-key ios-key-num">9</button>
+        <button type="button" data-calculator-key="*" class="ios-key ios-key-op" aria-label="Multiply">×</button>
+
+        <button type="button" data-calculator-key="4" class="ios-key ios-key-num">4</button>
+        <button type="button" data-calculator-key="5" class="ios-key ios-key-num">5</button>
+        <button type="button" data-calculator-key="6" class="ios-key ios-key-num">6</button>
+        <button type="button" data-calculator-key="-" class="ios-key ios-key-op" aria-label="Subtract">−</button>
+
+        <button type="button" data-calculator-key="1" class="ios-key ios-key-num">1</button>
+        <button type="button" data-calculator-key="2" class="ios-key ios-key-num">2</button>
+        <button type="button" data-calculator-key="3" class="ios-key ios-key-num">3</button>
+        <button type="button" data-calculator-key="+" class="ios-key ios-key-op" aria-label="Add">+</button>
+
+        <button type="button" data-calculator-key="0" class="ios-key ios-key-num ios-key-zero">0</button>
+        <button type="button" data-calculator-key="." class="ios-key ios-key-num">.</button>
+        <button type="button" data-calculator-key="=" class="ios-key ios-key-eq" aria-label="Equals">=</button>
+      </div>
+
+      <div id="calc-history-panel" class="ios-calc-history" hidden>
+        <div class="ios-calc-history-hdr">
+          <span><span class="bn">হিসাবের তালিকা</span><span class="en">History</span></span>
+          <button type="button" id="calc-history-clear" class="ios-calc-history-clear">
+            <span class="bn">সব মুছুন</span><span class="en">Clear</span>
+          </button>
+        </div>
+        <div id="calc-history-list" class="ios-calc-history-list"></div>
+      </div>
     </div>
   </div>
 </div>
@@ -1286,7 +1314,7 @@ function ic(name){return`<span class="ic">${ICONS[name]||''}</span>`;}
 <script src="assets/js/app.js?v=6.40"></script>
 <script src="assets/js/mobile.js?v=6.40"></script>
 <script src="assets/js/motion.js?v=6.40"></script>
-<script src="assets/js/calculator.js?v=6.40"></script>
+<script src="assets/js/calculator.js?v=6.45"></script>
 <script src="assets/js/usage.js?v=6.40"></script>
 </body>
 </html>
