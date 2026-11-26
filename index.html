@@ -20,8 +20,8 @@
 <meta name="apple-mobile-web-app-title" content="হিসাব">
 <link rel="manifest" href="manifest.json">
 <title>হিসাব ট্র্যাকার PRO</title>
-<meta name="ht-release" content="6.39">
-<script src="assets/js/update.js?v=6.39" defer></script>
+<meta name="ht-release" content="6.40">
+<script src="assets/js/update.js?v=6.40" defer></script>
 <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;600;700&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="icon" type="image/png" href="assets/images/icon.png">
 <script>
@@ -45,7 +45,7 @@
   } catch(e){}
 })();
 </script>
-<link rel="stylesheet" href="assets/css/style.css?v=6.39">
+<link rel="stylesheet" href="assets/css/style.css?v=6.40">
 <style>
 /* ── SVG ICON SYSTEM ── */
 .ic{display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;}
@@ -89,11 +89,11 @@ const ICONS={
 function ic(name){return`<span class="ic">${ICONS[name]||''}</span>`;}
 </script>
 <script src="assets/vendor/supabase.min.js"></script>
-<link rel="stylesheet" href="assets/css/expense.css?v=6.39">
-<link rel="stylesheet" href="assets/css/mobile.css?v=6.39">
-<link rel="stylesheet" href="assets/css/security.css?v=6.39">
-<link rel="stylesheet" href="assets/css/motion.css?v=6.39">
-<link rel="stylesheet" href="assets/css/calculator.css?v=6.39">
+<link rel="stylesheet" href="assets/css/expense.css?v=6.40">
+<link rel="stylesheet" href="assets/css/mobile.css?v=6.40">
+<link rel="stylesheet" href="assets/css/security.css?v=6.40">
+<link rel="stylesheet" href="assets/css/motion.css?v=6.40">
+<link rel="stylesheet" href="assets/css/calculator.css?v=6.40">
 </head>
 <body>
 
@@ -672,35 +672,37 @@ function ic(name){return`<span class="ic">${ICONS[name]||''}</span>`;}
       <button type="button" class="drw-close" data-calculator-close aria-label="বন্ধ করুন / Close">✕</button>
     </div>
     <div class="calculator-display">
-      <div id="calculator-expression" dir="ltr">&nbsp;</div>
-      <output id="calculator-result" tabindex="0" dir="ltr">0</output>
-    </div>
-    <div class="calculator-toolbar">
-      <span id="calculator-feedback" role="status"></span>
-      <button type="button" id="calculator-copy" disabled><span class="bn">ফল কপি করুন</span><span class="en">Copy result</span></button>
+      <div class="calculator-entry">
+        <input type="text" id="calculator-expression" dir="ltr" inputmode="none" maxlength="160" autocomplete="off" spellcheck="false" placeholder="0" aria-label="হিসাবের লাইন / Expression">
+        <button type="button" data-calculator-key="backspace" class="calculator-icon-button" aria-label="এক অক্ষর মুছুন / Backspace">⌫</button>
+      </div>
+      <output id="calculator-result" dir="ltr">0</output>
     </div>
     <div class="calculator-pad">
       <button type="button" data-calculator-key="clear" class="calculator-function" aria-label="সব মুছুন / Clear">AC</button>
       <button type="button" data-calculator-key="(" class="calculator-function">(</button>
       <button type="button" data-calculator-key=")" class="calculator-function">)</button>
-      <button type="button" data-calculator-key="backspace" class="calculator-function" aria-label="এক অক্ষর মুছুন / Backspace">⌫</button>
+      <button type="button" data-calculator-key="/" class="calculator-operator">÷</button>
       <button type="button" data-calculator-key="7"><span class="bn">৭</span><span class="en">7</span></button>
       <button type="button" data-calculator-key="8"><span class="bn">৮</span><span class="en">8</span></button>
       <button type="button" data-calculator-key="9"><span class="bn">৯</span><span class="en">9</span></button>
-      <button type="button" data-calculator-key="/" class="calculator-operator">÷</button>
+      <button type="button" data-calculator-key="*" class="calculator-operator">×</button>
       <button type="button" data-calculator-key="4"><span class="bn">৪</span><span class="en">4</span></button>
       <button type="button" data-calculator-key="5"><span class="bn">৫</span><span class="en">5</span></button>
       <button type="button" data-calculator-key="6"><span class="bn">৬</span><span class="en">6</span></button>
-      <button type="button" data-calculator-key="*" class="calculator-operator">×</button>
+      <button type="button" data-calculator-key="-" class="calculator-operator">−</button>
       <button type="button" data-calculator-key="1"><span class="bn">১</span><span class="en">1</span></button>
       <button type="button" data-calculator-key="2"><span class="bn">২</span><span class="en">2</span></button>
       <button type="button" data-calculator-key="3"><span class="bn">৩</span><span class="en">3</span></button>
-      <button type="button" data-calculator-key="-" class="calculator-operator">−</button>
+      <button type="button" data-calculator-key="+" class="calculator-operator">+</button>
       <button type="button" data-calculator-key="0"><span class="bn">০</span><span class="en">0</span></button>
       <button type="button" data-calculator-key=".">.</button>
       <button type="button" data-calculator-key="%" class="calculator-function">%</button>
-      <button type="button" data-calculator-key="+" class="calculator-operator">+</button>
       <button type="button" data-calculator-key="=" class="calculator-equals">=</button>
+    </div>
+    <div class="calculator-toolbar">
+      <span id="calculator-feedback" role="status"></span>
+      <button type="button" id="calculator-copy" disabled><span class="bn">ফল কপি করুন</span><span class="en">Copy result</span></button>
     </div>
   </div>
 </div>
@@ -1278,13 +1280,13 @@ function ic(name){return`<span class="ic">${ICONS[name]||''}</span>`;}
 <div class="overlay" id="m-usage" role="dialog" aria-modal="true" aria-labelledby="usage-title" onclick="if(event.target===this)cm(this.id)"><div class="modal usage-modal"><div class="app-info-heading"><h2 id="usage-title"><span class="bn">ওয়েবসাইট ব্যবহার</span><span class="en">Website Usage</span></h2><button type="button" class="drw-close" aria-label="Close" onclick="cm('m-usage')">✕</button></div><div id="usage-content"></div></div></div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-<script src="assets/js/safety.js?v=6.39"></script>
-<script src="assets/js/security.js?v=6.39"></script>
-<script src="assets/js/sync.js?v=6.39"></script>
-<script src="assets/js/app.js?v=6.39"></script>
-<script src="assets/js/mobile.js?v=6.39"></script>
-<script src="assets/js/motion.js?v=6.39"></script>
-<script src="assets/js/calculator.js?v=6.39"></script>
-<script src="assets/js/usage.js?v=6.39"></script>
+<script src="assets/js/safety.js?v=6.40"></script>
+<script src="assets/js/security.js?v=6.40"></script>
+<script src="assets/js/sync.js?v=6.40"></script>
+<script src="assets/js/app.js?v=6.40"></script>
+<script src="assets/js/mobile.js?v=6.40"></script>
+<script src="assets/js/motion.js?v=6.40"></script>
+<script src="assets/js/calculator.js?v=6.40"></script>
+<script src="assets/js/usage.js?v=6.40"></script>
 </body>
 </html>
